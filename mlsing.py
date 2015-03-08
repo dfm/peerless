@@ -58,6 +58,12 @@ def simulation_system(q1, q2, period, t0, ror, b):
     return s
 
 
+def normalize_inputs(X):
+    X /= np.median(X, axis=1)[:, None]
+    X[:, :] = np.log(X)
+    return X
+
+
 def generate_injections(lcs, npos=10000, nneg=None,
                         min_period=2e3, max_period=1e4,
                         min_ror=0.03, max_ror=0.3):
@@ -74,7 +80,7 @@ def generate_injections(lcs, npos=10000, nneg=None,
     for j in range(len(pos_sims)):
         # Generate the simulation parameters.
         nlc = np.random.randint(len(lcs))
-        ntt = np.random.randint(HALF_WIDTH, len(t)-HALF_WIDTH)
+        ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc][0])-HALF_WIDTH)
         pos_pars.append([
             nlc, ntt, lcs[nlc][0][ntt],
             np.random.rand(), np.random.rand(),
@@ -94,12 +100,12 @@ def generate_injections(lcs, npos=10000, nneg=None,
     neg_pars = []
     for j in range(len(neg_sims)):
         nlc = np.random.randint(len(lcs))
-        ntt = np.random.randint(HALF_WIDTH, len(t)-HALF_WIDTH)
+        ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc][0])-HALF_WIDTH)
         neg_pars.append([nlc, ntt, lcs[nlc][0][ntt]] + 6*[np.nan])
         neg_sims[j] = lcs[nlc][1][ntt+inds]
 
     # Format the arrays for sklearn.
-    X = np.concatenate((pos_sims, neg_sims), axis=0)
+    X = normalize_inputs(np.concatenate((pos_sims, neg_sims), axis=0))
     y = np.ones(len(X))
     y[len(pos_sims):] = 0
 

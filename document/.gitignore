@@ -1,0 +1,10 @@
+*.aux
+*.log
+*.out
+ms.pdf
+figures/.ipynb_checkpoints
+figures/cache
+candidates
+*.bbl
+*.blg
+figures/data

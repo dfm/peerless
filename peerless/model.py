@@ -4,24 +4,29 @@ from __future__ import division, print_function
 
 __all__ = ["normalize_inputs", "Model"]
 
+import os
+import h5py
+import pickle
 import transit
 import numpy as np
+import matplotlib.pyplot as pl
 
-# from sklearn.grid_search import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, precision_recall_curve
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 
-from .settings import HALF_WIDTH
+from .settings import TEXP, HALF_WIDTH
 
 
 class Model(object):
 
     def __init__(self, lcs, **kwargs):
         self.lcs = lcs
+        self.models = [None] * len(lcs)
         self.format_dataset(**kwargs)
 
-    def format_dataset(self, npos=10000, nneg=None, min_period=2e3,
-                       max_period=1e4, min_ror=0.03, max_ror=0.3, dt=1.0):
+    def format_dataset(self, npos=10000, nneg=None,
+                       min_period=2e3, max_period=1e4,
+                       min_ror=0.03, max_ror=0.3, dt=1.0):
         lcs = self.lcs
         if nneg is None:
             nneg = npos
@@ -48,9 +53,9 @@ class Model(object):
                 np.random.uniform(0, 1.0 + ror),
             ])
 
-            # Build the simulator and
+            # Build the simulator and inject the transit signal.
             s = simulation_system(*(pos_pars[j][3:]))
-            pos_sims[j] = lcs[nlc].flux[ntt+inds] * s.light_curve(t)
+            pos_sims[j] = lcs[nlc].flux[ntt+inds]*s.light_curve(t, texp=TEXP)
 
         # The negative examples are just random chunks of light curve without
         # any injection.
@@ -80,12 +85,20 @@ class Model(object):
         self.y = y[inds]
         self.meta = meta[inds]
 
-    def train(self, month, **kwargs):
+    def fit_section(self, month, refit=False, cls=None, prec_req=0.9999,
+                    **kwargs):
+        if not 0 <= month < len(self.lcs):
+            raise ValueError("invalid section ID")
+
+        if self.models[month] is not None and not refit:
+            return self.models[month]
+
         # Initialize the model.
         kwargs["n_estimators"] = kwargs.get("n_estimators", 500)
-        kwargs["min_samples_leaf"] = kwargs.get("min_samples_leaf", 100)
-        clf = RandomForestClassifier(**kwargs)
-        # clf = ExtraTreesClassifier(**kwargs)
+        kwargs["min_samples_leaf"] = kwargs.get("min_samples_leaf", 1)
+        if cls is None:
+            cls = RandomForestClassifier
+        clf = cls(**kwargs)
 
         # Select the training and validation sets.
         r = np.random.rand(len(self.meta)) > 0.5
@@ -96,11 +109,12 @@ class Model(object):
         # Train the model.
         clf.fit(self.X[m_train], self.y[m_train])
 
-        # Measure the precision and recall.
+        # Predict on the validation set and compute the precision and recall.
         y_valid = clf.predict_proba(self.X[m_valid])[:, 1]
-        precision, recall, thresh = precision_recall_curve(self.y[m_valid],
-                                                           y_valid)
-        print(auc(recall, precision))
+        prc = precision_recall_curve(self.y[m_valid], y_valid)
+        prc = np.array(zip(prc[0], prc[1], np.append(prc[2], 1.0)),
+                       dtype=[("precision", float), ("recall", float),
+                              ("threshold", float)])
 
         # Test on the held out month.
         two_hw = 2 * HALF_WIDTH
@@ -109,8 +123,47 @@ class Model(object):
         X_test = normalize_inputs(lc.flux[inds])
         y_test = clf.predict_proba(X_test)[:, 1]
         t = lc.time[np.arange(HALF_WIDTH, len(lc)-HALF_WIDTH+1)]
+        results = np.array(zip(t, y_test), dtype=[("time", float),
+                                                  ("predict_prob", float)])
 
-        return precision, recall, thresh, t, y_test
+        self.models[month] = dict(
+            section=month,
+            classifier=clf,
+            precision_recall_curve=prc,
+            area_under_the_prc=auc(prc["recall"], prc["precision"]),
+            prec_req=prec_req,
+            threshold=prc["threshold"][prc["precision"] < prec_req][-1],
+            recall=prc["recall"][prc["precision"] < prec_req][-1],
+            validation_set=self.meta[m_valid],
+            validation_pred=y_valid,
+            results=results,
+        )
+
+        return self.models[month]
+
+    def to_hdf(self, fn):
+        fn = os.path.abspath(fn)
+        try:
+            os.makedirs(os.path.dirname(fn))
+        except os.error:
+            pass
+
+        with h5py.File(fn, "w") as f:
+            for res in self.models:
+                if res is None:
+                    continue
+
+                # Create the data group and save the attributes.
+                g = f.create_group("section_{0:03d}".format(res["section"]))
+                for k in ["section", "prec_req", "threshold", "recall",
+                          "area_under_the_prc"]:
+                    g.attrs[k] = res[k]
+                g.attrs["classifier"] = pickle.dumps(res["classifier"])
+
+                # Save the datasets.
+                for k in ["precision_recall_curve", "validation_set",
+                          "validation_pred", "results"]:
+                    g.create_dataset(k, data=res[k])
 
 
 def normalize_inputs(X):

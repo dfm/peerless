@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["HALF_WIDTH"]
+__all__ = ["TEXP", "HALF_WIDTH"]
 
-HALF_WIDTH = 60
+TEXP = 1626.0 / 60. / 60. / 24.
+HALF_WIDTH = 30

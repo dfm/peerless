@@ -8,8 +8,8 @@ import transit
 import numpy as np
 
 # from sklearn.grid_search import GridSearchCV
-from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.metrics import auc, precision_recall_curve
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 
 from .settings import HALF_WIDTH
 
@@ -84,7 +84,8 @@ class Model(object):
         # Initialize the model.
         kwargs["n_estimators"] = kwargs.get("n_estimators", 500)
         kwargs["min_samples_leaf"] = kwargs.get("min_samples_leaf", 100)
-        clf = ExtraTreesClassifier(**kwargs)
+        clf = RandomForestClassifier(**kwargs)
+        # clf = ExtraTreesClassifier(**kwargs)
 
         # Select the training and validation sets.
         r = np.random.rand(len(self.meta)) > 0.5

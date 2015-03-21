@@ -2,12 +2,21 @@
 
 from __future__ import division, print_function
 
-__all__ = ["load_light_curves"]
+__all__ = ["load_light_curves_for_kic", "load_light_curves"]
 
 import fitsio
 import numpy as np
 
 from .settings import HALF_WIDTH
+
+
+def load_light_curves_for_kic(kicid, **kwargs):
+    import kplr
+    client = kplr.API()
+    kwargs["fetch"] = kwargs.get("fetch", True)
+    kwargs["short_cadence"] = kwargs.get("short_cadence", False)
+    lcs = client.star(kicid).get_light_curves(**kwargs)
+    return load_light_curves(lc.filename for lc in lcs)
 
 
 def load_light_curves(fns):

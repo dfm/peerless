@@ -9,7 +9,6 @@ import h5py
 import pickle
 import transit
 import numpy as np
-import matplotlib.pyplot as pl
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, precision_recall_curve
@@ -25,8 +24,8 @@ class Model(object):
         self.format_dataset(**kwargs)
 
     def format_dataset(self, npos=10000, nneg=None,
-                       min_period=2e3, max_period=1e4,
-                       min_ror=0.03, max_ror=0.3, dt=1.0):
+                       min_period=500, max_period=1e4,
+                       min_ror=0.03, max_ror=0.3, dt=0.1):
         lcs = self.lcs
         if nneg is None:
             nneg = npos
@@ -84,6 +83,9 @@ class Model(object):
         self.X = X[inds]
         self.y = y[inds]
         self.meta = meta[inds]
+
+    def fit_all(self, **kwargs):
+        return [self.fit_section(i, **kwargs) for i in range(len(self.lcs))]
 
     def fit_section(self, month, refit=False, cls=None, prec_req=0.9999,
                     **kwargs):

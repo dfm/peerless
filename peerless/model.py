@@ -167,6 +167,23 @@ class Model(object):
                           "validation_pred", "results"]:
                     g.create_dataset(k, data=res[k])
 
+    @classmethod
+    def from_hdf(cls, fn, lcs, **kwargs):
+        self = cls(lcs, **kwargs)
+        with h5py.File(fn, "r") as f:
+            for k in f:
+                g = f[k]
+                d = dict(classifier = pickle.loads(g.attrs["classifier"]))
+                for k in ["section", "prec_req", "threshold", "recall",
+                          "area_under_the_prc"]:
+                    d[k] = g.attrs[k]
+
+                for k in ["precision_recall_curve", "validation_set",
+                          "validation_pred", "results"]:
+                    d[k] = g[k][...]
+                self.models[g.attrs["section"]] = d
+        return self
+
 
 def normalize_inputs(X):
     X /= np.median(X, axis=1)[:, None]

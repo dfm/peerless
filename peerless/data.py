@@ -15,6 +15,7 @@ def load_light_curves_for_kic(kicid, **kwargs):
     client = kplr.API()
     kwargs["fetch"] = kwargs.get("fetch", True)
     kwargs["short_cadence"] = kwargs.get("short_cadence", False)
+    kwargs["order"] = kwargs.get("order", "sci_data_quarter")
     lcs = client.star(kicid).get_light_curves(**kwargs)
     return load_light_curves(lc.filename for lc in lcs)
 

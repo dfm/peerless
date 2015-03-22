@@ -17,7 +17,7 @@ def fit_target(kicid):
     fn = "results/{0}.h5".format(kicid)
 
     print("Starting {0}".format(kicid))
-    lcs = peerless.load_light_curves_for_kic(10287723)
+    lcs = peerless.load_light_curves_for_kic(kicid)
 
     strt = time.time()
     mod = peerless.Model(lcs)

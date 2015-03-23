@@ -1,0 +1,4 @@
+*.pyc
+results*
+.ipynb_checkpoints
+*.png

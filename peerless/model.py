@@ -22,11 +22,48 @@ class Model(object):
 
     def __init__(self, lcs, **kwargs):
         self.lcs = lcs
-        self.models = [None] * len(lcs)
+        self.models = [None] * 3
         self.X = None
         self.kwargs = kwargs
 
-    def format_dataset(self, npos=100000, nneg=None,
+        # Pre-compute the footprint weights for each light curve.
+        w = np.array([lc.footprint for lc in lcs])
+        w /= np.sum(w)
+        self.weights = w
+
+        # Split the sections into the three sets.
+        quarters = np.array([lc.meta["quarter"] for lc in lcs])
+        inds = np.arange(len(quarters))
+        self.splits = [set() for _ in range(3)]
+
+        # Loop over each quarter and distribute the sections "uniformly".
+        for q in set(quarters):
+            m = quarters == q
+            i = inds[m]
+            if m.sum() < 3:
+                # If there are fewer than 3 sections, randomly add them.
+                j = np.random.choice(3, size=m.sum(), replace=False)
+                for j0, i0 in zip(j, i):
+                    self.splits[j0].add(i0)
+            elif m.sum() == 3:
+                # If there are exactly 3 sections, add one to each split.
+                np.random.shuffle(i)
+                for j0, i0 in enumerate(i):
+                    self.splits[j0].add(i0)
+            else:
+                # If there are more than 3 sections, distribute them according
+                # to their footprints... this should end up having
+                # approximately the same footprint of data in each split.
+                np.random.shuffle(i)
+                w = self.weights[i]
+                w /= w.sum()
+                cs = np.cumsum(w)
+                a, b = np.argmin(np.abs(cs-1./3)), np.argmin(np.abs(cs-2./3))
+                self.splits[0] |= set(i[:a+1])
+                self.splits[1] |= set(i[a+1:b+1])
+                self.splits[2] |= set(i[b+1:])
+
+    def format_dataset(self, npos=10000, nneg=None,
                        min_period=1e3, max_period=1e4,
                        min_rad=0.03, max_rad=0.3, dt=0.05,
                        smass=1.0, srad=1.0):
@@ -34,58 +71,58 @@ class Model(object):
         if nneg is None:
             nneg = npos
 
-        # Pre-compute the weights for each light curve.
-        w = np.array([lc.footprint for lc in lcs])
-        w /= np.sum(w)
-        self.lc_weights = w
-
         # The time grid for within a single chunk.
         inds = np.arange(-HALF_WIDTH, HALF_WIDTH+1)
         meta_keys = ["channel", "skygroup", "module", "output", "quarter",
                      "season"]
 
         # Positive examples.
-        pos_sims = np.empty((npos, len(inds)))
-        pos_pars = []
-        for j in range(len(pos_sims)):
-            # Generate the simulation parameters.
-            nlc = np.argmax(np.random.multinomial(1, w))
-            ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
-            rp = np.exp(np.random.uniform(np.log(min_rad), np.log(max_rad)))
-            pos_pars.append([
-                nlc, ntt, lcs[nlc].time[ntt],
-                np.random.rand(), np.random.rand(),
-                np.exp(np.random.uniform(np.log(min_period),
-                                         np.log(max_period))),
-                np.random.uniform(-dt, dt),
-                rp,
-                np.random.uniform(0, 1.0 + rp / srad),
-                beta.rvs(1.12, 3.09),
-                np.random.uniform(-np.pi, np.pi),
-            ] + [lcs[nlc].meta[k] for k in meta_keys])
+        pos_sims = np.empty((3, npos, len(inds)))
+        pos_pars = [[] for _ in range(3)]
+        neg_sims = np.empty((3, nneg, len(inds)))
+        neg_pars = [[] for _ in range(3)]
+        for i in range(3):
+            lc_inds = np.array(list(self.splits[i]))
+            pval = self.weights[lc_inds]
+            pval /= pval.sum()
 
-            # Build the simulator and inject the transit signal.
-            s = simulation_system(smass, srad,
-                                  *(pos_pars[j][3:-len(meta_keys)]))
-            t = lcs[nlc].time[ntt+inds]
-            t -= np.mean(t)
-            pos_sims[j] = lcs[nlc].flux[ntt+inds]*s.light_curve(t, texp=TEXP)
+            for j in range(pos_sims.shape[1]):
+                # Generate the simulation parameters.
+                nlc = np.random.choice(lc_inds, p=pval)
+                ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
+                rp = np.exp(np.random.uniform(np.log(min_rad),
+                                              np.log(max_rad)))
+                pos_pars[i].append([
+                    nlc, ntt, lcs[nlc].time[ntt],
+                    np.random.rand(), np.random.rand(),
+                    np.exp(np.random.uniform(np.log(min_period),
+                                             np.log(max_period))),
+                    np.random.uniform(-dt, dt),
+                    rp,
+                    np.random.uniform(0, 1.0 + rp / srad),
+                    beta.rvs(1.12, 3.09),
+                    np.random.uniform(-np.pi, np.pi),
+                ] + [lcs[nlc].meta[k] for k in meta_keys])
 
-        # The negative examples are just random chunks of light curve without
-        # any injection.
-        neg_sims = np.empty((nneg, len(t)))
-        neg_pars = []
-        for j in range(len(neg_sims)):
-            nlc = np.argmax(np.random.multinomial(1, w))
-            ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
-            neg_pars.append([nlc, ntt, lcs[nlc].time[ntt]] + 8*[np.nan]
-                            + [lcs[nlc].meta[k] for k in meta_keys])
-            neg_sims[j] = lcs[nlc].flux[ntt+inds]
+                # Build the simulator and inject the transit signal.
+                s = simulation_system(smass, srad,
+                                      *(pos_pars[i][j][3:-len(meta_keys)]))
+                t = lcs[nlc].time[ntt+inds]
+                t -= np.mean(t)
+                pos_sims[i, j] = lcs[nlc].flux[ntt+inds]
+                pos_sims[i, j] *= s.light_curve(t, texp=TEXP)
+
+            for j in range(neg_sims.shape[1]):
+                nlc = np.random.choice(lc_inds, p=pval)
+                ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
+                neg_pars[i].append([nlc, ntt, lcs[nlc].time[ntt]] + 8*[np.nan]
+                                   + [lcs[nlc].meta[k] for k in meta_keys])
+                neg_sims[i, j] = lcs[nlc].flux[ntt+inds]
 
         # Format the arrays for sklearn.
-        X = normalize_inputs(np.concatenate((pos_sims, neg_sims), axis=0))
-        y = np.ones(len(X))
-        y[len(pos_sims):] = 0
+        X = normalize_inputs(np.concatenate((pos_sims, neg_sims), axis=1))
+        y = np.ones(X.shape[:2])
+        y[:, npos:] = 0
 
         # Give the metedata a dtype.
         dtype = [("nlc", int), ("ntt", int), ("tt", float),
@@ -93,156 +130,98 @@ class Model(object):
                  ("t0", float), ("rp", float), ("b", float), ("e", float),
                  ("pomega", float)]
         dtype += [(k, int) for k in meta_keys]
-        meta = np.array(map(tuple, pos_pars + neg_pars), dtype=dtype)
+        meta = [np.array(map(tuple, pos_pars[i] + neg_pars[i]), dtype=dtype)
+                for i in range(3)]
 
         # Shuffle the order.
-        inds = np.arange(len(X))
+        inds = np.arange(X.shape[1])
         np.random.shuffle(inds)
-        self.X = X[inds]
-        self.y = y[inds]
-        self.meta = meta[inds]
+        self.X = X[:, inds]
+        self.y = y[:, inds]
+        self.meta = [m[inds] for m in meta]
 
     def fit_all(self, **kwargs):
-        return [self.fit_section(i, **kwargs) for i in range(len(self.lcs))]
+        return [self.fit_split(i, **kwargs) for i in range(3)]
 
-    def fit_section(self, month, refit=False, cls=None, prec_req=0.9999,
-                    ntrain=None, nvalid=None, **kwargs):
-        if not 0 <= month < len(self.lcs):
-            raise ValueError("invalid section ID")
+    def fit_split(self, split, refit=False, cls=None, prec_req=0.9999,
+                  ntrain=None, **kwargs):
+        # Return the cached model if it's already been computed.
+        if not 0 <= split < len(self.models):
+            raise ValueError("invalid split ID")
+        if self.models[split] is not None and not refit:
+            return self.models[split]
 
+        # Generate the training data if required.
         if self.X is None:
             self.format_dataset(**(self.kwargs))
 
-        if self.models[month] is not None and not refit:
-            return self.models[month]
+        # Set up the model.
+        self.models[split] = d = dict(split_id=split)
 
-        # Generate the two splits of the data.
-        s = np.random.get_state()
-        m_1 = self._split(month, ntrain, nvalid)
-        np.random.set_state(s)
-        m_2 = self._split(month, nvalid, ntrain)
-
-        # Initialize the model dictionary.
-        self.models[month] = dict(
-            section=month,
-            splits=[],
-        )
-
-        # Loop over the splits and fit the models.
+        # Build the classifier.
         kwargs["n_estimators"] = kwargs.get("n_estimators", 1000)
         kwargs["min_samples_leaf"] = kwargs.get("min_samples_leaf", 2)
-        for m_train, m_valid in (m_1, m_2[::-1]):
-            # Initialize the model.
-            if cls is None:
-                cls = RandomForestClassifier
-            clf = cls(**kwargs)
+        if cls is None:
+            cls = RandomForestClassifier
+        d["classifier"] = clf = cls(**kwargs)
 
-            # Train the model.
-            clf.fit(self.X[m_train], self.y[m_train])
+        # Only use the maximum number of training samples.
+        X, y = self.X[split], self.y[split]
+        if ntrain is not None:
+            X, y = X[:ntrain], y[:ntrain]
+            if len(X) != ntrain:
+                logging.warn("Not enough training examples ({0})"
+                             .format(len(X)))
 
-            # Predict on the validation set and compute the precision and
-            # recall.
-            y_valid = clf.predict_proba(self.X[m_valid])[:, 1]
-            prc = precision_recall_curve(self.y[m_valid], y_valid)
+        # Train the model.
+        clf.fit(X, y)
+
+        # Compute the PR curve on the validation sets.
+        vs = range(3)
+        del vs[split]
+        d["validation"] = [dict(split_id=i) for i in vs]
+        d["test"] = [dict(split_id=i) for i in vs]
+        for i, s in enumerate(vs):
+            # Predict on the validation set.
+            X_valid, y_valid = self.X[s], self.y[s]
+            y_valid_pred = clf.predict_proba(X_valid)[:, 1]
+
+            # Save the predictions for the validation set.
+            d0 = d["validation"][i]
+            d0["validation_set"] = self.meta[s]
+            d0["validation_pred"] = y_valid_pred
+
+            # Compute the PR curve.
+            prc = precision_recall_curve(y_valid, y_valid_pred)
             prc = np.array(zip(prc[0], prc[1], np.append(prc[2], 1.0)),
                            dtype=[("precision", float), ("recall", float),
                                   ("threshold", float)])
+            d0["precision_recall_curve"] = prc
 
-            # Test on the held out month.
+            # Compute the threshold and recall at fixed precision.
+            d0["prec_req"] = prec_req
+            d0["area_under_the_prc"] = auc(prc["recall"], prc["precision"])
+            d0["threshold"] = prc["threshold"][prc["precision"] < prec_req][-1]
+            d0["recall"] = prc["recall"][prc["precision"] < prec_req][-1]
+
+            # Compute the prediction on the light curves that weren't used.
+            times, preds, sect_ids = [], [], []
             two_hw = 2 * HALF_WIDTH
-            lc = self.lcs[month]
-            inds = np.arange(len(lc)-two_hw)[:, None] + np.arange(two_hw + 1)
-            X_test = normalize_inputs(lc.flux[inds])
-            y_test = clf.predict_proba(X_test)[:, 1]
-            t = lc.time[np.arange(HALF_WIDTH, len(lc)-HALF_WIDTH+1)]
-            results = np.array(zip(t, y_test), dtype=[("time", float),
-                                                      ("predict_prob", float)])
+            for j in self.splits[s]:
+                lc = self.lcs[j]
+                inds = np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)
+                times.append(lc.time[np.arange(HALF_WIDTH,
+                                               len(lc)-HALF_WIDTH+1)])
+                X_test = normalize_inputs(lc.flux[inds])
+                preds.append(clf.predict_proba(X_test)[:, 1])
+                sect_ids.append(j + np.zeros(len(X_test), dtype=int))
+            d["test"][i]["prediction"] = np.array(zip(
+                np.concatenate(sect_ids), np.concatenate(times),
+                np.concatenate(preds),
+            ), dtype=[("sect_id", int), ("time", float),
+                      ("predict_prob", float)])
 
-            self.models[month]["splits"].append(dict(
-                classifier=clf,
-                precision_recall_curve=prc,
-                area_under_the_prc=auc(prc["recall"], prc["precision"]),
-                prec_req=prec_req,
-                threshold=prc["threshold"][prc["precision"] < prec_req][-1],
-                recall=prc["recall"][prc["precision"] < prec_req][-1],
-                validation_set=self.meta[m_valid],
-                validation_pred=y_valid,
-                results=results,
-                ntrain=m_train.sum(),
-                nvalid=m_valid.sum(),
-            ))
-
-        return self.models[month]
-
-    def _split(self, month, ntrain, nvalid):
-        # Split the "in quarter" sections into the training/validation sets.
-        lc = self.lcs[month]
-        quarters = np.array([l.meta["quarter"] for l in self.lcs])
-        seasons = np.array([l.meta["season"] for l in self.lcs])
-
-        # Split the "in quarter" sections.
-        m = np.ones_like(quarters, dtype=bool)
-        m[month] = False
-        in_quarter = quarters == lc.meta["quarter"]
-        inds = np.arange(len(quarters))[in_quarter & m]
-        np.random.shuffle(inds)
-        w = self.lc_weights[inds]
-        w /= np.sum(w)
-        cs = np.cumsum(w) <= 0.5
-        train_lcs = inds[cs]
-        valid_lcs = inds[~cs]
-
-        # Split the "in season" sections.
-        in_season = seasons == lc.meta["season"]
-        inds = np.arange(len(quarters))[in_season & ~in_quarter & m]
-        np.random.shuffle(inds)
-        w = self.lc_weights[inds]
-        w /= np.sum(w)
-        cs = np.cumsum(w) <= 0.5
-        train_lcs = np.append(train_lcs, inds[cs])
-        valid_lcs = np.append(valid_lcs, inds[~cs])
-
-        # Select the training and validation samples.
-        train_lcs, valid_lcs = set(train_lcs), set(valid_lcs)
-        m_train = np.array([row["nlc"] in train_lcs for row in self.meta])
-        m_valid = np.array([row["nlc"] in valid_lcs for row in self.meta])
-
-        # Select the extra samples that might be needed if there aren't enough
-        # in season and in quarter samples.
-        inds = np.arange(len(quarters))[quarters != lc.meta["quarter"]]
-        np.random.shuffle(inds)
-        w = self.lc_weights[inds]
-        w /= np.sum(w)
-        cs = np.cumsum(w) <= 0.5
-        train_lcs, valid_lcs = set(inds[cs]), set(inds[~cs])
-        x_train = np.array([row["nlc"] in train_lcs for row in self.meta])
-        x_valid = np.array([row["nlc"] in valid_lcs for row in self.meta])
-
-        # Only select the requested number of training/validation examples.
-        if ntrain is None:
-            # Add in the extra samples.
-            m_train |= x_train
-        else:
-            m_train[np.cumsum(m_train) > ntrain] = False
-            if m_train.sum() != ntrain:
-                x_train[np.cumsum(x_train) > ntrain - m_train.sum()] = False
-                m_train |= x_train
-            if m_train.sum() != ntrain:
-                logging.warn("Not enough training examples ({0})"
-                             .format(m_train.sum()))
-        if nvalid is None:
-            # Add in the extra samples.
-            m_valid |= x_valid
-        else:
-            m_valid[np.cumsum(m_valid) > nvalid] = False
-            if m_valid.sum() != ntrain:
-                x_valid[np.cumsum(x_valid) > nvalid - m_valid.sum()] = False
-                m_valid |= x_valid
-            if m_valid.sum() != nvalid:
-                logging.warn("Not enough validation examples ({0})"
-                             .format(m_valid.sum()))
-
-        return m_train, m_valid
+        return self.models[split]
 
     def to_hdf(self, fn):
         fn = os.path.abspath(fn)
@@ -257,22 +236,29 @@ class Model(object):
                     continue
 
                 # Create the data group and save the attributes.
-                sect = results["section"]
-                g0 = f.create_group("section_{0:03d}".format(sect))
-                g0.attrs["section"] = sect
+                sect = results["split_id"]
+                g = f.create_group("section_{0:03d}".format(sect))
+                g.attrs["split_id"] = sect
+                g.attrs["classifier"] = pickle.dumps(results["classifier"])
 
-                # Loop over the splits and save those.
-                for i, res in enumerate(results["splits"]):
-                    g = g0.create_group("split_{0:d}".format(i))
-                    for k in ["prec_req", "threshold", "recall",
-                            "area_under_the_prc"]:
-                        g.attrs[k] = res[k]
-                    g.attrs["classifier"] = pickle.dumps(res["classifier"])
-
-                    # Save the datasets.
+                # Loop over validation sets and save the data.
+                for i, d0 in enumerate(results["validation"]):
+                    id_ = d0["split_id"]
+                    g0 = g.create_group("validation_{0:d}".format(id_))
+                    for k in ["split_id", "prec_req", "threshold", "recall",
+                              "area_under_the_prc"]:
+                        g0.attrs[k] = d0[k]
                     for k in ["precision_recall_curve", "validation_set",
-                              "validation_pred", "results"]:
-                        g.create_dataset(k, data=res[k], compression="gzip")
+                              "validation_pred"]:
+                        g0.create_dataset(k, data=d0[k], compression="gzip")
+
+                # Loop over test sets and save the data.
+                for i, d0 in enumerate(results["test"]):
+                    id_ = d0["split_id"]
+                    g0 = g.create_group("test_{0:d}".format(id_))
+                    g0.attrs["split_id"] = id_
+                    g0.create_dataset("prediction", data=d0["prediction"],
+                                      compression="gzip")
 
     @classmethod
     def from_hdf(cls, fn, lcs, **kwargs):

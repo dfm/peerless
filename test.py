@@ -27,8 +27,8 @@ def fit_target(row):
 
     strt = time.time()
     mod = peerless.Model(lcs, smass=float(row.koi_smass),
-                         srad=float(row.koi_srad), npos=50000)
-    mod.fit_all(ntrain=2000)
+                         srad=float(row.koi_srad), npos=100000)
+    mod.fit_all(ntrain=2000, n_jobs=-1)
     mod.to_hdf(fn)
     print("Finished {0} in {1} seconds".format(kicid, time.time() - strt))
 

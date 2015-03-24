@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function
 
+import os
 import peerless
 import numpy as np
 import pandas as pd
@@ -18,17 +19,20 @@ targets = kois[m]
 
 def plot_koi(koi):
     kicid = koi.kepid
-    print(kicid)
     fn = "results/{0}.h5".format(kicid)
+    if not os.path.exists(fn):
+        return
+    print(kicid)
     lcs = peerless.load_light_curves_for_kic(kicid)
     mod = peerless.Model.from_hdf(fn, lcs)
 
     pl.clf()
-    for i, r in enumerate(mod.models):
-        pl.plot(r["results"]["time"], r["results"]["predict_prob"],
-                "rb"[i % 2])
-        pl.plot(r["results"]["time"],
-                r["threshold"]+np.zeros(len(r["results"])), "br"[i%2])
+    for i, res in enumerate(mod.models):
+        for r in res["splits"]:
+            pl.plot(r["results"]["time"], r["results"]["predict_prob"],
+                    "rb"[i % 2])
+            pl.plot(r["results"]["time"],
+                    r["threshold"]+np.zeros(len(r["results"])), "br"[i%2])
 
     period = float(koi.koi_period)
     t0 = float(koi.koi_time0bk) % period

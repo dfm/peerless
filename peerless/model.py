@@ -76,6 +76,12 @@ class Model(object):
         meta_keys = ["channel", "skygroup", "module", "output", "quarter",
                      "season"]
 
+        # # Build the full set of negative examples for each split.
+        # for i in range(3):
+        #     times, fluxes = [], []
+        #     for j in self.splits[i]:
+        #         t, f = unwrap_lc(lcs[j])
+
         # Positive examples.
         pos_sims = np.empty((3, npos, len(inds)))
         pos_pars = [[] for _ in range(3)]
@@ -119,8 +125,11 @@ class Model(object):
                                    + [lcs[nlc].meta[k] for k in meta_keys])
                 neg_sims[i, j] = lcs[nlc].flux[ntt+inds]
 
+            pos_sims[i] = normalize_inputs(pos_sims[i])
+            neg_sims[i] = normalize_inputs(neg_sims[i])
+
         # Format the arrays for sklearn.
-        X = normalize_inputs(np.concatenate((pos_sims, neg_sims), axis=1))
+        X = np.concatenate((pos_sims, neg_sims), axis=1)
         y = np.ones(X.shape[:2])
         y[:, npos:] = 0
 
@@ -206,15 +215,12 @@ class Model(object):
 
             # Compute the prediction on the light curves that weren't used.
             times, preds, sect_ids = [], [], []
-            two_hw = 2 * HALF_WIDTH
             for j in self.splits[s]:
-                lc = self.lcs[j]
-                inds = np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)
-                times.append(lc.time[np.arange(HALF_WIDTH,
-                                               len(lc)-HALF_WIDTH+1)])
-                X_test = normalize_inputs(lc.flux[inds])
+                t, f = unwrap_lc(self.lcs[j])
+                X_test = normalize_inputs(f)
+                times.append(t)
                 preds.append(clf.predict_proba(X_test)[:, 1])
-                sect_ids.append(j + np.zeros(len(X_test), dtype=int))
+                sect_ids.append(j + np.zeros(len(t), dtype=int))
             d["test"][i]["prediction"] = np.array(zip(
                 np.concatenate(sect_ids), np.concatenate(times),
                 np.concatenate(preds),
@@ -265,21 +271,42 @@ class Model(object):
         self = cls(lcs, **kwargs)
         with h5py.File(fn, "r") as f:
             for k in f:
-                g0 = f[k]
-                d0 = dict(section=g0.attrs["section"], splits=[])
-                for k in g0:
-                    g = g0[k]
-                    d = dict(classifier = pickle.loads(g.attrs["classifier"]))
-                    for k in ["prec_req", "threshold", "recall",
-                              "area_under_the_prc"]:
-                        d[k] = g.attrs[k]
+                g = f[k]
 
-                    for k in ["precision_recall_curve", "validation_set",
-                            "validation_pred", "results"]:
-                        d[k] = g[k][...]
-                    d0["splits"].append(d)
-                self.models[g0.attrs["section"]] = d0
+                # Create the data group and save the attributes.
+                d = dict(
+                    split_id=g.attrs["split_id"],
+                    classifier=pickle.loads(g.attrs["classifier"]),
+                    validation=[],
+                    test=[],
+                )
+
+                # Loop over the groups and load the datasets.
+                for k0 in g:
+                    g0 = g[k0]
+                    if k0.startswith("validation"):
+                        d0 = dict((i, g0.attrs[i])
+                                  for i in ["split_id", "prec_req",
+                                            "threshold", "recall",
+                                            "area_under_the_prc"])
+                        for i in ["precision_recall_curve", "validation_set",
+                                  "validation_pred"]:
+                            d0[i] = g0[i][...]
+                        d["validation"].append(d0)
+                    elif k0.startswith("test"):
+                        d0 = dict(split_id=g0.attrs["split_id"])
+                        d0["prediction"] = g0["prediction"][...]
+                        d["test"].append(d0)
+
+                self.models[d["split_id"]] = d
+
         return self
+
+
+def unwrap_lc(lc, two_hw=2*HALF_WIDTH):
+    t = lc.time[np.arange(HALF_WIDTH, len(lc)-HALF_WIDTH)]
+    f = lc.flux[np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)]
+    return t, f
 
 
 def normalize_inputs(X):

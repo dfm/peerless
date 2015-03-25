@@ -16,6 +16,8 @@ m &= ((kois.koi_disposition == "CANDIDATE")
       | (kois.koi_disposition == "CONFIRMED"))
 targets = kois[m][["kepid", "koi_smass", "koi_srad"]]
 targets = [t for _, t in targets.iterrows()]
+print(targets)
+assert 0
 
 
 def fit_target(row):

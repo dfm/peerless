@@ -26,13 +26,13 @@ def plot_koi(koi):
     lcs = peerless.load_light_curves_for_kic(kicid)
     mod = peerless.Model.from_hdf(fn, lcs)
 
-    pl.clf()
+    fig = pl.figure()
     for i, res in enumerate(mod.models):
-        for r in res["splits"]:
-            pl.plot(r["results"]["time"], r["results"]["predict_prob"],
-                    "rb"[i % 2])
-            pl.plot(r["results"]["time"],
-                    r["threshold"]+np.zeros(len(r["results"])), "br"[i%2])
+        for r, v in zip(res["test"][::-1], res["validation"]):
+            p = r["prediction"]
+            y = p["predict_prob"]
+            pl.plot(p["time"], y, ".", color="rgb"[i % 3], alpha=0.3)
+            pl.gca().axhline(v["threshold"], color="rgb"[i % 3])
 
     period = float(koi.koi_period)
     t0 = float(koi.koi_time0bk) % period
@@ -43,6 +43,7 @@ def plot_koi(koi):
 
     pl.ylim(0, 1.05)
     pl.savefig("results/{0}.png".format(kicid))
+    pl.close(fig)
 
 pool = Pool()
 koi_list = [k for _, k in targets.iterrows()]

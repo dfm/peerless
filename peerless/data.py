@@ -16,7 +16,7 @@ from .settings import HALF_WIDTH, PEERLESS_DATA_DIR
 
 def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     # Make sure that that data directory exists.
-    bp = os.path.join(PEERLESS_DATA_DIR, "lcs")
+    bp = os.path.join(PEERLESS_DATA_DIR, "data")
     try:
         os.makedirs(bp)
     except os.error:
@@ -28,7 +28,7 @@ def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     # Loop over the URLs and download the files if needed.
     fns = []
     for url in urls:
-        fn = os.path.join(PEERLESS_DATA_DIR, "data", url.split("/")[-1])
+        fn = os.path.join(bp, url.split("/")[-1])
         fns.append(fn)
         if os.path.exists(fn):
             continue

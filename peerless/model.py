@@ -250,11 +250,16 @@ class Model(object):
                     candidates["{0:.6f}".format(t)].append(p / thresh)
 
         # Only include the models where more than one prediction agrees.
-        candidates = np.array([(float(t0), 0.5*sum(c))
+        candidates = np.array([[float(t0), sum(c) / len(c)] + c
                                for t0, c in candidates.iteritems()
                                if len(c) > 1])
+
+        # If no candidates were found, return a blank.
+        dtype = [("time", float), ("mean_factor", float), ("num_points", int)]
+        dtype += [("factor_{0}".format(i+1), float)
+                  for i in range(len(self.models) - 1)]
         if not len(candidates):
-            return np.array([])
+            return np.array([], dtype=dtype)
 
         # Iterate through the candidates and exclude points that overlap
         # within the window.
@@ -264,10 +269,10 @@ class Model(object):
             i = np.arange(len(m))[m][np.argmax(candidates[m, 1])]
             t0 = candidates[i, 0]
             m0 = np.abs(candidates[:, 0] - t0) < window
-            final_candidates.append((t0, candidates[i, 1], m0.sum()))
+            final_candidates.append(tuple(
+                [t0, candidates[i, 1], m0.sum()] + list(candidates[i, 2:])))
             m[m0] = False
 
-        dtype = [("time", float), ("factor", float), ("num_points", int)]
         return np.array(final_candidates, dtype=dtype)
 
     def to_hdf(self, fn):

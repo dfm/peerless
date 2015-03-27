@@ -42,7 +42,7 @@ def run_on_kicid(kicid, out_dir=None, lc_params=None, model_params=None,
     mass, rad = float(star.mass), float(star.radius)
     mass = mass if np.isfinite(mass) else 1.0
     rad = rad if np.isfinite(rad) else 1.0
-    logging.info("mass={1} and rad={2}".format(mass, rad))
+    logging.info("mass={0} and rad={1}".format(mass, rad))
     logging.info("Training model")
     mod = Model(lcs, smass=mass, srad=rad, **model_params)
     mod.fit_all(**fit_params)
@@ -54,5 +54,7 @@ def run_on_kicid(kicid, out_dir=None, lc_params=None, model_params=None,
         except os.error:
             pass
         fn = os.path.join(out_dir, "{0}.h5".format(kicid))
-        logging.info("Saving search results to {1}".format(fn))
+        logging.info("Saving search results to {0}".format(fn))
         mod.to_hdf(fn)
+
+    return mod

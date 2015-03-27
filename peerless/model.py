@@ -11,6 +11,7 @@ import transit
 import logging
 import numpy as np
 from scipy.stats import beta
+from collections import defaultdict
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, precision_recall_curve
@@ -231,6 +232,41 @@ class Model(object):
                       ("predict_prob", float)])
 
         return self.models[split]
+
+    def find_candidates(self, window=4.0):
+        if any(m is None for m in self.models):
+            raise RuntimeError("you need to compute all the models first")
+
+        # Loop over the models and compete the models against each other.
+        candidates = defaultdict(list)
+        for i, res in enumerate(self.models):
+            for j, (test, valid) in enumerate(zip(res["test"],
+                                                  res["validation"][::-1])):
+                pred = test["prediction"]
+                thresh = valid["threshold"]
+                for i in np.arange(len(pred))[pred["predict_prob"] > thresh]:
+                    t = pred["time"][i]
+                    p = pred["predict_prob"][i]
+                    candidates["{0:.6f}".format(t)].append(p / thresh)
+
+        # Only include the models where more than one prediction agrees.
+        candidates = np.array([(float(t0), 0.5*sum(c))
+                               for t0, c in candidates.iteritems()
+                               if len(c) > 1])
+        if not len(candidates):
+            return np.array([])
+
+        # Iterate through the candidates and exclude points that overlap
+        # within the window.
+        final_candidates = []
+        m = np.ones(len(candidates), dtype=bool)
+        while m.sum():
+            i = np.arange(len(m))[m][np.argmax(candidates[m, 1])]
+            t0 = candidates[i, 0]
+            final_candidates.append(t0)
+            m[np.abs(candidates[:, 0] - t0) < window] = False
+
+        return np.array(final_candidates)
 
     def to_hdf(self, fn):
         fn = os.path.abspath(fn)

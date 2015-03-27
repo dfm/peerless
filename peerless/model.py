@@ -148,7 +148,7 @@ class Model(object):
     def fit_all(self, **kwargs):
         return [self.fit_split(i, **kwargs) for i in range(3)]
 
-    def fit_split(self, split, refit=False, cls=None, prec_req=0.9999,
+    def fit_split(self, split, refit=False, cls=None, prec_req=1.0,
                   ntrain=None, **kwargs):
         # Return the cached model if it's already been computed.
         if not 0 <= split < len(self.models):

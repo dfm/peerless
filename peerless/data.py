@@ -10,10 +10,11 @@ import requests
 import numpy as np
 from scipy.ndimage.measurements import label as contig_label
 
+from .catalogs import KOICatalog
 from .settings import HALF_WIDTH, PEERLESS_DATA_DIR
 
 
-def load_light_curves_for_kic(kicid, **kwargs):
+def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     # Make sure that that data directory exists.
     bp = os.path.join(PEERLESS_DATA_DIR, "lcs")
     try:
@@ -40,10 +41,19 @@ def load_light_curves_for_kic(kicid, **kwargs):
             f.write(r.content)
 
     # Load the light curves.
+    if remove_kois:
+        kwargs["remove_kois"] = kicid
     return load_light_curves(fns, **kwargs)
 
 
-def load_light_curves(fns, pdc=True, min_break=1, delete=False):
+def load_light_curves(fns, pdc=True, min_break=1, delete=False,
+                      remove_kois=None):
+    # Find any KOIs.
+    if remove_kois is not None:
+        df = KOICatalog().df
+        kois = df[df.kepid == remove_kois]
+
+    # Load the light curves.
     lcs = []
     for fn in fns:
         # Load the data.
@@ -65,6 +75,15 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False):
             quarter=hdr["QUARTER"],
             season=hdr["SEASON"],
         )
+
+        # Remove any KOI points.
+        if remove_kois is not None:
+            for _, koi in kois.iterrows():
+                period = float(koi.koi_period)
+                t0 = float(koi.koi_time0bk) % period
+                tau = float(koi.koi_duration) / 24.
+                m = np.abs((x-t0+0.5*period) % period-0.5*period) < tau
+                y[m] = np.nan
 
         # Remove bad quality points.
         y[q != 0] = np.nan

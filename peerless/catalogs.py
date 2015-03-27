@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Code for interfacing with the Exoplanet Archive catalogs.
 
@@ -17,6 +16,12 @@ import pandas as pd
 from six.moves import urllib
 
 from .settings import PEERLESS_DATA_DIR
+
+
+def download():
+    for c in (KOICatalog, KICatalog):
+        print("Downloading {0}...".format(c.cls.__name__))
+        c().fetch(clobber=True)
 
 
 class Catalog(object):

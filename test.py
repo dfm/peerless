@@ -16,8 +16,6 @@ m &= ((kois.koi_disposition == "CANDIDATE")
       | (kois.koi_disposition == "CONFIRMED"))
 targets = kois[m][["kepid", "koi_smass", "koi_srad"]]
 targets = [t for _, t in targets.iterrows()]
-print(targets)
-assert 0
 
 
 def fit_target(row):
@@ -29,7 +27,7 @@ def fit_target(row):
 
     strt = time.time()
     mod = peerless.Model(lcs, smass=float(row.koi_smass),
-                         srad=float(row.koi_srad), npos=10000)
+                         srad=float(row.koi_srad), npos=20000)
     mod.fit_all(n_jobs=-1)
     mod.to_hdf(fn)
     print("Finished {0} in {1} seconds".format(kicid, time.time() - strt))

@@ -63,7 +63,7 @@ class Model(object):
                 self.splits[1] |= set(i[a+1:b+1])
                 self.splits[2] |= set(i[b+1:])
 
-    def format_dataset(self, npos=10000, nneg=None,
+    def format_dataset(self, npos=20000, nneg=None,
                        min_period=1e3, max_period=1e4,
                        min_rad=0.03, max_rad=0.3, dt=0.05,
                        smass=1.0, srad=1.0):
@@ -75,12 +75,6 @@ class Model(object):
         inds = np.arange(-HALF_WIDTH, HALF_WIDTH+1)
         meta_keys = ["channel", "skygroup", "module", "output", "quarter",
                      "season"]
-
-        # # Build the full set of negative examples for each split.
-        # for i in range(3):
-        #     times, fluxes = [], []
-        #     for j in self.splits[i]:
-        #         t, f = unwrap_lc(lcs[j])
 
         # Positive examples.
         pos_sims = np.empty((3, npos, len(inds)))

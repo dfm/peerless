@@ -22,12 +22,13 @@ def load_light_curves_for_kic(kicid, pdc=True, min_break=5, **kwargs):
                              min_break=min_break)
 
 
-def load_light_curves(fns, pdc=True, min_break=5):
+def load_light_curves(fns, pdc=True, min_break=1):
     lcs = []
     for fn in fns:
         # Load the data.
         data = fitsio.read(fn)
         x = data["TIME"]
+        q = data["SAP_QUALITY"]
         if pdc:
             y = data["PDCSAP_FLUX"]
         else:
@@ -43,6 +44,9 @@ def load_light_curves(fns, pdc=True, min_break=5):
             quarter=hdr["QUARTER"],
             season=hdr["SEASON"],
         )
+
+        # Remove bad quality points.
+        y[q != 0] = np.nan
 
         # Find and flag long sections of missing NaNs.
         lbls, count = contig_label(~np.isfinite(y))

@@ -30,9 +30,11 @@ def plot_koi(koi):
     for i, res in enumerate(mod.models):
         for r, v in zip(res["test"][::-1], res["validation"]):
             p = r["prediction"]
-            y = p["predict_prob"]
+            y = p["predict_prob"] / v["threshold"]
             pl.plot(p["time"], y, ".", color="rgb"[i % 3], alpha=0.3)
-            pl.gca().axhline(v["threshold"], color="rgb"[i % 3])
+            # pl.gca().axhline(v["threshold"], color="rgb"[i % 3])
+
+    pl.gca().axhline(1.0, color="k", alpha=0.5)
 
     period = float(koi.koi_period)
     t0 = float(koi.koi_time0bk) % period
@@ -41,7 +43,7 @@ def plot_koi(koi):
         pl.gca().axvline(t, color="k", alpha=0.3)
         t += period
 
-    pl.ylim(0, 1.05)
+    # pl.ylim(0, 1.05)
     pl.savefig("results/{0}.png".format(kicid))
     pl.close(fig)
 

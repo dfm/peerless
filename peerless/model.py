@@ -267,7 +267,8 @@ class Model(object):
             final_candidates.append((t0, candidates[i, 1], m0.sum()))
             m[m0] = False
 
-        return np.array(final_candidates)
+        dtype = [("time", float), ("factor", float), ("num_points", int)]
+        return np.array(final_candidates, dtype=dtype)
 
     def to_hdf(self, fn):
         fn = os.path.abspath(fn)

@@ -4,25 +4,46 @@ from __future__ import division, print_function
 
 __all__ = ["load_light_curves_for_kic", "load_light_curves"]
 
+import os
 import fitsio
+import requests
 import numpy as np
 from scipy.ndimage.measurements import label as contig_label
 
-from .settings import HALF_WIDTH
+from .settings import HALF_WIDTH, PEERLESS_DATA_DIR
 
 
-def load_light_curves_for_kic(kicid, pdc=True, min_break=5, **kwargs):
-    import kplr
-    client = kplr.API()
-    kwargs["fetch"] = kwargs.get("fetch", True)
-    kwargs["short_cadence"] = kwargs.get("short_cadence", False)
-    kwargs["order"] = kwargs.get("order", "sci_data_quarter")
-    lcs = client.star(kicid).get_light_curves(**kwargs)
-    return load_light_curves((lc.filename for lc in lcs), pdc=pdc,
-                             min_break=min_break)
+def load_light_curves_for_kic(kicid, **kwargs):
+    # Make sure that that data directory exists.
+    bp = os.path.join(PEERLESS_DATA_DIR, "lcs")
+    try:
+        os.makedirs(bp)
+    except os.error:
+        pass
+
+    # Get the list of data URLs.
+    urls = _get_mast_light_curve_urls(kicid)
+
+    # Loop over the URLs and download the files if needed.
+    fns = []
+    for url in urls:
+        fn = os.path.join(PEERLESS_DATA_DIR, "lcs", url.split("/")[-1])
+        fns.append(fn)
+        if os.path.exists(fn):
+            continue
+
+        # Download the file.
+        r = requests.get(url)
+        if r.status_code != requests.codes.ok:
+            r.raise_for_status()
+        with open(fn, "wb") as f:
+            f.write(r.content)
+
+    # Load the light curves.
+    return load_light_curves(fns, **kwargs)
 
 
-def load_light_curves(fns, pdc=True, min_break=1):
+def load_light_curves(fns, pdc=True, min_break=1, delete=False):
     lcs = []
     for fn in fns:
         # Load the data.
@@ -80,6 +101,9 @@ def load_light_curves(fns, pdc=True, min_break=1):
             y0[~m] = np.interp(x0[~m], x0[m], y0[m])
             lcs.append(LightCurve(x0, y0, meta))
 
+        if delete:
+            os.remove(fn)
+
     # Only retain chunks that are long enough (wrt the window half width).
     return [lc for lc in lcs if len(lc) > 2 * HALF_WIDTH]
 
@@ -94,3 +118,30 @@ class LightCurve(object):
 
     def __len__(self):
         return len(self.time)
+
+
+def _get_mast_light_curve_urls(kic, short_cadence=False, **params):
+    # Build the URL and request parameters.
+    url = "http://archive.stsci.edu/kepler/data_search/search.php"
+    params["action"] = params.get("action", "Search")
+    params["outputformat"] = "JSON"
+    params["coordformat"] = "dec"
+    params["verb"] = 3
+    params["ktc_kepler_id"] = kic
+    params["ordercolumn1"] = "sci_data_quarter"
+    if not short_cadence:
+        params["ktc_target_type"] = "LC"
+
+    # Get the list of files.
+    r = requests.get(url, params=params)
+    if r.status_code != requests.codes.ok:
+        r.raise_for_status()
+
+    # Format the data URLs.
+    kic = "{0:09d}".format(kic)
+    base_url = ("http://archive.stsci.edu/pub/kepler/lightcurves/{0}/{1}/"
+                .format(kic[:4], kic))
+    for row in r.json():
+        ds = row["Dataset Name"].lower()
+        tt = row["Target Type"].lower()
+        yield base_url + "{0}_{1}lc.fits".format(ds, tt[0])

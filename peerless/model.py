@@ -63,6 +63,8 @@ class Model(object):
                 self.splits[1] |= set(i[a+1:b+1])
                 self.splits[2] |= set(i[b+1:])
 
+        logging.info("Found splits {0}".format(map(len, self.splits)))
+
     def format_dataset(self, npos=20000, nneg=None,
                        min_period=1e3, max_period=1e4,
                        min_rad=0.03, max_rad=0.3, dt=0.05,
@@ -76,7 +78,7 @@ class Model(object):
         meta_keys = ["channel", "skygroup", "module", "output", "quarter",
                      "season"]
 
-        # Positive examples.
+        logging.info("Generating training and validation sets")
         pos_sims = np.empty((3, npos, len(inds)))
         pos_pars = [[] for _ in range(3)]
         neg_sims = np.empty((3, nneg, len(inds)))
@@ -177,6 +179,8 @@ class Model(object):
                              .format(len(X)))
 
         # Train the model.
+        logging.info("Training the {0}-split model on {1} training examples"
+                     .format(split, len(X)))
         clf.fit(X, y)
 
         # Compute the PR curve on the validation sets.
@@ -187,6 +191,8 @@ class Model(object):
         for i, s in enumerate(vs):
             # Predict on the validation set.
             X_valid, y_valid = self.X[s], self.y[s]
+            logging.info("Validating {0}-split model on {1} examples"
+                         .format(split, len(X_valid)))
             y_valid_pred = clf.predict_proba(X_valid)[:, 1]
 
             # Save the predictions for the validation set.
@@ -206,8 +212,11 @@ class Model(object):
             d0["area_under_the_prc"] = auc(prc["recall"], prc["precision"])
             d0["threshold"] = prc["threshold"][prc["precision"] < prec_req][-1]
             d0["recall"] = prc["recall"][prc["precision"] < prec_req][-1]
+            logging.info("AUC for {0}-split model: {1}"
+                         .format(split, d0["area_under_the_prc"]))
 
             # Compute the prediction on the light curves that weren't used.
+            logging.info("Computing prediction for test set")
             times, preds, sect_ids = [], [], []
             for j in self.splits[s]:
                 t, f = unwrap_lc(self.lcs[j])

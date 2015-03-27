@@ -67,7 +67,7 @@ class Model(object):
         logging.info("Found splits {0}".format(map(len, self.splits)))
 
     def format_dataset(self, npos=20000, nneg=None,
-                       min_period=1e3, max_period=1e4,
+                       min_period=1.0e3, max_period=1.0e4,
                        min_rad=0.03, max_rad=0.3, dt=0.05,
                        smass=1.0, srad=1.0):
         lcs = self.lcs

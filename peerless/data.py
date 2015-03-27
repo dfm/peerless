@@ -15,7 +15,7 @@ from .catalogs import KOICatalog
 from .settings import HALF_WIDTH, PEERLESS_DATA_DIR
 
 
-def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
+def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True, **kwargs):
     # Make sure that that data directory exists.
     bp = os.path.join(PEERLESS_DATA_DIR, "data")
     try:
@@ -31,7 +31,7 @@ def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     for url in urls:
         fn = os.path.join(bp, url.split("/")[-1])
         fns.append(fn)
-        if os.path.exists(fn):
+        if os.path.exists(fn) and not clobber:
             continue
 
         # Download the file.

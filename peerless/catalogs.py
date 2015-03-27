@@ -104,7 +104,7 @@ class KOICatalog(ExoplanetArchiveCatalog):
 
 
 class KICatalog(ExoplanetArchiveCatalog):
-    name = "keplerstellar"
+    name = "q1_q16_stellar"
 
 
 class CatalogDownloadError(Exception):

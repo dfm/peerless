@@ -28,7 +28,7 @@ def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     # Loop over the URLs and download the files if needed.
     fns = []
     for url in urls:
-        fn = os.path.join(PEERLESS_DATA_DIR, "lcs", url.split("/")[-1])
+        fn = os.path.join(PEERLESS_DATA_DIR, "data", url.split("/")[-1])
         fns.append(fn)
         if os.path.exists(fn):
             continue

@@ -263,8 +263,9 @@ class Model(object):
         while m.sum():
             i = np.arange(len(m))[m][np.argmax(candidates[m, 1])]
             t0 = candidates[i, 0]
-            final_candidates.append(t0)
-            m[np.abs(candidates[:, 0] - t0) < window] = False
+            m0 = np.abs(candidates[:, 0] - t0) < window
+            final_candidates.append((t0, candidates[i, 1], m0.sum()))
+            m[m0] = False
 
         return np.array(final_candidates)
 

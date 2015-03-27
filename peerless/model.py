@@ -283,6 +283,9 @@ class Model(object):
             pass
 
         with h5py.File(fn, "w") as f:
+            for k, v in self.kwargs.iteritems():
+                f.attrs[k] = v
+
             for results in self.models:
                 if results is None:
                     continue
@@ -316,6 +319,9 @@ class Model(object):
     def from_hdf(cls, fn, lcs, **kwargs):
         self = cls(lcs, **kwargs)
         with h5py.File(fn, "r") as f:
+            for k in f.attrs:
+                self.kwargs[k] = f.attrs[k]
+
             for k in f:
                 g = f[k]
 

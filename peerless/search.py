@@ -42,6 +42,8 @@ def run_on_kicid(kicid, base_dir=None, lc_params=None,
     logging.info("Loading light curves")
     lcs = load_light_curves_for_kic(kicid, **lc_params)
     logging.info("Found {0} light curve sections".format(len(lcs)))
+    if not len(lcs):
+        return None
 
     # Train the model.
     mass, rad = float(star.mass), float(star.radius)

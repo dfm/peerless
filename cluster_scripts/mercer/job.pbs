@@ -9,6 +9,7 @@
  
 module purge
 export PATH="$HOME/anaconda/bin:$PATH"
+module load mvapich2/intel/2.0rc1
 
 # Needed environment variables.
 export PEERLESS_DATA_DIR=$SCRATCH
@@ -19,6 +20,9 @@ export RUNDIR=$WORK/peerless/bright_g_stars
 export PROFILEDIR=$RUNDIR/profile
 mkdir -p $RUNDIR
 cd $RUNDIR
+
+# Note which version of MPI we're using.
+echo `which mpiexec` > mpiexec.log
 
 # Python path.
 export PYTHONPATH=$SRCDIR:$PYTHONPATH

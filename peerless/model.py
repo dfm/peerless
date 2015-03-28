@@ -11,6 +11,7 @@ import transit
 import logging
 import numpy as np
 from scipy.stats import beta
+from scipy.spatial import cKDTree
 from collections import defaultdict
 
 from sklearn.ensemble import RandomForestClassifier
@@ -132,8 +133,8 @@ class Model(object):
         y = np.ones(X.shape[:2])
         y[:, npos:] = 0
 
-        # Give the metedata a dtype.
-        dtype = [("nlc", int), ("ntt", int), ("tt", float),
+        # Give the metadata a dtype.
+        dtype = [("sect_id", int), ("ntt", int), ("transit_time", float),
                  ("q1", float), ("q2", float), ("period", float),
                  ("t0", float), ("rp", float), ("b", float), ("e", float),
                  ("pomega", float)]
@@ -239,43 +240,73 @@ class Model(object):
         if any(m is None for m in self.models):
             raise RuntimeError("you need to compute all the models first")
 
+        # Build the KDTrees to find the nearest examples.
+        inds = set(range(len(self.models)))
+        X = [np.concatenate(self.X[list(inds - set([i]))], axis=0)
+             for i in range(len(inds))]
+        meta = [np.concatenate([
+            self.meta[j] for j in list(inds - set([i]))
+        ], axis=0) for i in range(len(inds))]
+        trees = [cKDTree(x) for x in X]
+
         # Loop over the models and compete the models against each other.
-        candidates = defaultdict(list)
-        for i, res in enumerate(self.models):
+        cand_time = defaultdict(list)
+        cand_sect = dict()
+        cand_pred = dict()
+        for mod_ind, res in enumerate(self.models):
             for j, (test, valid) in enumerate(zip(res["test"],
                                                   res["validation"][::-1])):
                 pred = test["prediction"]
                 thresh = valid["threshold"]
                 for i in np.arange(len(pred))[pred["predict_prob"] > thresh]:
-                    t = pred["time"][i]
-                    p = pred["predict_prob"][i]
-                    candidates["{0:.6f}".format(t)].append(p / thresh)
+                    t0 = pred["time"][i]
+                    k = "{0:.6f}".format(t0)
+                    cand_time[k].append(pred["predict_prob"][i] / thresh)
+                    cand_sect[k] = pred["sect_id"][i]
+                    if k in cand_pred:
+                        continue
+
+                    # Pull out the light curve chunk.
+                    lc = self.lcs[pred["sect_id"][i]]
+                    ind = np.argmin(np.abs(lc.time - t0))
+                    xx = np.array([lc.flux[ind-HALF_WIDTH:ind+HALF_WIDTH+1]])
+                    xx = normalize_inputs(xx)
+                    _, ind = trees[test["split_id"]].query(xx)
+                    cand_pred[k] = meta[test["split_id"]][ind]
 
         # Only include the models where more than one prediction agrees.
-        candidates = np.array([[float(t0), sum(c) / len(c)] + c
-                               for t0, c in candidates.iteritems()
-                               if len(c) > 1])
-
-        # If no candidates were found, return a blank.
-        dtype = [("time", float), ("mean_factor", float), ("num_points", int)]
+        meta_keys = ["channel", "skygroup", "module", "output", "quarter",
+                     "season"]
+        dtype = [("time", float), ("num_points", int), ("sect_id", int),
+                 ("mean_factor", float)]
         dtype += [("factor_{0}".format(i+1), float)
                   for i in range(len(self.models) - 1)]
+        dtype += [(k, int) for k in meta_keys]
+        dt = meta[0][0].dtype
+        inj_keys = dt.names
+        dtype += [("nn_" + k, dt[k]) for k in inj_keys]
+        candidates = np.array([tuple(
+            [float(t0), 0, cand_sect[t0], sum(c) / len(c)] + c
+            + [self.lcs[cand_sect[t0]].meta[k] for k in meta_keys]
+            + [cand_pred[t0][k] for k in inj_keys]
+        ) for t0, c in cand_time.iteritems() if len(c) > 1], dtype=dtype)
+
+        # If no candidates were found, return a blank.
         if not len(candidates):
-            return np.array([], dtype=dtype)
+            return candidates
 
         # Iterate through the candidates and exclude points that overlap
         # within the window.
-        final_candidates = []
         m = np.ones(len(candidates), dtype=bool)
+        final = np.zeros(len(candidates), dtype=bool)
         while m.sum():
-            i = np.arange(len(m))[m][np.argmax(candidates[m, 1])]
-            t0 = candidates[i, 0]
-            m0 = np.abs(candidates[:, 0] - t0) < window
-            final_candidates.append(tuple(
-                [t0, candidates[i, 1], m0.sum()] + list(candidates[i, 2:])))
+            i = np.arange(len(m))[m][np.argmax(candidates[m]["mean_factor"])]
+            t0 = candidates[i]["time"]
+            m0 = np.abs(candidates["time"] - t0) < window
+            candidates[i]["num_points"] = m0.sum()
             m[m0] = False
-
-        return np.array(final_candidates, dtype=dtype)
+            final[i] = True
+        return candidates[final]
 
     def to_hdf(self, fn):
         fn = os.path.abspath(fn)

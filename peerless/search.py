@@ -15,7 +15,7 @@ from .catalogs import KICatalog
 from .data import load_light_curves_for_kic
 
 
-def run_on_kicid(kicid, base_dir=None, lc_params=None,
+def run_on_kicid(kicid, base_dir=None, return_model=False, lc_params=None,
                  model_params=None, fit_params=None, cand_params=None):
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
@@ -82,7 +82,10 @@ def run_on_kicid(kicid, base_dir=None, lc_params=None,
         logging.info("Saving candidate list to {0}".format(fn))
         pd.DataFrame.from_records(candidates).to_csv(fn, index=False)
 
-    return mod
+    if return_model:
+        return mod
+    else:
+        del mod
 
 
 def run_on_kicids(kicids, base_dir=".", poolargs=None, **kwargs):

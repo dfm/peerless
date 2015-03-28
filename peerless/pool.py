@@ -17,18 +17,19 @@ class IPythonPool(object):
         self.client = Client(**kwargs)
 
     def run(self, function, arglist, dirlist, quiet=False, **kwargs):
-        f = _wrapper(function, **kwargs)
-        return self.client[:].map(f, zip(dirlist, arglist))
+        f = _wrapper(function, quiet=quiet, **kwargs)
+        return list(self.client[:].map(f, zip(dirlist, arglist)))
 
 
 class _wrapper(object):
 
     def __init__(self, function, name="output.log", error="error.log",
-                 **kwargs):
+                 quiet=False, **kwargs):
         self.filename = name
         self.error = error
         self.function = function
         self.kwargs = kwargs
+        self.quiet = quiet
 
     def __call__(self, args):
         bp = args[0]
@@ -43,7 +44,8 @@ class _wrapper(object):
         except Exception:
             with open(os.path.join(bp, self.error), "a") as f:
                 f.write(traceback.format_exc() + "\n\n")
-            raise
+            if not self.quiet:
+                raise
 
 
 # Insane hackish output capturing context.

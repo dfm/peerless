@@ -7,9 +7,13 @@ from peerless.pool import IPythonPool
 
 
 def blah(x):
-    return x[0]**2
+    print(x)
+    if x == 0:
+        assert 0
+    return x**2
 
 
 pool = IPythonPool()
-r = pool.run(blah, [[i] for i in range(5)], map("out/{0}".format, range(5)))
+pool.client[:].push(dict(blah=blah), block=True)
+r = pool.run(blah, range(5), map("out/{0}".format, range(5)), quiet=True)
 print(r)

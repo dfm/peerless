@@ -67,8 +67,8 @@ class Model(object):
         logging.info("Found splits {0}".format(map(len, self.splits)))
 
     def format_dataset(self, npos=20000, nneg=None,
-                       min_period=1.0e3, max_period=1.0e4,
-                       min_rad=0.05, max_rad=0.3, dt=0.5,
+                       min_period=1.0e3, max_period=5.0e3,
+                       min_rad=0.08, max_rad=0.15, dt=0.15,
                        smass=1.0, srad=1.0):
         lcs = self.lcs
         if nneg is None:
@@ -102,7 +102,7 @@ class Model(object):
                                              np.log(max_period))),
                     np.random.uniform(-dt, dt),
                     rp,
-                    np.random.uniform(0, 1.0 + rp / srad),
+                    np.random.uniform(0, 1.0),  # + rp / srad),
                     beta.rvs(1.12, 3.09),
                     np.random.uniform(-np.pi, np.pi),
                 ] + [lcs[nlc].meta[k] for k in meta_keys])
@@ -112,7 +112,8 @@ class Model(object):
                                       *(pos_pars[i][j][3:-len(meta_keys)]))
                 t = lcs[nlc].time[ntt+inds]
                 t -= np.mean(t)
-                pos_sims[i, j] = lcs[nlc].flux[ntt+inds]
+                order = 2*np.random.randint(2)-1
+                pos_sims[i, j] = lcs[nlc].flux[ntt+inds][::order]
                 pos_sims[i, j] *= s.light_curve(t, texp=TEXP)
 
             for j in range(neg_sims.shape[1]):
@@ -120,7 +121,8 @@ class Model(object):
                 ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
                 neg_pars[i].append([nlc, ntt, lcs[nlc].time[ntt]] + 8*[np.nan]
                                    + [lcs[nlc].meta[k] for k in meta_keys])
-                neg_sims[i, j] = lcs[nlc].flux[ntt+inds]
+                order = 2*np.random.randint(2)-1
+                neg_sims[i, j] = lcs[nlc].flux[ntt+inds][::order]
 
             pos_sims[i] = normalize_inputs(pos_sims[i])
             neg_sims[i] = normalize_inputs(neg_sims[i])

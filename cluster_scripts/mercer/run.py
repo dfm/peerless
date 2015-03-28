@@ -28,8 +28,8 @@ if args.profile_dir is not None:
 stlr = peerless.catalogs.KICatalog().df
 select = (stlr.teff > 4100) & (stlr.teff < 6100)
 select &= (stlr.logg > 4.0) & (stlr.logg < 4.9)
-select &= (stlr.kepmag < 15)
-kicids = np.array(stlr[select].sort("kepmag").kepid)
+select &= (stlr.kepmag > 10.0) & (stlr.kepmag < 15)
+kicids = np.array(stlr[select].kepid)
 
 # Set up the lock files.
 fns = map(os.path.join(args.out_dir, "{0}.lock").format, kicids)

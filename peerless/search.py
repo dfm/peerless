@@ -19,10 +19,20 @@ def run_on_kicid(kicid, base_dir=None, lc_params=None,
                  model_params=None, fit_params=None, cand_params=None):
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s [KIC {0}]: %(message)s".format(kicid),
-    )
+    if base_dir is None:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(levelname)s [KIC {0}]: %(message)s".format(kicid),
+        )
+    else:
+        bp = os.path.join(base_dir, "{0}".format(kicid))
+        if not os.path.exists(bp):
+            os.makedirs(bp)
+        logging.basicConfig(
+            filename=os.path.join(bp, "logging.log"),
+            level=logging.INFO,
+            format="%(levelname)s [KIC {0}]: %(message)s".format(kicid),
+        )
 
     # Set the default parameters.
     lc_params = dict() if lc_params is None else lc_params
@@ -43,6 +53,7 @@ def run_on_kicid(kicid, base_dir=None, lc_params=None,
     lcs = load_light_curves_for_kic(kicid, **lc_params)
     logging.info("Found {0} light curve sections".format(len(lcs)))
     if not len(lcs):
+        logging.warn("Exiting because no light curves were found")
         return None
 
     # Train the model.
@@ -52,6 +63,9 @@ def run_on_kicid(kicid, base_dir=None, lc_params=None,
     logging.info("mass={0} and rad={1}".format(mass, rad))
     logging.info("Training model")
     mod = Model(lcs, smass=mass, srad=rad, **model_params)
+    if not all(map(len, mod.splits)):
+        logging.warn("Exiting because at least one split was empty")
+        return None
     mod.fit_all(**fit_params)
 
     # Find the candidates.
@@ -60,11 +74,6 @@ def run_on_kicid(kicid, base_dir=None, lc_params=None,
 
     # Save the results.
     if base_dir is not None:
-        bp = os.path.join(base_dir, "{0}".format(kicid))
-        try:
-            os.makedirs(bp)
-        except os.error:
-            pass
         fn = os.path.join(bp, "model.h5")
         logging.info("Saving model results to {0}".format(fn))
         mod.to_hdf(fn)

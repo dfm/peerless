@@ -16,7 +16,7 @@ export PEERLESS_DATA_DIR=$SCRATCH
 
 # Locations.
 export SRCDIR=$HOME/projects/peerless
-export RUNDIR=$WORK/peerless/bright_g_stars
+export RUNDIR=$SCRATCH/peerless/bright_g_stars
 export PROFILEDIR=$RUNDIR/profile
 mkdir -p $RUNDIR
 cd $RUNDIR
@@ -41,7 +41,7 @@ done
 
 if (( success )); then
     # Run the analysis.
-    python $SRCDIR/cluster_scripts/mercer/run.py $RUNDIR --profile-dir $PROFILEDIR &> output.log
+    python $SRCDIR/cluster_scripts/mercer/run.py $RUNDIR -n 1000 --profile-dir $PROFILEDIR &> output.log
 else
     echo "Server never started" &> output.log
 fi

@@ -5,17 +5,18 @@ from __future__ import division, print_function
 __all__ = ["run_on_kicid"]
 
 import os
-import h5py
 import logging
 import numpy as np
+import pandas as pd
 
 from .model import Model
+from .pool import IPythonPool
 from .catalogs import KICatalog
 from .data import load_light_curves_for_kic
 
 
-def run_on_kicid(kicid, out_dir=None, lc_params=None, model_params=None,
-                 fit_params=None, cand_params=None):
+def run_on_kicid(kicid, base_dir=None, lc_params=None,
+                 model_params=None, fit_params=None, cand_params=None):
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
     logging.basicConfig(
@@ -54,11 +55,10 @@ def run_on_kicid(kicid, out_dir=None, lc_params=None, model_params=None,
     # Find the candidates.
     candidates = mod.find_candidates(**cand_params)
     logging.info("Found {0} candidates".format(len(candidates)))
-    print(candidates)
 
     # Save the results.
-    if out_dir is not None:
-        bp = os.path.join(out_dir, "{0}".format(kicid))
+    if base_dir is not None:
+        bp = os.path.join(base_dir, "{0}".format(kicid))
         try:
             os.makedirs(bp)
         except os.error:
@@ -67,9 +67,20 @@ def run_on_kicid(kicid, out_dir=None, lc_params=None, model_params=None,
         logging.info("Saving model results to {0}".format(fn))
         mod.to_hdf(fn)
 
-        fn = os.path.join(bp, "candidates.h5")
+        fn = os.path.join(bp, "candidates.csv")
         logging.info("Saving candidate list to {0}".format(fn))
-        with h5py.File(fn, "w") as f:
-            f.create_dataset("candidates", data=candidates)
+        pd.DataFrame.from_records(candidates).to_csv(fn, index=False)
 
     return mod
+
+
+def run_on_kicids(kicids, base_dir=".", poolargs=None, **kwargs):
+    base_dir = os.path.abspath(base_dir)
+    arglist = kicids
+    dirlist = [os.path.join(base_dir, "{0}".format(i)) for i in kicids]
+    poolargs = dict() if poolargs is None else poolargs
+    pool = IPythonPool(**poolargs)
+    pool.client[:].push(dict(
+        run_on_kicid=run_on_kicid,
+    ))
+    pool.run(run_on_kicid, arglist, dirlist, base_dir=base_dir, **kwargs)

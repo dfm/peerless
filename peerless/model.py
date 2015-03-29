@@ -17,13 +17,12 @@ from collections import defaultdict
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, precision_recall_curve
 
-from .settings import TEXP, HALF_WIDTH
-
 
 class Model(object):
 
-    def __init__(self, lcs, **kwargs):
-        self.lcs = lcs
+    def __init__(self, lcs, half_width=100, **kwargs):
+        self.lcs = [lc for lc in lcs if len(lc) > 2*int(half_width)]
+        self.half_width = int(half_width)
         self.models = [None] * 3
         self.X = None
         self.kwargs = kwargs
@@ -76,7 +75,7 @@ class Model(object):
             nneg = npos
 
         # The time grid for within a single chunk.
-        inds = np.arange(-HALF_WIDTH, HALF_WIDTH+1)
+        inds = np.arange(-self.half_width, self.half_width+1)
         meta_keys = ["channel", "skygroup", "module", "output", "quarter",
                      "season"]
 
@@ -93,7 +92,8 @@ class Model(object):
             for j in range(pos_sims.shape[1]):
                 # Generate the simulation parameters.
                 nlc = np.random.choice(lc_inds, p=pval)
-                ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
+                ntt = np.random.randint(self.half_width,
+                                        len(lcs[nlc])-self.half_width)
                 rp = np.exp(np.random.uniform(np.log(min_rad),
                                               np.log(max_rad)))
                 pos_pars[i].append([
@@ -116,11 +116,12 @@ class Model(object):
                 t -= np.mean(t)
                 order = 2*np.random.randint(2)-1
                 pos_sims[i, j] = lcs[nlc].flux[ntt+inds][::order]
-                pos_sims[i, j] *= s.light_curve(t, texp=TEXP)
+                pos_sims[i, j] *= s.light_curve(t, texp=lcs[nlc].texp)
 
             for j in range(neg_sims.shape[1]):
                 nlc = np.random.choice(lc_inds, p=pval)
-                ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
+                ntt = np.random.randint(self.half_width,
+                                        len(lcs[nlc])-self.half_width)
                 neg_pars[i].append([nlc, ntt, lcs[nlc].time[ntt]] + 8*[np.nan]
                                    + [lcs[nlc].meta[k] for k in meta_keys])
                 order = 2*np.random.randint(2)-1
@@ -224,7 +225,7 @@ class Model(object):
             logging.info("Computing prediction for test set")
             times, preds, sect_ids = [], [], []
             for j in self.splits[s]:
-                t, f = unwrap_lc(self.lcs[j])
+                t, f = unwrap_lc(self.lcs[j], self.half_width)
                 X_test = normalize_inputs(f)
                 times.append(t)
                 preds.append(clf.predict_proba(X_test)[:, 1])
@@ -270,7 +271,8 @@ class Model(object):
                     # Pull out the light curve chunk.
                     lc = self.lcs[pred["sect_id"][i]]
                     ind = np.argmin(np.abs(lc.time - t0))
-                    xx = np.array([lc.flux[ind-HALF_WIDTH:ind+HALF_WIDTH+1]])
+                    xx = np.array([lc.flux[ind-self.half_width:
+                                           ind+self.half_width+1]])
                     xx = normalize_inputs(xx)
                     _, ind = trees[test["split_id"]].query(xx)
                     cand_pred[k] = meta[test["split_id"]][ind]
@@ -388,8 +390,9 @@ class Model(object):
         return self
 
 
-def unwrap_lc(lc, two_hw=2*HALF_WIDTH):
-    t = lc.time[np.arange(HALF_WIDTH, len(lc)-HALF_WIDTH)]
+def unwrap_lc(lc, hw):
+    two_hw = 2*hw
+    t = lc.time[np.arange(hw, len(lc)-hw)]
     f = lc.flux[np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)]
     return t, f
 

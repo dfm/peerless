@@ -12,7 +12,7 @@ import numpy as np
 from scipy.ndimage.measurements import label as contig_label
 
 from .catalogs import KOICatalog
-from .settings import HALF_WIDTH, PEERLESS_DATA_DIR
+from .settings import TEXP, PEERLESS_DATA_DIR
 
 
 def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True, **kwargs):
@@ -125,18 +125,17 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
 
         if delete:
             os.remove(fn)
-
-    # Only retain chunks that are long enough (wrt the window half width).
-    return [lc for lc in lcs if len(lc) > 2 * HALF_WIDTH]
+    return lcs
 
 
 class LightCurve(object):
 
-    def __init__(self, time, flux, meta):
+    def __init__(self, time, flux, meta, texp=TEXP):
         self.time = np.ascontiguousarray(time, dtype=float)
         self.flux = np.ascontiguousarray(flux / np.median(flux), dtype=float)
         self.meta = meta
         self.footprint = self.time.max() - self.time.min()
+        self.texp = texp
 
     def __len__(self):
         return len(self.time)

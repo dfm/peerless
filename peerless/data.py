@@ -48,7 +48,7 @@ def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True, **kwargs):
 
 
 def load_light_curves(fns, pdc=True, min_break=1, delete=False,
-                      remove_kois=None):
+                      remove_kois=None, downsample=1):
     # Find any KOIs.
     if remove_kois is not None:
         df = KOICatalog().df
@@ -60,13 +60,41 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
     lcs = []
     for fn in fns:
         # Load the data.
-        data = fitsio.read(fn)
+        data, hdr = fitsio.read(fn, header=True)
+        texp = hdr["INT_TIME"] * hdr["NUM_FRM"] / (24. * 60. * 60.)
         x = data["TIME"]
         q = data["SAP_QUALITY"]
         if pdc:
             y = data["PDCSAP_FLUX"]
         else:
             y = data["SAP_FLUX"]
+
+        # Resample the time series.
+        if downsample > 1:
+            # Reshape the arrays to downsample.
+            downsample = int(downsample)
+            l = len(x) // downsample * downsample
+            inds = np.arange(l).reshape((-1, downsample))
+            x, y, q = x[inds], y[inds], q[inds]
+
+            # Ignore missing points.
+            m = np.isfinite(y) & np.isfinite(x) & (q == 0)
+            x[~m] = 0.0
+            y[~m] = 0.0
+            x = np.sum(x, axis=1)
+            y = np.sum(y, axis=1)
+            q = np.min(q, axis=1)
+
+            # Take the mean.
+            norm = np.sum(m, axis=1)
+            m = norm > 0.0
+            x[m] /= norm[m]
+            x[~m] = np.nan
+            y[m] /= norm[m]
+            y[~m] = np.nan
+
+            # Update the exposure time.
+            texp = downsample * texp
 
         # Load the meta data.
         hdr = fitsio.read_header(fn, 0)
@@ -121,7 +149,7 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
             if not np.any(m):
                 continue
             y0[~m] = np.interp(x0[~m], x0[m], y0[m])
-            lcs.append(LightCurve(x0, y0, meta))
+            lcs.append(LightCurve(x0, y0, meta, texp=texp))
 
         if delete:
             os.remove(fn)

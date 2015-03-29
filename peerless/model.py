@@ -28,12 +28,12 @@ class Model(object):
         self.kwargs = kwargs
 
         # Pre-compute the footprint weights for each light curve.
-        w = np.array([lc.footprint for lc in lcs])
+        w = np.array([lc.footprint for lc in self.lcs])
         w /= np.sum(w)
         self.weights = w
 
         # Split the sections into the three sets.
-        quarters = np.array([lc.meta["quarter"] for lc in lcs])
+        quarters = np.array([lc.meta["quarter"] for lc in self.lcs])
         inds = np.arange(len(quarters))
         self.splits = [set() for _ in range(3)]
 

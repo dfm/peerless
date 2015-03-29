@@ -46,7 +46,7 @@ for _, fn in targets:
 # Run the search.
 try:
     peerless.search.run_on_kicids([k for k, _ in targets], base_dir=args.out_dir,
-                                  poolargs=poolargs,
+                                  quiet=True, poolargs=poolargs,
                                   lc_params=dict(clobber=True))
 
 finally:

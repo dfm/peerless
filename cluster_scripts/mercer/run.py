@@ -36,7 +36,7 @@ fns = map(os.path.join(args.out_dir, "{0}.lock").format, kicids)
 targets = [(kicid, fn) for kicid, fn in zip(kicids, fns)
            if not (os.path.exists(fn) or
                    os.path.exists(os.path.join(
-                       args.out_dir, "{0}", "model.h5"
+                       args.out_dir, "{0}".format(kicid), "model.h5"
                    )))][:args.number]
 
 # Create the lock files.

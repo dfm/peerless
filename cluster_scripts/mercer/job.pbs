@@ -2,7 +2,7 @@
 #PBS -l nodes=3:ppn=20
 #PBS -l walltime=12:00:00
 #PBS -l mem=350GB
-#PBS -N peerless
+#PBS -N peerless-noe
 #PBS -m ae
 #PBS -M danfm@nyu.edu
 #PBS -j oe
@@ -16,7 +16,7 @@ export PEERLESS_DATA_DIR=$SCRATCH
 
 # Locations.
 export SRCDIR=$HOME/projects/peerless
-export RUNDIR=$SCRATCH/peerless/bright_g_stars
+export RUNDIR=$SCRATCH/peerless/noe
 export PROFILEDIR=$RUNDIR/profile
 mkdir -p $RUNDIR
 cd $RUNDIR

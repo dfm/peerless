@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function
 
-__all__ = ["normalize_inputs", "Model"]
+__all__ = ["Model"]
 
 import os
 import h5py
@@ -17,15 +17,23 @@ from collections import defaultdict
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, precision_recall_curve
 
+try:
+    import pywt
+except ImportError:
+    pywt = None
+
 
 class Model(object):
 
-    def __init__(self, lcs, half_width=100, **kwargs):
+    def __init__(self, lcs, wavelet=None, half_width=100, **kwargs):
         self.lcs = [lc for lc in lcs if len(lc) > 2*int(half_width)]
         self.half_width = int(half_width)
         self.models = [None] * 3
         self.X = None
         self.kwargs = kwargs
+        self.wavelet = wavelet
+        if wavelet is not None and pywt is None:
+            raise ImportError("pywt")
 
         # Pre-compute the footprint weights for each light curve.
         w = np.array([lc.footprint for lc in self.lcs])
@@ -127,8 +135,8 @@ class Model(object):
                 order = 2*np.random.randint(2)-1
                 neg_sims[i, j] = lcs[nlc].flux[ntt+inds][::order]
 
-            pos_sims[i] = normalize_inputs(pos_sims[i])
-            neg_sims[i] = normalize_inputs(neg_sims[i])
+            pos_sims[i] = self.normalize_inputs(pos_sims[i])
+            neg_sims[i] = self.normalize_inputs(neg_sims[i])
 
         # Format the arrays for sklearn.
         X = np.concatenate((pos_sims, neg_sims), axis=1)
@@ -225,8 +233,8 @@ class Model(object):
             logging.info("Computing prediction for test set")
             times, preds, sect_ids = [], [], []
             for j in self.splits[s]:
-                t, f = unwrap_lc(self.lcs[j], self.half_width)
-                X_test = normalize_inputs(f)
+                t, f = self.unwrap_lc(self.lcs[j])
+                X_test = self.normalize_inputs(f)
                 times.append(t)
                 preds.append(clf.predict_proba(X_test)[:, 1])
                 sect_ids.append(j + np.zeros(len(t), dtype=int))
@@ -273,7 +281,7 @@ class Model(object):
                     ind = np.argmin(np.abs(lc.time - t0))
                     xx = np.array([lc.flux[ind-self.half_width:
                                            ind+self.half_width+1]])
-                    xx = normalize_inputs(xx)
+                    xx = self.normalize_inputs(xx)
                     _, ind = trees[test["split_id"]].query(xx)
                     cand_pred[k] = meta[test["split_id"]][ind]
 
@@ -389,18 +397,21 @@ class Model(object):
 
         return self
 
+    def normalize_inputs(self, X):
+        X /= np.median(X, axis=1)[:, None]
+        if self.wavelet is None:
+            X[:, :] = np.log(X)
+        else:
+            for i, x in enumerate(X):
+                X[i, :] = np.concatenate(pywt.dwt(x - 1.0, self.wavelet))[:-1]
+        return X
 
-def unwrap_lc(lc, hw):
-    two_hw = 2*hw
-    t = lc.time[np.arange(hw, len(lc)-hw)]
-    f = lc.flux[np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)]
-    return t, f
-
-
-def normalize_inputs(X):
-    X /= np.median(X, axis=1)[:, None]
-    X[:, :] = np.log(X)
-    return X
+    def unwrap_lc(self, lc):
+        hw = self.half_width
+        two_hw = 2*hw
+        t = lc.time[np.arange(hw, len(lc)-hw)]
+        f = lc.flux[np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)]
+        return t, f
 
 
 def simulation_system(smass, srad, q1, q2, period, t0, rp, b, e, pomega):

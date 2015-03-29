@@ -69,7 +69,7 @@ class Model(object):
 
     def format_dataset(self, npos=20000, nneg=None,
                        min_period=1.0e3, max_period=5.0e3,
-                       min_rad=0.08, max_rad=0.15, dt=0.15,
+                       min_rad=0.05, max_rad=0.2, dt=0.15,
                        smass=1.0, srad=1.0):
         lcs = self.lcs
         if nneg is None:
@@ -103,9 +103,10 @@ class Model(object):
                                              np.log(max_period))),
                     np.random.uniform(-dt, dt),
                     rp,
-                    np.random.uniform(0, 1.0),  # + rp / srad),
-                    beta.rvs(1.12, 3.09),
-                    np.random.uniform(-np.pi, np.pi),
+                    np.random.uniform(0, 1.0 - rp / srad),
+                    0.0, 0.0,
+                    # beta.rvs(0.867, 3.03),
+                    # np.random.uniform(-np.pi, np.pi),
                 ] + [lcs[nlc].meta[k] for k in meta_keys])
 
                 # Build the simulator and inject the transit signal.
@@ -214,8 +215,8 @@ class Model(object):
             # Compute the threshold and recall at fixed precision.
             d0["prec_req"] = prec_req
             d0["area_under_the_prc"] = auc(prc["recall"], prc["precision"])
-            d0["threshold"] = prc["threshold"][prc["precision"] < prec_req][-1]
-            d0["recall"] = prc["recall"][prc["precision"] < prec_req][-1]
+            thr = prc["threshold"][prc["precision"] < prec_req]
+            d0["threshold"] = thr[-1] if len(thr) else prc["threshold"][0]
             logging.info("AUC for {0}-split model: {1}"
                          .format(split, d0["area_under_the_prc"]))
 
@@ -333,7 +334,7 @@ class Model(object):
                 for i, d0 in enumerate(results["validation"]):
                     id_ = d0["split_id"]
                     g0 = g.create_group("validation_{0:d}".format(id_))
-                    for k in ["split_id", "prec_req", "threshold", "recall",
+                    for k in ["split_id", "prec_req", "threshold",
                               "area_under_the_prc"]:
                         g0.attrs[k] = d0[k]
                     for k in ["precision_recall_curve", "validation_set",
@@ -372,8 +373,7 @@ class Model(object):
                     if k0.startswith("validation"):
                         d0 = dict((i, g0.attrs[i])
                                   for i in ["split_id", "prec_req",
-                                            "threshold", "recall",
-                                            "area_under_the_prc"])
+                                            "threshold", "area_under_the_prc"])
                         for i in ["precision_recall_curve", "validation_set",
                                   "validation_pred"]:
                             d0[i] = g0[i][...]

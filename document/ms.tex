@@ -185,8 +185,6 @@ enough training set
 
 \end{itemize}
 
-\citep{kois}
-
 \section{Data preparation}
 
 The \kepler\ Mission measured photometry for about 150,000 stars at half-hour
@@ -261,30 +259,155 @@ The Random Forest (RF) classification model \citep{Breiman:2001} has become
 very popular in the machine learning community.
 It has also been applied with great success in astronomy \citep[for
 example]{Richards:2011, Richards:2012} \dfmtodo{others}.
-The RF model works by building
+The RF model works by fitting an ensemble of decision trees to randomly
+selected subsamples of the training dataset.
+Each tree in the forest is ``grown'' by greedily choosing decision boundaries
+that optimize the separation of the training data in randomly selected
+subsets of the features until the separation is complete, each leaf contains
+only one class or, at most, a fixed number of samples.
+At each branch, the decision boundary is set by maximizing either the entropy
+or the ``gini'' coefficient.
 
-
+For the problem of single transit search, our problem can be phrased as a
+classification problem where we want to assign every $K$ data point long chunk
+of light curve into either the \texttt{transit} or \texttt{no transit} class.
+This problem doesn't fall under the standard format of a supervised
+classification problem because very few long-period transits have actually
+been observed or classified.
+We do think, however, that we have a good physical generative model for the
+signal of interest and most of the observations of each star have no transits.
+Therefore, we can train the model on simulated signals.
 
 
 \section{Search procedure}\sectlabel{search}
 
+To search for single transits in the light curve of a specific star, we fit
+three random forest models.
+
 \paragraph{Generate the training \& validation sets}
 
+We need to train the classification model on simulated signals.
+To simulate these training and validation examples, we randomly select
+sections of 121 contiguous flux measurements and simulate the transit signal
+induced by the physical orbit of a large planet.
+The specific distribution of simulated parameters is listed in \dfmtodo{some
+table}.
+In the simulations, we take limb darkening and integration time into account
+\dfmtodo{cite}.
+Since we expect most of the systematic variability to be time-reversible, we
+augment the training set with simulations injected into the reversed time
+series \dfmtodo{cite some examples of rotational invariance}.
+The training set also includes an equal number of negative examples---time
+series chunks of the same length without a simulated transit injection.
+By virtue of the fact that we are specifically searching for single transits
+it is safe to assume that none of the negative samples from the other light
+curve sections will have no transits.
+
+We also generate a validation set of simulated signals.
+This set is identical to the training set except it is simulated in sections
+of light curve that are not used for training.
+As discussed below, this set is used to determine the transit significance
+threshold required to achieve a pure sample.
+
+In practice, we only need to train three models on the three disjoint
+training sets and then for each model, we validate and test on both of the
+remaining splits.
+
+
+\paragraph{Features}
+
+In many supervised classification problems, a sophisticated feature
+extraction method is used to improve the performance of the procedure.
+For this specific problem, we find excellent performance using the 121
+normalized flux values as the features.
+The depth of the transit and the noise in the light curve is not irrelevant
+to detection so we don't normalize the features to unit variance in the
+standard way.
+Instead, we normalize each sample (feature vector) by it's empirical median
+value and take the logarithm.
+Another option for a feature set could be the Fourier transform or wavelet
+transform of the light curve section.
+Alternatively, the spectrogram of the fluxes in a larger window.
+We have experimented briefly with this options finding similar performance.
+
+
 \paragraph{Train}
+
+
+
 
 \paragraph{Validate}
 
 \paragraph{Test}
 
 
-\section{Tuning parameters}
+\section{Tuning parameters}\sectlabel{tuning}
+
+Many choices need to be made in building this classification model.
+These choices can be specified by a set of parameters that can be tuned the
+optimize the performance of the method.
+At this point, it's probably worth discussing how one might specifically
+measure the ``performance'' of a search for transits.
+The goal is, of course, to \emph{find transiting planets}.
+Therefore, we would like to develop a method that finds the most planets
+possible.
+This will, in general, trade off with the purity of the sample.
+For example, a method that returns every possible point the light curve as a
+planet candidate will be guaranteed to find every signal in the dataset---it
+will have excellent completeness or \emph{recall}---but almost every
+candidate will be false---the \emph{precision} is low.
+This is obviously not what we want.
+Instead, the more relevant metric is probably the recall at fixed (high)
+precision.
+
+Let's be clear about what we mean by the terms \emph{precision} and
+\emph{recall} in this context because they have specific definitions in the
+machine learning that will be useful in our discussion here.
+Recall is the probability, integrated across the full parameter space of
+interest that a true transit signal will be detected by the method.
+In astronomy, this quantity is generally called the completeness or the
+detection efficiency and it is routinely measured for transit surveys
+\dfmtodo{cite}.
+On the other hand, precision is the probability that a positive classification
+will be true.
+In other words, for a given candidate that our pipeline spits out, the
+probability that it is a false alarm is given by one minus the precision.
+In astronomy, precision is generally hard or impossible to measure because we
+have no ground truth; we don't know that \emph{there is definitely no transit}
+at a given time in the light curve.
+However, with a few weak assumptions, we can, in practice, estimate the
+precision of our single transit search robustly.
+
+\paragraph{Estimating the survey precision}
+
+There are two key assumptions that enter into our precision calculation.
+The first is that all transiting planets with more than one transit and a
+large signal-to-noise ratio have been previously discovered by one of the many
+transit searches applied the \kepler\ dataset \dfmtodo{cite}.
+This is a safe assumption because, for large planets, these surveys are all
+largely complete out to periods yielding only 2 or 3 transits in the \kepler\
+baseline \dfmtodo{cite}.
+The second necessary assumption is less robust but it is required for a
+completely reliable measurement of the survey precision.
+This assumption is that the noise processes in the data are stationary.
+In other words, the transit-like noise signals in the training and validation
+sets must be ``similar'' to the signals in the target section.
+The PDC processing of the data successfully removes most of the
+instrument-induced signals with some exceptions that are discussed in
+\sect{demo}.
+Perhaps we make the further assumption that the stellar variability is
+also stationary.
+
+Under these assumptions, the precision of the search procedure is
+estimated using a set of injections.
+
 
 \paragraph{The parameters}
 
 \paragraph{Objective function}
 
 
-\section{Demonstration}
+\section{Demonstration}\sectlabel{demo}
 
 \paragraph{Successes}
 

@@ -54,9 +54,10 @@
 \newcommand{\Tab}[1]{Table~\ref{tab:#1}}
 \newcommand{\tab}[1]{\Tab{#1}}
 \newcommand{\tablabel}[1]{\label{tab:#1}}
-\newcommand{\Eq}[1]{Equation~(\ref{eq:#1})}
+\renewcommand{\eqref}[1]{\ref{eq:#1}}
+\newcommand{\Eq}[1]{Equation~(\eqref{#1})}
 \newcommand{\eq}[1]{\Eq{#1}}
-\newcommand{\eqalt}[1]{Equation~\ref{eq:#1}}
+\newcommand{\eqalt}[1]{Equation~\eqref{#1}}
 \newcommand{\eqlabel}[1]{\label{eq:#1}}
 \newcommand{\sectionname}{Section}
 \newcommand{\Sect}[1]{\sectionname~\ref{sect:#1}}
@@ -178,7 +179,8 @@ enough training set
 
 Before the launch of the \kepler\ Mission, \citet{Yee:2008} predicted the
 yield of single transit events based on the planet occurrence rates estimated
-based on small catalog of radial velocity discoveries \citep{Butler:2006}.
+based on small catalog of radial velocity discoveries \citep{Butler:2006} and
+a fit to their occurrence rate \citep{Cumming:2008}.
 Using these early results and the pre-launch specifications of the \kepler\
 Mission, \citet{Yee:2008} predicted that \kepler\ would discover $\sim 6$
 single transit events in the full dataset.
@@ -217,7 +219,7 @@ the temporal transit probability, and signal-to-noise ratio threshold of the
 search technique.
 Assuming circular orbits, the geometric transit probability is given by
 \citep{Winn:2010}
-\begin{eqnarray}
+\begin{eqnarray}\eqlabel{q-geom}
 Q_k^\mathrm{(geom)}(\rp,\,\period) &=& \frac{R_k}{a} \\
 &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, \period^{-2/3}
 \end{eqnarray}
@@ -226,7 +228,7 @@ The eccentricity distribution of these long-period planets will affect this
 transit probability \citep{Kipping:2014} but this simple prescription should
 be sufficient for a rough estimate.
 For long-period orbits, the temporal transit probability will be given by
-\begin{eqnarray}
+\begin{eqnarray}\eqlabel{q-time}
 Q_k^\mathrm{(time)}(\rp,\,\period) &=& \frac{T_k}{\period}
 \end{eqnarray}
 where $T_k$ is the total time that \kepler\ spent observing the star $k$.
@@ -245,7 +247,7 @@ $f$ is the detection threshold for the method.
 
 Combining the detection efficiency components, the integral from \eq{nk}
 becomes
-\begin{eqnarray}
+\begin{eqnarray}\eqlabel{nk-2}
 N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k
     \int_{\rp_\mathrm{min}} ^{\rp_\mathrm{max}} \frac{\dd\rp}{\rp}
     \int_{\period_\mathrm{min}} ^{\period_\mathrm{max}}
@@ -261,6 +263,17 @@ the form
 \rate(\rp,\,\period) &=& C\,\left(\frac{\period}{10\,\mathrm{d}}\right)^\beta
 \end{eqnarray}
 in a set of radius bins.
+Using this model, the integral in \eq{nk-2} becomes
+\begin{eqnarray}
+N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k \,
+    \sum_{j=1}^J \frac{C_j}{(10\,\mathrm{d})^{\beta_j}}\,
+    \ln \left( \frac{\rp_{\mathrm{max},j}}{\rp_{\mathrm{min},j}} \right) \,
+    \left[ \frac{{\period_\mathrm{min}}^{\beta_j - 5/3}}{5/3-\beta_j} \right]
+\end{eqnarray}
+where the sum is over the $J$ radial bins studied by \citet{Dong:2013}.
+It's important to note that the model used by \citet{Dong:2013} is given in
+base-10 logarithms so the units must be converted to natural logarithms as
+appropriate.
 
 Assuming the stellar parameters provided by the NASA Exoplanet
 Archive\footnote{\dfmtodo{URL for kepler stellar table; downloaded on SOME
@@ -269,7 +282,14 @@ DATE.}} \dfmtodo{cite Huber} and approximating the stellar noise using the
 number of transiting planets with $\period > 1500\,\mathrm{d}$ based on the
 \citet{Dong:2013} power-law model.
 For a detection threshold $f\sim10$, the expected number of single transit
-events in the \kepler\ light curves is $\sim 120$.
+events in the \kepler\ light curves is $\sim 150$.
+
+This results is much more optimistic than the pre-launch estimate from
+\citet{Yee:2008} for a few reasons.
+One effect is that, the \kepler\ Mission ran for more than four
+years---longer than the fiducial Mission goal---and $\sim190,000$ stars were
+targeted for nearly the full baseline instead of the original 100,000.
+\dfmtodo{Explain other reasons.}
 
 \begin{figure}[p]
 \begin{center}
@@ -288,7 +308,7 @@ parameters.
 
 \section{Data preparation}
 
-The \kepler\ Mission measured photometry for about 150,000 stars at half-hour
+The \kepler\ Mission measured photometry for about 190,000 stars at half-hour
 cadence for a baseline of over four years.
 We aim to search these time series for single transits of long-period planets
 and single eclipses of binary stars.
@@ -516,7 +536,11 @@ estimated using a set of injections.
 \paragraph{Objective function}
 
 
-\section{Demonstration}\sectlabel{demo}
+\section{Preliminary results}\sectlabel{demo}
+
+\paragraph{A discovery}
+
+
 
 \paragraph{Successes}
 
@@ -525,9 +549,54 @@ estimated using a set of injections.
 
 \section{Parameter estimation}
 
+Even though only one transit is observed, it is still possible to estimate the
+orbital period of these planet candidates using independent constraints on the
+stellar properties.
+This technique is similar in spirit to the ``photoeccentric effect''
+\citep{Dawson:2012} and ``asterodensity profiling'' \citep{Kipping:2012}.
+The fundamental principle is that, the transit duration is a measurement of
+the instantaneous velocity of the planetary motion and this yields a
+constraint on the orbital period when combining this with a measurement of the
+stellar density and a prior on the eccentricity of the orbit.
+
+In practice, we directly model the light curve as being generated by a planet
+on an eccentric Keplerian orbit transiting a limb darkened star and
+marginalize over all the orbital elements and physical parameters.
+We take limb darkening and the finite exposure time into account
+\citep{Mandel:2002, Kipping:2010, Kipping:2013} and use an empirical
+Beta function prior on the eccentricity \citep{Kipping:2013a}.
+
 
 \section{Population inference}
 
+Based on our single transit discoveries, we now want to place a limit on
+the occurrence rate of long-period planets.
+Since we only have one discovery thus far, we'll make the simplifying
+assumption that the rate is flat in log-period and log-radius in the range
+$1000\,\mathrm{d} < \period < 5000\,\mathrm{d}$ and $5\,R_\odot <
+20\,R_\odot$.
+For this distribution, \citet{Foreman-Mackey:2014} derived the analytic
+maximum likelihood result
+\begin{eqnarray}
+\rate &=& \frac{N_\mathrm{obs}}{\int Q(w)\dd w}
+\end{eqnarray}
+where $\rate$ is the occurrence rate per natural logarithm in period and
+radius, $N_\mathrm{obs}$ is the number of detections, and the integral is over
+the completeness measurements for every star that has been searched.
+If we make the simplifying assumption that the detectability of a transit
+depends on period only through Equations~(\eqref{q-geom})
+and~(\eqref{q-time}), then this integral becomes
+\begin{eqnarray}
+\int Q(w)\dd w &=& \sum_{k=1}^K
+    \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k \, Q_k \,
+    \int \period^{-8/3}\,\rp^{-1} \dd\rp\dd\period \\
+ &=& \sum_{k=1}^K
+    \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k \, Q_k \,
+    \ln \left(\frac{\rp_\mathrm{max}}{\rp_\mathrm{min}}\right)
+    \frac{3}{5} \,
+    \left[{\period_\mathrm{min}}^{-5/3} - {\period_\mathrm{max}}^{-5/3}\right]
+\end{eqnarray}
+where the sum is over all the targeted stars.
 
 \section{Results}
 

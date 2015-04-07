@@ -66,8 +66,13 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
         q = data["SAP_QUALITY"]
         if pdc:
             y = data["PDCSAP_FLUX"]
+            yerr = data["PDCSAP_FLUX_ERR"]
         else:
             y = data["SAP_FLUX"]
+            yerr = data["SAP_FLUX_ERR"]
+
+        # Compute the median error bar.
+        yerr = np.median(yerr[np.isfinite(yerr)])
 
         # Resample the time series.
         if downsample > 1:
@@ -148,8 +153,9 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
             m = np.isfinite(y0)
             if not np.any(m):
                 continue
-            y0[~m] = np.interp(x0[~m], x0[m], y0[m])
-            lcs.append(LightCurve(x0, y0, meta, texp=texp))
+            # y0[~m] = np.interp(x0[~m], x0[m], y0[m])
+            # y0[~m] += yerr * np.random.randn((~m).sum())
+            lcs.append(LightCurve(x0, y0, yerr, meta, texp=texp))
 
         if delete:
             os.remove(fn)
@@ -158,9 +164,11 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
 
 class LightCurve(object):
 
-    def __init__(self, time, flux, meta, texp=TEXP):
+    def __init__(self, time, flux, yerr, meta, texp=TEXP):
         self.time = np.ascontiguousarray(time, dtype=float)
-        self.flux = np.ascontiguousarray(flux / np.median(flux), dtype=float)
+        mu = np.median(flux)
+        self.flux = np.ascontiguousarray(flux / mu, dtype=float)
+        self.yerr = float(yerr) / mu
         self.meta = meta
         self.footprint = self.time.max() - self.time.min()
         self.texp = texp

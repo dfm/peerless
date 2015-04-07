@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function
 
-__all__ = ["normalize_inputs", "Model"]
+__all__ = ["Model"]
 
 import os
 import h5py
@@ -17,24 +17,31 @@ from collections import defaultdict
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import auc, precision_recall_curve
 
-from .settings import TEXP, HALF_WIDTH
+try:
+    import pywt
+except ImportError:
+    pywt = None
 
 
 class Model(object):
 
-    def __init__(self, lcs, **kwargs):
-        self.lcs = lcs
+    def __init__(self, lcs, wavelet=None, half_width=100, **kwargs):
+        self.lcs = [lc for lc in lcs if len(lc) > 2*int(half_width)]
+        self.half_width = int(half_width)
         self.models = [None] * 3
         self.X = None
         self.kwargs = kwargs
+        self.wavelet = wavelet
+        if wavelet is not None and pywt is None:
+            raise ImportError("pywt")
 
         # Pre-compute the footprint weights for each light curve.
-        w = np.array([lc.footprint for lc in lcs])
+        w = np.array([lc.footprint for lc in self.lcs])
         w /= np.sum(w)
         self.weights = w
 
         # Split the sections into the three sets.
-        quarters = np.array([lc.meta["quarter"] for lc in lcs])
+        quarters = np.array([lc.meta["quarter"] for lc in self.lcs])
         inds = np.arange(len(quarters))
         self.splits = [set() for _ in range(3)]
 
@@ -76,7 +83,7 @@ class Model(object):
             nneg = npos
 
         # The time grid for within a single chunk.
-        inds = np.arange(-HALF_WIDTH, HALF_WIDTH+1)
+        inds = np.arange(-self.half_width, self.half_width+1)
         meta_keys = ["channel", "skygroup", "module", "output", "quarter",
                      "season"]
 
@@ -93,7 +100,8 @@ class Model(object):
             for j in range(pos_sims.shape[1]):
                 # Generate the simulation parameters.
                 nlc = np.random.choice(lc_inds, p=pval)
-                ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
+                ntt = np.random.randint(self.half_width,
+                                        len(lcs[nlc])-self.half_width)
                 rp = np.exp(np.random.uniform(np.log(min_rad),
                                               np.log(max_rad)))
                 pos_pars[i].append([
@@ -116,18 +124,19 @@ class Model(object):
                 t -= np.mean(t)
                 order = 2*np.random.randint(2)-1
                 pos_sims[i, j] = lcs[nlc].flux[ntt+inds][::order]
-                pos_sims[i, j] *= s.light_curve(t, texp=TEXP)
+                pos_sims[i, j] *= s.light_curve(t, texp=lcs[nlc].texp)
 
             for j in range(neg_sims.shape[1]):
                 nlc = np.random.choice(lc_inds, p=pval)
-                ntt = np.random.randint(HALF_WIDTH, len(lcs[nlc])-HALF_WIDTH)
+                ntt = np.random.randint(self.half_width,
+                                        len(lcs[nlc])-self.half_width)
                 neg_pars[i].append([nlc, ntt, lcs[nlc].time[ntt]] + 8*[np.nan]
                                    + [lcs[nlc].meta[k] for k in meta_keys])
                 order = 2*np.random.randint(2)-1
                 neg_sims[i, j] = lcs[nlc].flux[ntt+inds][::order]
 
-            pos_sims[i] = normalize_inputs(pos_sims[i])
-            neg_sims[i] = normalize_inputs(neg_sims[i])
+            pos_sims[i] = self.normalize_inputs(pos_sims[i])
+            neg_sims[i] = self.normalize_inputs(neg_sims[i])
 
         # Format the arrays for sklearn.
         X = np.concatenate((pos_sims, neg_sims), axis=1)
@@ -224,8 +233,8 @@ class Model(object):
             logging.info("Computing prediction for test set")
             times, preds, sect_ids = [], [], []
             for j in self.splits[s]:
-                t, f = unwrap_lc(self.lcs[j])
-                X_test = normalize_inputs(f)
+                t, f = self.unwrap_lc(self.lcs[j])
+                X_test = self.normalize_inputs(f)
                 times.append(t)
                 preds.append(clf.predict_proba(X_test)[:, 1])
                 sect_ids.append(j + np.zeros(len(t), dtype=int))
@@ -270,8 +279,9 @@ class Model(object):
                     # Pull out the light curve chunk.
                     lc = self.lcs[pred["sect_id"][i]]
                     ind = np.argmin(np.abs(lc.time - t0))
-                    xx = np.array([lc.flux[ind-HALF_WIDTH:ind+HALF_WIDTH+1]])
-                    xx = normalize_inputs(xx)
+                    xx = np.array([lc.flux[ind-self.half_width:
+                                           ind+self.half_width+1]])
+                    xx = self.normalize_inputs(xx)
                     _, ind = trees[test["split_id"]].query(xx)
                     cand_pred[k] = meta[test["split_id"]][ind]
 
@@ -387,17 +397,25 @@ class Model(object):
 
         return self
 
+    def normalize_inputs(self, X):
+        # X /= np.median(X, axis=1)[:, None]
+        if self.wavelet is None:
+            t = np.arange(X.shape[1])
+            for i, x in enumerate(X):
+                m = np.isfinite(x)
+                x[~m] = np.interp(t[~m], t[m], x[m])
+                X[i, :] = np.log(x) - np.log(np.median(x))
+        else:
+            for i, x in enumerate(X):
+                X[i, :] = np.concatenate(pywt.dwt(x - 1.0, self.wavelet))[:-1]
+        return X
 
-def unwrap_lc(lc, two_hw=2*HALF_WIDTH):
-    t = lc.time[np.arange(HALF_WIDTH, len(lc)-HALF_WIDTH)]
-    f = lc.flux[np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)]
-    return t, f
-
-
-def normalize_inputs(X):
-    X /= np.median(X, axis=1)[:, None]
-    X[:, :] = np.log(X)
-    return X
+    def unwrap_lc(self, lc):
+        hw = self.half_width
+        two_hw = 2*hw
+        t = lc.time[np.arange(hw, len(lc)-hw)]
+        f = lc.flux[np.arange(len(lc)-two_hw)[:, None]+np.arange(two_hw+1)]
+        return t, f
 
 
 def simulation_system(smass, srad, q1, q2, period, t0, rp, b, e, pomega):

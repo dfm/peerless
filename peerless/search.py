@@ -16,7 +16,8 @@ from .data import load_light_curves_for_kic
 
 
 def run_on_kicid(kicid, base_dir=None, return_model=False, lc_params=None,
-                 model_params=None, fit_params=None, cand_params=None):
+                 model_params=None, fit_params=None, cand_params=None,
+                 min_lcs=40):
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
     if base_dir is None:
@@ -52,8 +53,9 @@ def run_on_kicid(kicid, base_dir=None, return_model=False, lc_params=None,
     logging.info("Loading light curves")
     lcs = load_light_curves_for_kic(kicid, **lc_params)
     logging.info("Found {0} light curve sections".format(len(lcs)))
-    if not len(lcs):
-        logging.warn("Exiting because no light curves were found")
+    if len(lcs) < min_lcs:
+        logging.warn("Exiting because only {0} light curves were found"
+                     .format(len(lcs)))
         return None
 
     # Train the model.

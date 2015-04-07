@@ -12,7 +12,7 @@ import numpy as np
 from scipy.ndimage.measurements import label as contig_label
 
 from .catalogs import KOICatalog
-from .settings import HALF_WIDTH, PEERLESS_DATA_DIR
+from .settings import TEXP, PEERLESS_DATA_DIR
 
 
 def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True, **kwargs):
@@ -47,8 +47,8 @@ def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True, **kwargs):
     return load_light_curves(fns, **kwargs)
 
 
-def load_light_curves(fns, pdc=True, min_break=1, delete=False,
-                      remove_kois=None):
+def load_light_curves(fns, pdc=True, min_break=10, delete=False,
+                      remove_kois=None, downsample=1):
     # Find any KOIs.
     if remove_kois is not None:
         df = KOICatalog().df
@@ -60,13 +60,46 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
     lcs = []
     for fn in fns:
         # Load the data.
-        data = fitsio.read(fn)
+        data, hdr = fitsio.read(fn, header=True)
+        texp = hdr["INT_TIME"] * hdr["NUM_FRM"] / (24. * 60. * 60.)
         x = data["TIME"]
         q = data["SAP_QUALITY"]
         if pdc:
             y = data["PDCSAP_FLUX"]
+            yerr = data["PDCSAP_FLUX_ERR"]
         else:
             y = data["SAP_FLUX"]
+            yerr = data["SAP_FLUX_ERR"]
+
+        # Compute the median error bar.
+        yerr = np.median(yerr[np.isfinite(yerr)])
+
+        # Resample the time series.
+        if downsample > 1:
+            # Reshape the arrays to downsample.
+            downsample = int(downsample)
+            l = len(x) // downsample * downsample
+            inds = np.arange(l).reshape((-1, downsample))
+            x, y, q = x[inds], y[inds], q[inds]
+
+            # Ignore missing points.
+            m = np.isfinite(y) & np.isfinite(x) & (q == 0)
+            x[~m] = 0.0
+            y[~m] = 0.0
+            x = np.sum(x, axis=1)
+            y = np.sum(y, axis=1)
+            q = np.min(q, axis=1)
+
+            # Take the mean.
+            norm = np.sum(m, axis=1)
+            m = norm > 0.0
+            x[m] /= norm[m]
+            x[~m] = np.nan
+            y[m] /= norm[m]
+            y[~m] = np.nan
+
+            # Update the exposure time.
+            texp = downsample * texp
 
         # Load the meta data.
         hdr = fitsio.read_header(fn, 0)
@@ -120,23 +153,25 @@ def load_light_curves(fns, pdc=True, min_break=1, delete=False,
             m = np.isfinite(y0)
             if not np.any(m):
                 continue
-            y0[~m] = np.interp(x0[~m], x0[m], y0[m])
-            lcs.append(LightCurve(x0, y0, meta))
+            # y0[~m] = np.interp(x0[~m], x0[m], y0[m])
+            # y0[~m] += yerr * np.random.randn((~m).sum())
+            lcs.append(LightCurve(x0, y0, yerr, meta, texp=texp))
 
         if delete:
             os.remove(fn)
-
-    # Only retain chunks that are long enough (wrt the window half width).
-    return [lc for lc in lcs if len(lc) > 2 * HALF_WIDTH]
+    return lcs
 
 
 class LightCurve(object):
 
-    def __init__(self, time, flux, meta):
+    def __init__(self, time, flux, yerr, meta, texp=TEXP):
         self.time = np.ascontiguousarray(time, dtype=float)
-        self.flux = np.ascontiguousarray(flux / np.median(flux), dtype=float)
+        mu = np.median(flux)
+        self.flux = np.ascontiguousarray(flux / mu, dtype=float)
+        self.yerr = float(yerr) / mu
         self.meta = meta
         self.footprint = self.time.max() - self.time.min()
+        self.texp = texp
 
     def __len__(self):
         return len(self.time)

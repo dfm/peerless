@@ -2,3 +2,6 @@
 results*
 .ipynb_checkpoints
 *.png
+*.ipynb
+out
+papers

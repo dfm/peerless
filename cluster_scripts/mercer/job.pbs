@@ -2,7 +2,7 @@
 #PBS -l nodes=3:ppn=20
 #PBS -l walltime=12:00:00
 #PBS -l mem=350GB
-#PBS -N peerless-noe
+#PBS -N peerless-kois
 #PBS -m ae
 #PBS -M danfm@nyu.edu
 #PBS -j oe
@@ -16,7 +16,7 @@ export PEERLESS_DATA_DIR=$SCRATCH
 
 # Locations.
 export SRCDIR=$HOME/projects/peerless
-export RUNDIR=$SCRATCH/peerless/noe
+export RUNDIR=$SCRATCH/peerless/kois
 export PROFILEDIR=$RUNDIR/profile
 mkdir -p $RUNDIR
 cd $RUNDIR
@@ -41,7 +41,7 @@ done
 
 if (( success )); then
     # Run the analysis.
-    python $SRCDIR/cluster_scripts/mercer/run.py $RUNDIR -n 1000 --profile-dir $PROFILEDIR &> output.log
+    python $SRCDIR/cluster_scripts/mercer/run.py $RUNDIR -n 2000 --profile-dir $PROFILEDIR &> output.log
 else
     echo "Server never started" &> output.log
 fi

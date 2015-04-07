@@ -47,7 +47,7 @@ def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True, **kwargs):
     return load_light_curves(fns, **kwargs)
 
 
-def load_light_curves(fns, pdc=True, min_break=1, delete=False,
+def load_light_curves(fns, pdc=True, min_break=10, delete=False,
                       remove_kois=None, downsample=1):
     # Find any KOIs.
     if remove_kois is not None:

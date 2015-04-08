@@ -71,8 +71,6 @@
 \newcommand{\app}[1]{\App{#1}}
 \newcommand{\sectlabel}[1]{\label{sect:#1}}
 
-\newcommand{\BIC}{{\ensuremath{\mathrm{BIC}}}}
-\newcommand{\TIC}{{\ensuremath{\mathrm{TIC}}}}
 \newcommand{\T}{\ensuremath{\mathrm{T}}}
 \newcommand{\dd}{\ensuremath{\,\mathrm{d}}}
 \newcommand{\bvec}[1]{{\ensuremath{\boldsymbol{#1}}}}
@@ -90,6 +88,7 @@
 \newcommand{\period}{{\ensuremath{P}}}
 \newcommand{\rp}{{\ensuremath{R_\mathrm{P}}}}
 \newcommand{\rate}{{\ensuremath{\Gamma}}}
+\newcommand{\score}{{\ensuremath{S}}}
 
 \newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
 
@@ -208,6 +207,8 @@ Huang:2013, Kipping:2014a}.
 For more recent data releases, the community has settled on more conservative
 selection criteria where candidates are required to have multiple transits
 \citep[for example][]{Petigura:2013, Burke:2014}.
+Even the \project{QATS} algorithm \dfmtodo{cite} for finding quasiperiodic
+transits builds on much the same infrastructure.
 This means that there has never been a systematic search for single transits
 in the full \kepler\ dataset.
 
@@ -421,9 +422,9 @@ parameters.
 
 \section{Data preparation}\sectlabel{data}
 
-The \kepler\ Mission measured photometry for about 190,000 stars at half-hour
-cadence for a baseline of over four years.
-We aim to search these time series for single transits of long-period planets
+The \kepler\ Mission measured photometric time series for about 190,000 stars
+at half-hour cadence for a baseline of over four years.
+We aim to search these light curves for single transits of long-period planets
 and single eclipses of binary stars.
 These data are made available on
 MAST\footnote{\url{https://archive.stsci.edu/kepler/}} and, for each target,
@@ -450,35 +451,6 @@ Archive}\footnote{\url{http://exoplanetarchive.ipac.caltech.edu/}; We
 downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 2015-03-25.}.
 
-\paragraph{Terminology}
-
-Any remaining missing data points are filled in using linear interpolation
-resulting in sections of contiguous time series measurements with nearly
-uniform time sampling.
-This procedure yields about 100 \emph{light curve sections} for the typical
-\kepler\ target.
-
-As we discuss further below, a key assumption of our analysis is that the
-process generating any non-transit variability or noise in the light curve
-is stationary.
-
-Every three months, the \kepler\ spacecraft rolled 90~degrees to maintain its
-orientation with respect to the Sun.
-This means that each star landed on a different set of pixels each quarter
-and, therefore, the systematic signals caused by any specific spacecraft
-orientation won't be shared between neighboring quarters.
-A year later, however, the pointing would return to nearly the same setup and
-each star ends up back on many of the same pixels.
-This manifests itself in the light curves by causing the observations
-separated by a year to be qualitatively similar.
-
-For reasons that will become clear in \sect{search}, we split the light curve
-sections into 3 disjoint sets.
-We use these sets to run a train/validate/test procedure so the goal is to
-have representative samples in each set.
-Therefore, we attempt to split the sections intelligently; evenly
-distributing sections from the same quarter and season across the splits.
-When this is not possible, we randomly assign the section to a split.
 
 
 \section{Random forest classification}\sectlabel{rfc}
@@ -585,7 +557,7 @@ Finally, \sect{features} explores alternative representations of the data or
 features.
 
 
-\subsection{Splitting the dataset}
+\subsection{Splitting the dataset}\sectlabel{split}
 
 It is crucial that the model used to test for transits in a raw \kepler\
 light curve not be trained on the same data.
@@ -594,8 +566,8 @@ For the model to work well, we require that the signals induced by
 variability, noise, and other systematics be consistent between splits.
 It is, therefore, necessary that we assign the splits carefully.
 As discussed in \sect{data}, a light curve can be separated naturally into
-``sections'' of contiguous measurements; these are the base unit for splitting
-the dataset.
+``sections'' of nearly contiguous measurements; these are the base unit for
+splitting the dataset.
 For the typical \kepler\ target, this division is finer than month long
 chunks and there are about 100 sections for each light curve.
 Each light curve section is cut out of a specific ``quarter'' and each quarter
@@ -647,10 +619,58 @@ For the purposes of this \paper, we only simulate circular orbits under the
 assumption that a single transit of a planet on an elliptical orbit would be
 nearly identical to a circular orbit at a different period.
 
+The dataset will still have some missing or flagged fluxes.
+In order to account for these missing points, we linearly interpolate these
+values based on their neighbors.
+For consistency, we perform the interpolation on the training set \emph{after
+injecting the synthetic transit signals}.
+Before passing the light curve sections to the model at any stage, we
+normalize the section by its empirical median and take the logarithm of the
+fluxes.
+This normalization appears to yield better performance in some test cases but
+better performance might be achieved using optimized methods.
+This choice is discussed further in \sect{params}.
 
-\subsection{Initial candidate detection}
 
+\subsection{Training, validation, and testing}
 
+For each subset of the data, we train a RF classifier on the 40,000 training
+examples generated from the light curves in that split.
+The \texttt{RandomForestClassifier} implementation from \project{scikit-learn}
+has several tuning parameters that could be optimized using cross-validation
+but we find acceptable performance in most cases using fixed values.
+Specifically, we use a forest with 1000 trees by setting
+\texttt{num\_estimators = 1000}.
+We discuss this choice and the settings for other parameters in more detail in
+\sect{params}.
+
+Using this classifier, fit to one of the light curve subsets, we validate its
+performance on each set of simulations from the two other splits.
+This results in two precision--recall curves for the classifier.
+The \emph{precision} is an empirical measurement of the sample purity (or
+false positive rate) and \emph{recall} is a measurement of the completeness
+(the probability of detecting a true signal).
+Since the RF classifier scores each class and with a continuous value \score\
+between 0 and 1, both precision and recall can be tuned by changing the
+threshold value of \score\ above which the signal is considered a candidate.
+For each model--validation set pair, we ambitiously choose the threshold in
+order to obtain a precision of 100~percent.
+The result of this procedure applied to the three splits is three classifiers
+with two score thresholds each.
+
+Each of these six models has been fit using two splits so we then apply it to
+the raw light curves (without injected signals) from the remaining, untouched
+splits.
+This yields a \texttt{transit} class score as a function of transit time and
+any points above the detection threshold are passed along to the candidate
+selection procedure.
+
+At this point, there are two class predictions from two different models for
+every light curve section.
+Any section that is classified as \texttt{transit} by \emph{both models} is
+accepted as a single transit candidate.
+
+\dfmtodo{make a figure}
 
 
 \subsection{Candidate vetting}\sectlabel{vetting}

@@ -51,19 +51,23 @@
 \newcommand{\Fig}[1]{\figurename~\figref{#1}}
 \newcommand{\fig}[1]{\Fig{#1}}
 \newcommand{\figlabel}[1]{\label{fig:#1}}
+
 \newcommand{\Tab}[1]{Table~\ref{tab:#1}}
 \newcommand{\tab}[1]{\Tab{#1}}
 \newcommand{\tablabel}[1]{\label{tab:#1}}
+
 \renewcommand{\eqref}[1]{\ref{eq:#1}}
 \newcommand{\Eq}[1]{Equation~(\eqref{#1})}
 \newcommand{\eq}[1]{\Eq{#1}}
 \newcommand{\eqalt}[1]{Equation~\eqref{#1}}
 \newcommand{\eqlabel}[1]{\label{eq:#1}}
+
 \newcommand{\sectionname}{Section}
-\newcommand{\Sect}[1]{\sectionname~\ref{sect:#1}}
+\newcommand{\sectref}[1]{\ref{sect:#1}}
+\newcommand{\Sect}[1]{\sectionname~\sectref{#1}}
 \newcommand{\sect}[1]{\Sect{#1}}
-\newcommand{\sectalt}[1]{\ref{sect:#1}}
-\newcommand{\App}[1]{Appendix~\ref{sect:#1}}
+\newcommand{\sectalt}[1]{\sectref{#1}}
+\newcommand{\App}[1]{Appendix~\sectref{#1}}
 \newcommand{\app}[1]{\App{#1}}
 \newcommand{\sectlabel}[1]{\label{sect:#1}}
 
@@ -237,8 +241,54 @@ this in-place of the humans to find single transit events.
 This method is novel as a means to transit search and it differs substantially
 from the standard methods.
 
+Automated classification processes have been hugely successful in the machine
+learning literature when applied to the right datasets \dfmtodo{cite some
+things}.
+Many astronomical problems can't be naturally solved by the standard machine
+learning models because of their heterogeneous character and heteroscedastic
+uncertainties.
+The search for single transits, however, is an excellent use case when applied
+with care.
+The noise in the light curve of a given star is relatively consistent for the
+full baseline of observation and we have a very good physical generative model
+for the transit signal so we can simulate arbitrarily large sets of training
+examples.
 
-\section{Estimated yield}
+In the training step, a Random Forest (RF) classifier is trained to
+distinguish---based only on the light curve itself---between sections of light
+curve that contain transits from sections of the same size that do not.
+This model is then used to find candidates in left-out sections of the light
+curve.
+In principle, this model can capture arbitrarily complicated non-linear
+structure in the decision space and if the training set is large and complete
+it will ``learn'' the shape of a physical transit.
+In practice, classification algorithms like this also require a complete set
+of ``negative'' training examples so further vetting using physical models
+is necessary.
+
+In \sect{est}, we extrapolate a recent model of the distribution of exoplanets
+to the long periods considered in this \paper.
+Using an approximate but realistic model for the detection efficiency of a
+search for single transits, we estimate that $\sim 60$ single transit events
+should be detectable in the archival \kepler\ dataset.
+In \sect{data}, we describe the data and outline the structure exploited by
+our transit search procedure.
+In \sect{rfc}, we briefly describe the Random Forest classification framework
+and in \sect{search} we outline the steps used to apply this model for transit
+search.
+This method requires the setting of many tuning parameters and the
+optimization of these choices is both computationally and intellectually
+challenging so in \sect{tuning} we discuss some steps in this direction.
+In \sect{demo}, we demonstrate the feasibility of this method, present a
+single transit discovery, and indicate some interesting weaknesses of the
+method.
+In \sectionname s~\sectref{params} and~\sectref{exopop}, we describe the
+parameter estimation that is possible given a single transit and outline the
+prospects for exoplanet population inference given a catalog of single transit
+discoveries.
+
+
+\section{Estimated yield}\sectlabel{est}
 
 Before the launch of the \kepler\ Mission, \citet{Yee:2008} predicted the
 yield of single transit events based on the planet occurrence rates estimated
@@ -369,7 +419,7 @@ parameters.
 \end{figure}
 
 
-\section{Data preparation}
+\section{Data preparation}\sectlabel{data}
 
 The \kepler\ Mission measured photometry for about 190,000 stars at half-hour
 cadence for a baseline of over four years.
@@ -377,15 +427,18 @@ We aim to search these time series for single transits of long-period planets
 and single eclipses of binary stars.
 These data are made available on
 MAST\footnote{\url{https://archive.stsci.edu/kepler/}} and, for each target,
-we downloaded the full set of light curve files provided by Data Release 24
-\citep{Thompson:2015}.
+we downloaded the full set of long cadence light curve files provided by Data
+Release 24 \citep{Thompson:2015}.
 From these files, we extracted the PDC time series and split them into
-``sections'' with no more than two contiguous missing or flagged data points.
+``sections'' with no more than ten contiguous missing or flagged data points.
 The PDC light curves have been corrected for the instrumental effects caused
 by the spacecraft using a data-driven model of the focal plane
 \citep{Stumpe:2012, Smith:2012}.
 Crucially, an attempt is also made by the PDC procedure to remove sharp
 instrumental artifacts like ``sudden pixel sensitivity dropouts (SPSDs)''.
+The success rate of this correction procedure is much higher than in earlier
+data releases but, as discussed in \sect{demo}, there remain some cases that
+are not properly accounted for.
 
 The goal of this project is to discover the transits of long-period planets
 that have not yet been discovered.
@@ -402,7 +455,7 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 Any remaining missing data points are filled in using linear interpolation
 resulting in sections of contiguous time series measurements with nearly
 uniform time sampling.
-This procedure yields about 150 \emph{light curve sections} for the typical
+This procedure yields about 100 \emph{light curve sections} for the typical
 \kepler\ target.
 
 As we discuss further below, a key assumption of our analysis is that the
@@ -428,22 +481,34 @@ distributing sections from the same quarter and season across the splits.
 When this is not possible, we randomly assign the section to a split.
 
 
-\section{Random forest classification}
+\section{Random forest classification}\sectlabel{rfc}
 
 A common task in the machine learning literature is called \emph{supervised
 classification} where the goal is to separate objects into classes
 represented by sets of labeled examples.
-One example from the astronomy literature is the problem of star--galaxy
-separation (\dfmtodo{cite}).
-In this problem, there are a set of images or photometric measurements that
-have been classified---by some other method---as either a star or galaxy
-observation and the goal is to transfer these labels to a set of observations
-that have not yet been classified.
+In the astronomy literature, supervised classification has been used for
+variable star classification \citep{Richards:2011} star--galaxy separation
+\citep{Fadely:2012}, galaxy morphology prediction \citep{Dieleman:2015}, and
+other applications.
+In each of these problems, there are a set of measurements that have been
+assigned classes---by some other method; often manually---and the goal is to
+transfer these labels to a set of observations that have not yet been
+labeled.
 For a more in-depth discussion of the application of these techniques in
 astronomy, the interested reader is directed to \citet{Ivezic:2013}.
 
-The Random Forest (RF) classification model \citep{Breiman:2001} has become
-very popular in the machine learning community.
+In our problem of transit search, we want to ``label'' sections of light curve
+with either the \texttt{transit} or \texttt{no transit} class.
+This problem doesn't fall under the standard format of a supervised
+classification problem because very few long-period transits have actually
+been observed or classified.
+We do think, however, that we have a good physical generative model for the
+signal of interest and most of the observations of each star have no transits.
+Therefore, we train the model on simulated signals.
+
+The Random Forest (RF) classification model \citep{Breiman:2001} is a popular
+model in the machine learning community where it is a common go-to model for
+basic classification tasks.
 It has also been applied with great success in astronomy \citep[for
 example]{Richards:2011, Richards:2012} \dfmtodo{others}.
 The RF model works by fitting an ensemble of decision trees to randomly
@@ -455,26 +520,63 @@ only one class or, at most, a fixed number of samples.
 At each branch, the decision boundary is set by maximizing either the entropy
 or the ``gini'' coefficient.
 
-For the problem of single transit search, our problem can be phrased as a
-classification problem where we want to assign every $K$ data point long chunk
-of light curve into either the \texttt{transit} or \texttt{no transit} class.
-This problem doesn't fall under the standard format of a supervised
-classification problem because very few long-period transits have actually
-been observed or classified.
-We do think, however, that we have a good physical generative model for the
-signal of interest and most of the observations of each star have no transits.
-Therefore, we can train the model on simulated signals.
-
-We use the \project{scikit-learn}\citep{Pedregosa:2011} implementation of the
-RF classification algorithm\footnote{Specifically we use the
+We use the \project{scikit-learn} \citep{Pedregosa:2011} version of the RF
+classification algorithm\footnote{Specifically we use the
 \texttt{RandomForestClassifier} object;
-\url{http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html}.}.
+\url{http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html}.}
+implemented in \project{Python}.
+This implementation has state-of-the-art speed and
+performance\footnote{\url{http://blog.explainmydata.com/2014/03/big-speedup-for-random-forest-learning.html}}
+while maintaining a flexible and user-friendly interface.
 
 
-\section{Search procedure}\sectlabel{search}
+\section{Search methodology}\sectlabel{search}
 
-To search for single transits in the light curve of a specific star, we fit
-three random forest models.
+Now, we will apply the RF classification model to search for single transits
+in \kepler\ light curves.
+The basic structure of the problem, applied to the light curve of a single
+star, is:
+\begin{enumerate}
+
+{\item {\bf train} a classifier on simulated signals injected into a subset of
+the light curves sections,}
+
+{\item {\bf validate} the model on signals injected into a different subset of
+the data to estimate the precision of the results,}
+
+{\item {\bf test} the classifier by applying it to a final subset of the
+data---disjoint from the previous two sets---to predict the class
+(\texttt{transit} or \texttt{no transit}) of each light curve section, and}
+
+{\item iterate until the entire light curve has been classified.}
+
+\end{enumerate}
+This means that searching a single light curve involves training, validating,
+and testing at least 3 RF models.
+In practice, we find that it is sufficient to split the data (intelligently)
+into 3 disjoint subsets so that we need only train 3 classifiers for each
+star.
+
+A key assumption of this model is that the classes are sufficiently
+represented in feature space.
+In other words, the training set must span both of the classes.
+Given a large enough training set, this is not difficult for the
+\texttt{transit} class; we can simulate a transit for any combination of
+physical parameters.
+This is much more difficult for the \texttt{no transit} class.
+Since we don't have a generative model for the stellar and instrumental
+variability or other artifacts, we cannot simulate negative examples that
+cover the full space of possibilities.
+Instead we are using sections of real light curves as the \texttt{no transit}
+examples.
+This means that there are a finite number of samples available for training
+and validation, and if there is a qualitatively different signal in the test
+set that is not generated by a transit, the model is at risk of unpredictably
+misclassifying that section.
+This problem can be largely mitigated by careful splitting of the dataset---as
+described below---but there are inevitably some false signals that are not
+properly accounted for.
+
 
 \paragraph{Generate the training \& validation sets}
 
@@ -488,7 +590,7 @@ In the simulations, we take limb darkening and integration time into account
 \dfmtodo{cite}.
 Since we expect most of the systematic variability to be time-reversible, we
 augment the training set with simulations injected into the reversed time
-series \dfmtodo{cite some examples of rotational invariance}.
+series \citep[for example][]{Dieleman:2015}.
 The training set also includes an equal number of negative examples---time
 series chunks of the same length without a simulated transit injection.
 By virtue of the fact that we are specifically searching for single transits
@@ -506,7 +608,7 @@ training sets and then for each model, we validate and test on both of the
 remaining splits.
 
 
-\paragraph{Features}
+\paragraph{Feature selection}
 
 In many supervised classification problems, a sophisticated feature
 extraction method is used to improve the performance of the procedure.
@@ -521,16 +623,6 @@ Another option for a feature set could be the Fourier transform or wavelet
 transform of the light curve section.
 Alternatively, the spectrogram of the fluxes in a larger window.
 We have experimented briefly with this options finding similar performance.
-
-
-\paragraph{Train}
-
-
-
-
-\paragraph{Validate}
-
-\paragraph{Test}
 
 
 \section{Tuning parameters}\sectlabel{tuning}
@@ -610,7 +702,7 @@ estimated using a set of injections.
 \paragraph{Failures}
 
 
-\section{Parameter estimation}
+\section{Parameter estimation}\sectlabel{params}
 
 Even though only one transit is observed, it is still possible to estimate the
 orbital period of these planet candidates using independent constraints on the
@@ -630,7 +722,7 @@ We take limb darkening and the finite exposure time into account
 Beta function prior on the eccentricity \citep{Kipping:2013a}.
 
 
-\section{Population inference}
+\section{Prospects for population inference}\sectlabel{exopop}
 
 Based on our single transit discoveries, we now want to place a limit on
 the occurrence rate of long-period planets.
@@ -661,10 +753,8 @@ and~(\eqref{q-time}), then this integral becomes
 \end{eqnarray}
 where the sum is over all the targeted stars.
 
-\section{Results}
 
-
-\section{Discussion}
+\section{Discussion}\sectlabel{discussion}
 
 
 \acknowledgments

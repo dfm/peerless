@@ -162,18 +162,79 @@ stars: statistics
 
 \section{Introduction}
 
-\begin{itemize}
+The transit method of exoplanet detection and characterization has been
+demonstrated as a powerful method for building systematic catalogs of
+exoplanets.
+Despite the great success of the \kepler\ Mission with thousands of planet
+discoveries \dfmtodo{cite}, current methods for exoplanet discoveries are
+currently limited in the range of orbital periods that can be studied.
+Specifically, the standard transit search procedures only discover signals
+with at least three observed transits \dfmtodo{cite Jenkins, Petigura, \etc}.
+For \kepler, with a baseline of about four years, this sets an upper limit on
+the detectable periods of just over a year.
+In the Solar System, Jupiter---with a period of 12 years---dominates the
+planetary dynamics and, since it would only exhibit at most one transit in the
+\kepler\ data, it would be missed by most existing transit search procedures.
+It is possible to discover long-period planets like this using targeted radial
+velocity (RV) surveys \dfmtodo{cite} but the cost of implementing a systematic
+RV search is substantially higher than searching the existing and forthcoming
+photometric data for single transits.
 
-\item Description of the physical significance of these planets
+There are two main technical barriers to a search for single transit events.
+The first is that the transit probability for long-period planets is very low;
+scaling as $\propto\period^{-5/3}$ for orbital periods longer than the
+baseline of contiguous observations.
+Therefore, even if long-period planets are intrinsically common, they will
+still be underrepresented in a transiting sample.
+The second challenge is that there are substantial signals in the observed
+light curves caused by stochastic processes---both instrumental
+(pointing jitter, temperature variations, \etc) and astrophysical (stellar
+variability, \etc)---that can masquerade as transit signals.
+In practice, even using the most sophisticated systematics removal methods,
+these false signal far outnumber the true single transits.
 
-\item Discussion of previous attempts (papers by Gaudi, Yee, Payne, Bakos,
-\etc).
+Nearly every transit search algorithm is built on the same principles and many
+of the same decisions are made.
+In particular, at the heart of most methods is a matched filtering step where
+the likelihood of an approximate transit model is computed on a grid in the
+physical parameters \dfmtodo{cite}.
+Using these methods, and substantial hand-curation, some long-period
+transiting candidates have been published \citep[for example][]{Batalha:2013,
+Huang:2013, Kipping:2014a}.
+For more recent data releases, the community has settled on more conservative
+selection criteria where candidates are required to have multiple transits
+\citep[for example][]{Petigura:2013, Burke:2014}.
+This means that there has never been a systematic search for single transits
+in the full \kepler\ dataset.
 
-\item Comparison of method to filtering methods and an argument for why
-supervised classification should be more robust to false alarms given a large
-enough training set
+A qualitatively different approach to planet search is employed by the
+\project{Planet Hunters} (PH)
+project\footnote{\url{http://www.planethunters.org/}} \citep{Fischer:2012}.
+PH is a ``citizen science'' project where visitors to the website look at
+sections of light curve and mark the locations of transits that can be
+identified visually.
+Visual inspection can be a useful search technique for large single transits
+because humans are able to robustly distinguish transit signals from the noise
+and this project has yielded some promising long-period candidates and
+confirmed planets \citep[for example][]{Wang:2013}.
+One shortcoming of the PH method is that it can be difficult to fully quantify
+the performance (completeness and reliability) of the search and PH does not
+evaluate their users using synthetic transit signals as is now common practice
+in the transit search literature.
+This means that the PH sample of candidates cannot be used for robust
+population inference.
 
-\end{itemize}
+We propose a transit search method that shares some similarities with the PH
+model but, instead of human classifiers, we use a supervised classification
+model trained on large numbers of simulated transit signals injected into
+real \kepler\ light curves.
+This procedure is motivated because, by definition, most randomly selected
+sections of light curve contain no transits and there is an excellent physical
+model for the signals of interest.
+If we can train a classification model to robustly separate light curve
+sections with transits from sections without then we should be able to use
+this in-place of the humans to find single transit events.
+
 
 \section{Estimated yield}
 
@@ -279,10 +340,10 @@ Assuming the stellar parameters provided by the NASA Exoplanet
 Archive\footnote{\dfmtodo{URL for kepler stellar table; downloaded on SOME
 DATE.}} \dfmtodo{cite Huber} and approximating the stellar noise using the
 15-hour CDPP \dfmtodo{cite CDPP}, \dfmtodo{some figure} shows the extrapolated
-number of transiting planets with $\period > 1500\,\mathrm{d}$ based on the
-\citet{Dong:2013} power-law model.
+number of transiting planets with $1500\,\mathrm{d} < \period <
+5000\,\mathrm{d}$ based on the \citet{Dong:2013} power-law model.
 For a detection threshold $f\sim10$, the expected number of single transit
-events in the \kepler\ light curves is $\sim 150$.
+events in the \kepler\ light curves is $\sim 60$.
 
 This results is much more optimistic than the pre-launch estimate from
 \citet{Yee:2008} for a few reasons.

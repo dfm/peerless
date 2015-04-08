@@ -92,6 +92,9 @@
 
 \newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
 
+% no more bad lines!
+\sloppy\sloppypar
+
 \begin{document}
 
 \title{%
@@ -632,7 +635,7 @@ better performance might be achieved using optimized methods.
 This choice is discussed further in \sect{params}.
 
 
-\subsection{Training, validation, and testing}
+\subsection{Training, validation, and testing}\sectlabel{train}
 
 For each subset of the data, we train a RF classifier on the 40,000 training
 examples generated from the light curves in that split.
@@ -675,12 +678,28 @@ accepted as a single transit candidate.
 
 \subsection{Candidate vetting}\sectlabel{vetting}
 
+While the search procedure described in the previous sections is quite robust
+to false alarms, single transit events are extremely rare (as discussed in
+\sect{est}) and because of substantial violations of the model assumptions,
+false signals continue to outnumber the true signals in this catalog of
+candidate transits.
+To mitigate this problem, we manually inspect the light curves of candidate
+signals.
+As future work, we expect to automate this procedure by fitting a physical
+transit model and comparing it to simple models of stellar variability and
+instrumental artifacts.
+For this \paper, however, the catalog of candidates is sufficiently small that
+manual inspection is tractable.
+As demonstrated in \sect{demo}, the most common misclassifications are caused
+by astrophysical variability but some remaining systematic effects are also
+incorrectly labeled as candidates.
+
 
 \subsection{Feature selection}\sectlabel{features}
 
 In many supervised classification problems, a sophisticated feature
 extraction method is used to improve the performance of the procedure.
-For this specific problem, we find excellent performance using the 121
+For this specific problem, we find excellent performance using the 201
 normalized flux values as the features.
 The depth of the transit and the noise in the light curve is not irrelevant
 to detection so we don't normalize the features to unit variance in the
@@ -695,79 +714,115 @@ We have experimented briefly with this options finding similar performance.
 
 \section{Tuning parameters}\sectlabel{tuning}
 
-Many choices need to be made in building this classification model.
-These choices can be specified by a set of parameters that can be tuned the
-optimize the performance of the method.
-At this point, it's probably worth discussing how one might specifically
-measure the ``performance'' of a search for transits.
-The goal is, of course, to \emph{find transiting planets}.
-Therefore, we would like to develop a method that finds the most planets
-possible.
-This will, in general, trade off with the purity of the sample.
-For example, a method that returns every possible point the light curve as a
-planet candidate will be guaranteed to find every signal in the dataset---it
-will have excellent completeness or \emph{recall}---but almost every
-candidate will be false---the \emph{precision} is low.
-This is obviously not what we want.
-Instead, the more relevant metric is probably the recall at fixed (high)
-precision.
+Many choices need to be made in building this search procedure.
+Each of these choices can be specified by a set of parameters that can be
+tuned to optimize the method.
+In order to tune these parameters, we must decide on a quantitative
+measurement of the ``performance''.
+The goal is, of course, to \emph{robustly discover transiting planets}.
+In other words, the aim is a procedure that maximizes both \emph{recall} and
+\emph{precision}.
 
-Let's be clear about what we mean by the terms \emph{precision} and
-\emph{recall} in this context because they have specific definitions in the
-machine learning that will be useful in our discussion here.
-Recall is the probability, integrated across the full parameter space of
-interest that a true transit signal will be detected by the method.
-In astronomy, this quantity is generally called the completeness or the
-detection efficiency and it is routinely measured for transit surveys
-\dfmtodo{cite}.
+As discussed previously, recall is the probability, integrated across the full
+parameter space of interest that a true transit signal will be detected by the
+method.
+In astronomy, this quantity is generally called the completeness or detection
+efficiency and it is routinely measured for transit surveys \dfmtodo{cite}.
 On the other hand, precision is the probability that a positive classification
 will be true.
-In other words, for a given candidate that our pipeline spits out, the
-probability that it is a false alarm is given by one minus the precision.
-In astronomy, precision is generally hard or impossible to measure because we
-have no ground truth; we don't know that \emph{there is definitely no transit}
-at a given time in the light curve.
-However, with a few weak assumptions, we can, in practice, estimate the
-precision of our single transit search robustly.
+In astronomy, precision is generally hard to measure because we rarely have
+access to the ground truth.
+For this problem, correctly computing the recall is impossible because we
+never know that \emph{there is definitely no transit} at a given time in the
+light curve.
 
-\paragraph{Estimating the survey precision}
+What's more, it is not in general possible to maximize both recall and
+precision because transit signals are not completely separable from false
+positives.
+This means that, as the recall of the method improves, the false positive rate
+will also increase, reducing the precision.
+We must, therefore, choose a trade-off between recall and precision that
+represents our objective.
+The informal tradition in the transit search literature is to build a
+procedure that maximizes the recall at an extremely high ($\sim 100$~percent)
+fixed precision.
 
-There are two key assumptions that enter into our precision calculation.
+The main tuning parameters of the method are as follows:
+\begin{itemize}
+
+{\item \emph{the number of training and validation examples for each data
+split} --- The performance of most classification models improves drastically
+as the size of the training set increases but in this case we are limited by
+the number of \texttt{no transit} samples that are available since we have no
+generative model for the variability and systematics.
+For this \paper, we choose 20,000 positive \texttt{transit} samples per split
+and an equal number of negative examples.}
+
+{\item \emph{the range of physical parameters used to simulate the transit
+signals} --- The search will be most sensitive to transits with parameters
+spanned by the training set but training on too many low signal-to-noise
+examples in noisy light curves leads to decreased precision.
+The parameter ranges used for the demonstrations here are given in
+\dfmtodo{some table}.}
+
+{\item \emph{tuning parameters of the RF implementation} --- The
+\texttt{RandomForestClassifier} implementation has a few tuning parameters.
+The most important of these seems to be \texttt{num\_estimators}, the number
+of decision trees used in the forest.
+Increasing \texttt{num\_estimators} leads to substantial computational cost
+with diminishing returns on the search performance.
+Otherwise, there are a few parameters (for example, \texttt{max\_features},
+\texttt{min\_samples\_split}, and \texttt{min\_samples\_leaf}) that can be
+used to regularize the model but we have found that the performance is
+insensitive to these choices.
+As a trade-off between performance and computational cost, we set
+\texttt{num\_estimators = 1000} in all the examples shown in this \paper.}
+
+\end{itemize}
+In detail, the optimal set of decisions and parameter settings will be
+different for every target---and probably even for every permutation of the
+data splits.
+In practice, we find that the performance of the search is fairly insensitive
+to most of these choices so we choose parameters that seem to work well in
+most cases and leave optimization for future work.
+
+
+\paragraph{Estimating the precision}
+
+We estimate the precision of each RF classification model on the validation
+set as described in \sect{train}.
+As discussed in that \sectionname, we choose a target precision to
+100~percent and set the score threshold accordingly.
+This estimate is only applicable to the test set under two major assumptions.
 The first is that all transiting planets with more than one transit and a
 large signal-to-noise ratio have been previously discovered by one of the many
 transit searches applied the \kepler\ dataset \dfmtodo{cite}.
 This is a safe assumption because, for large planets, these surveys are all
 largely complete out to periods yielding only 2 or 3 transits in the \kepler\
 baseline \dfmtodo{cite}.
-The second necessary assumption is less robust but it is required for a
-completely reliable measurement of the survey precision.
+The second assumption is not always valid so it makes this estimate of the
+precision only approximate and not completely reliable.
 This assumption is that the noise processes in the data are stationary.
 In other words, the transit-like noise signals in the training and validation
-sets must be ``similar'' to the signals in the target section.
-The PDC processing of the data successfully removes most of the
-instrument-induced signals with some exceptions that are discussed in
-\sect{demo}.
-Perhaps we make the further assumption that the stellar variability is
-also stationary.
-
-Under these assumptions, the precision of the search procedure is
-estimated using a set of injections.
-
-
-\paragraph{The parameters}
-
-\paragraph{Objective function}
+sets must be ``similar'' to the signals in the test section.
+This constraint is nearly satisfied when the PDC light curves are used
+(\sect{data}) and the data are split carefully (\sect{split}).
+As demonstrated by the mis-classifications shown in \sect{demo}, however, it
+is clear that violations to this rule do exist in the data and final vetting
+of the candidates must be applied using a physical understanding of the
+signals.
 
 
 \section{Preliminary results}\sectlabel{demo}
 
+
+
+
 \paragraph{A discovery}
 
 
-
-\paragraph{Successes}
-
 \paragraph{Failures}
+
 
 
 \section{Parameter estimation}\sectlabel{params}

@@ -6,6 +6,7 @@ from plot_setup import COLORS
 from matplotlib import rcParams
 rcParams["font.size"] = 16
 
+import sys
 import h5py
 import emcee
 import transit
@@ -34,15 +35,15 @@ rstar = float(cand.radius)
 rstar_err1 = float(cand.radius_err1)
 rstar_err2 = float(cand.radius_err2)
 ln_rstar = np.log(rstar)
-ln_rstar_err = max(np.log(rstar + rstar_err1) - np.log(rstar),
-                   np.log(rstar) - np.log(rstar + rstar_err2))
+ln_rstar_err = np.mean([np.log(rstar + rstar_err1) - np.log(rstar),
+                        np.log(rstar) - np.log(rstar + rstar_err2)])
 
 mstar = float(cand.mass)
 mstar_err1 = float(cand.mass_err1)
 mstar_err2 = float(cand.mass_err2)
 ln_mstar = np.log(mstar)
-ln_mstar_err = max(np.log(mstar + mstar_err1) - np.log(mstar),
-                   np.log(mstar) - np.log(mstar + mstar_err2))
+ln_mstar_err = np.mean([np.log(mstar + mstar_err1) - np.log(mstar),
+                        np.log(mstar) - np.log(mstar + mstar_err2)])
 
 # Set up the model.
 system = transit.System(transit.Central(mass=mstar, radius=rstar))
@@ -87,7 +88,7 @@ class TransitWalker(emcee.BaseWalker):
             return -np.inf
 
         lp += beta.logpdf(e, 1.12, 3.09)
-        return lp
+        return lp  # + lnp
 
     def lnlikefn(self, p):
         lnfs, lnrs, lnms, q1, q2 = p[:5]
@@ -119,30 +120,38 @@ class TransitWalker(emcee.BaseWalker):
 p0 = np.array([0.0, ln_rstar, ln_mstar, 0.5, 0.5, np.log(rp), np.log(period),
                t0, b, 0.0, 0.0])
 nwalkers, ndim = 32, len(p0)
-coords = p0 + 1e-8 * np.random.randn(nwalkers, ndim)
-ensemble = emcee.Ensemble(TransitWalker(), coords)
-assert np.all(np.isfinite(ensemble.lnprob))
 sampler = emcee.Sampler()
 
-print("Burn-in 1")
-ensemble = sampler.run(ensemble, 2000)
+if "restart" in sys.argv:
+    with h5py.File("params.h5", "r") as fh:
+        coords = fh["coords"][-1, :, :]
+    ensemble = emcee.Ensemble(TransitWalker(), coords)
+    assert np.all(np.isfinite(ensemble.lnprob))
 
-# Re-sample ensemble.
-samples = sampler.get_coords(flat=True)
-lp = sampler.get_lnprob(flat=True)
-best_p = samples[np.argmax(lp)]
-print(best_p)
-print(np.exp(best_p))
-coords = p0 + 1e-8 * np.random.randn(nwalkers, ndim)
-ensemble = emcee.Ensemble(TransitWalker(), coords)
+else:
+    coords = p0 + 1e-8 * np.random.randn(nwalkers, ndim)
+    ensemble = emcee.Ensemble(TransitWalker(), coords)
+    assert np.all(np.isfinite(ensemble.lnprob))
 
-print("Burn-in 2")
-sampler.reset()
-ensemble = sampler.run(ensemble, 5000)
+    print("Burn-in 1")
+    ensemble = sampler.run(ensemble, 2000)
+
+    # Re-sample ensemble.
+    samples = sampler.get_coords(flat=True)
+    lp = sampler.get_lnprob(flat=True)
+    best_p = samples[np.argmax(lp)]
+    print(best_p)
+    print(np.exp(best_p))
+    coords = p0 + 1e-8 * np.random.randn(nwalkers, ndim)
+    ensemble = emcee.Ensemble(TransitWalker(), coords)
+
+    print("Burn-in 2")
+    sampler.reset()
+    ensemble = sampler.run(ensemble, 5000)
+    sampler.reset()
 
 print("Production")
-sampler.reset()
-ensemble = sampler.run(ensemble, 50000)
+ensemble = sampler.run(ensemble, 100000)
 
 with h5py.File("params.h5", "w") as fh:
     fh.create_dataset("coords", data=sampler.get_coords())

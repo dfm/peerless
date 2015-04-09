@@ -398,7 +398,6 @@ class Model(object):
         return self
 
     def normalize_inputs(self, X):
-        # X /= np.median(X, axis=1)[:, None]
         if self.wavelet is None:
             t = np.arange(X.shape[1])
             for i, x in enumerate(X):
@@ -406,6 +405,8 @@ class Model(object):
                 x[~m] = np.interp(t[~m], t[m], x[m])
                 X[i, :] = np.log(x) - np.log(np.median(x))
         else:
+            assert False, "WAVELETS ARE BROKEN"
+            X /= np.median(X, axis=1)[:, None]
             for i, x in enumerate(X):
                 X[i, :] = np.concatenate(pywt.dwt(x - 1.0, self.wavelet))[:-1]
         return X

@@ -38,7 +38,6 @@
 \newcommand{\terra}{\project{TERRA}}
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\license}{MIT License}
-\newcommand{\projectname}{\project{ketu}}
 
 \newcommand{\paper}{article}
 
@@ -170,19 +169,20 @@ The transit method of exoplanet detection and characterization has been
 demonstrated as a powerful method for building systematic catalogs of
 exoplanets.
 Despite the great success of the \kepler\ Mission with thousands of planet
-discoveries \dfmtodo{cite}, current methods for exoplanet discoveries are
+discoveries \citep{Burke:2014}, current methods for exoplanet discoveries are
 currently limited in the range of orbital periods that can be studied.
 Specifically, the standard transit search procedures only discover signals
-with at least three observed transits \dfmtodo{cite Jenkins, Petigura, \etc}.
+with at least three observed transits \citep[for example][]{Petigura:2013,
+Burke:2014}.
 For \kepler, with a baseline of about four years, this sets an upper limit on
 the detectable periods of just over a year.
 In the Solar System, Jupiter---with a period of 12 years---dominates the
 planetary dynamics and, since it would only exhibit at most one transit in the
 \kepler\ data, it would be missed by most existing transit search procedures.
 It is possible to discover long-period planets like this using targeted radial
-velocity (RV) surveys \dfmtodo{cite} but the cost of implementing a systematic
-RV search is substantially higher than searching the existing and forthcoming
-photometric data for single transits.
+velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014} but the
+cost of implementing a systematic RV search is substantially higher than
+searching the existing and forthcoming photometric data for single transits.
 
 There are two main technical barriers to a search for single transit events.
 The first is that the transit probability for long-period planets is very low;
@@ -201,15 +201,17 @@ Nearly every transit search algorithm is built on the same principles and many
 of the same decisions are made.
 In particular, at the heart of most methods is a matched filtering step where
 the likelihood of an approximate transit model is computed on a grid in the
-physical parameters \dfmtodo{cite}.
+physical parameters \citep[\kepler\ Data Processing
+Handbook\footnote{\url{https://archive.stsci.edu/kepler/manuals/KSCI-19081-001_Data_Processing_Handbook.pdf}};][]{%
+Petigura:2013, Huang:2013, Dressing:2015, Foreman-Mackey:2015}.
 Using these methods, and substantial hand-curation, some long-period
 transiting candidates have been published \citep[for example][]{Batalha:2013,
 Huang:2013, Kipping:2014a}.
 For more recent data releases, the community has settled on more conservative
 selection criteria where candidates are required to have multiple transits
 \citep[for example][]{Petigura:2013, Burke:2014}.
-Even the \project{QATS} algorithm \dfmtodo{cite} for finding quasiperiodic
-transits builds on much the same infrastructure.
+Even the \project{QATS} algorithm \citep{Carter:2013} for finding
+quasiperiodic transits builds on much the same infrastructure.
 This means that there has never been a systematic search for single transits
 in the full \kepler\ dataset.
 
@@ -244,8 +246,8 @@ This method is novel as a means to transit search and it differs substantially
 from the standard methods.
 
 Automated classification processes have been hugely successful in the machine
-learning literature when applied to the right datasets \dfmtodo{cite some
-things}.
+learning literature.
+% when applied to the right datasets \dfmtodo{cite some things}.
 Many astronomical problems can't be naturally solved by the standard machine
 learning models because of their heterogeneous character and heteroscedastic
 uncertainties.
@@ -392,11 +394,12 @@ base-10 logarithms so the units must be converted to natural logarithms as
 appropriate.
 
 Assuming the stellar parameters provided by the NASA Exoplanet
-Archive\footnote{\dfmtodo{URL for kepler stellar table; downloaded on SOME
-DATE.}} \dfmtodo{cite Huber} and approximating the stellar noise using the
-15-hour CDPP \dfmtodo{cite CDPP}, \dfmtodo{some figure} shows the extrapolated
-number of transiting planets with $1500\,\mathrm{d} < \period <
-5000\,\mathrm{d}$ based on the \citet{Dong:2013} power-law model.
+Archive\footnote{We downloaded the \texttt{q1\_q16\_stellar} table from
+\url{http://exoplanetarchive.ipac.caltech.edu/} on 2015-04-03.}
+\citep{Huber:2014} and approximating the stellar noise using the 15-hour CDPP
+\citep{Christiansen:2012}, \fig{predict} shows the extrapolated number of
+transiting planets with $1500\,\mathrm{d} < \period < 5000\,\mathrm{d}$ based
+on the \citet{Dong:2013} power-law model.
 For a detection threshold $f\sim10$, the expected number of single transit
 events in the \kepler\ light curves is $\sim 60$.
 
@@ -405,7 +408,7 @@ This results is much more optimistic than the pre-launch estimate from
 One effect is that, the \kepler\ Mission ran for more than four
 years---longer than the fiducial Mission goal---and $\sim190,000$ stars were
 targeted for nearly the full baseline instead of the original 100,000.
-\dfmtodo{Explain other reasons.}
+\dfmtodo{Explain the other reasons.}
 
 \begin{figure}[p]
 \begin{center}
@@ -484,7 +487,7 @@ The Random Forest (RF) classification model \citep{Breiman:2001} is a popular
 model in the machine learning community where it is a common go-to model for
 basic classification tasks.
 It has also been applied with great success in astronomy \citep[for
-example]{Richards:2011, Richards:2012} \dfmtodo{others}.
+example][]{Richards:2011, Richards:2012, Jenkins:2014}.
 The RF model works by fitting an ensemble of decision trees to randomly
 selected subsamples of the training dataset.
 Each tree in the forest is ``grown'' by greedily choosing decision boundaries
@@ -612,8 +615,7 @@ see][]{Dieleman:2015}.
 
 To generate the \texttt{transit} examples, we simulate the transit signal
 induced by the physical orbit of a large planet.
-The specific distribution of simulation parameters is listed in \dfmtodo{some
-table}.
+The specific distribution of simulation parameters is listed in \tab{params}.
 In these simulations, we take limb darkening and integration time into
 account\footnote{\url{https://github.com/dfm/transit}}
 \citep{Mandel:2002, Kipping:2010}.
@@ -632,6 +634,28 @@ fluxes.
 This normalization appears to yield better performance in some test cases but
 better performance might be achieved using optimized methods.
 This choice is discussed further in \sect{params}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Parameter & Units & Distribution \\
+\midrule
+
+limb darkening parameters $q_1$ and $q_2$ & --- & $q \sim U(0,\,1)$ \\
+orbital period \period & days & $\ln \period \sim U(\ln 1500,\,\ln 5000)$ \\
+reference transit time $\delta t$ & days & $\delta t \sim U(-0.15,\,0.15)$ \\
+planet radius \rp & $R_\oplus$ & $\ln \rp \sim U(\ln 5,\,\ln 20)$ \\
+impact parameter $b$ & --- & $b \sim U(0,\,1)$ \\
+
+\bottomrule
+\end{tabular}
+\end{center}
+\caption{%
+The distribution of physical parameters for the injected signals.
+The limb darkening parameterization is given by \citet{Kipping:2013}.
+\tablabel{params}}
+\end{table}
 
 
 \subsection{Training, validation, and testing}\sectlabel{train}
@@ -672,7 +696,7 @@ every light curve section.
 Any section that is classified as \texttt{transit} by \emph{both models} is
 accepted as a single transit candidate.
 
-\dfmtodo{make a figure}
+% \dfmtodo{make a figure}
 
 
 \subsection{Candidate vetting}\sectlabel{vetting}
@@ -708,7 +732,8 @@ value and take the logarithm.
 Another option for a feature set could be the Fourier transform or wavelet
 transform of the light curve section.
 Alternatively, the spectrogram of the fluxes in a larger window.
-We have experimented briefly with this options finding similar performance.
+We have experimented briefly with these options but find similar performance
+on the cases that we tested.
 
 
 \section{Tuning parameters}\sectlabel{tuning}
@@ -726,7 +751,8 @@ As discussed previously, recall is the probability, integrated across the full
 parameter space of interest that a true transit signal will be detected by the
 method.
 In astronomy, this quantity is generally called the completeness or detection
-efficiency and it is routinely measured for transit surveys \dfmtodo{cite}.
+efficiency and it is routinely measured for transit surveys
+\citep{Petigura:2013, Dressing:2015, Foreman-Mackey:2015}.
 On the other hand, precision is the probability that a positive classification
 will be true.
 In astronomy, precision is generally hard to measure because we rarely have
@@ -762,7 +788,7 @@ signals} --- The search will be most sensitive to transits with parameters
 spanned by the training set but training on too many low signal-to-noise
 examples in noisy light curves leads to decreased precision.
 The parameter ranges used for the demonstrations here are given in
-\dfmtodo{some table}.}
+\tab{params}.}
 
 {\item \emph{tuning parameters of the RF implementation} --- The
 \texttt{RandomForestClassifier} implementation has a few tuning parameters.
@@ -795,10 +821,10 @@ As discussed in that \sectionname, we choose a target precision to
 This estimate is only applicable to the test set under two major assumptions.
 The first is that all transiting planets with more than one transit and a
 large signal-to-noise ratio have been previously discovered by one of the many
-transit searches applied the \kepler\ dataset \dfmtodo{cite}.
+transit searches applied the \kepler\ dataset \citep{Burke:2014}.
 This is a safe assumption because, for large planets, these surveys are all
 largely complete out to periods yielding only 2 or 3 transits in the \kepler\
-baseline \dfmtodo{cite}.
+baseline \citep[for example][]{Petigura:2013}.
 The second assumption is not always valid so it makes this estimate of the
 precision only approximate and not completely reliable.
 This assumption is that the noise processes in the data are stationary.
@@ -846,12 +872,20 @@ list.
 
 \paragraph{Failures}
 
+\dfmtodo{Add some discussion of the failures and make suggestions for better
+vetting techniques.}
+
 
 \begin{figure}[p]
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figures/candidates.pdf}
 \end{center}
 \caption{%
+Some representative light curve sections that were labeled as candidates by
+the single transit search.
+The light curve in the top-left panel is a convincing transit signal but the
+other panels all appear to be caused by stellar variability or instrumental
+effects.
 \figlabel{candidates}}
 \end{figure}
 
@@ -865,11 +899,13 @@ curve of the 14.9~Kep-mag G-dwarf KIC 10602068.
 Despite the fact that this is a very large signal, its discovery has never
 been reported.
 Given the estimate of $\sim 60$ detectable single transits in the full
-\kepler\ archival dataset, we expect about one discovery in 3500 light curves.
+\kepler\ archival dataset, we do expect about one discovery in 3500 light
+curves.
 
-Even though only one transit is observed, it is still possible to place
-constraints on the physical properties---even the orbital period---of this
-transiting body.
+Even though only one transit is observed, if we assume that the transit is
+caused by a body on a Keplerian orbit around the host star, we can place
+constraints on the physical properties---even the orbital period---of the
+transiting candidate.
 This technique is similar in spirit to the ``photoeccentric effect''
 \citep{Dawson:2012} and ``asterodensity profiling'' \citep{Kipping:2012}.
 The fundamental principle is that the transit duration is a measurement of
@@ -877,16 +913,26 @@ the instantaneous velocity of the planetary motion and this yields a
 constraint on the orbital period when combining this with a measurement of the
 stellar density and a prior on the eccentricity of the orbit.
 
-The \citet{Huber:2014} parameters for this star place it as a G-dwarf with a
-radius of $\sim 0.9\,R_\odot$
-$2.1 \pm 0.4\,R_\mathrm{J}$.
+The photometrically derived physical properties for this star place it as a
+G-dwarf with a mass and radius of about 90~percent Solar \citep{Huber:2014}.
+Using these constraints and a beta function prior on the eccentricity of the
+orbit \citep{Kipping:2013a}, we run Markov Chain Monte Carlo
+\citep{Foreman-Mackey:2013} to sample the posterior probability for the
+physical parameters of the system.
+In this analysis, we take limb darkening and the finite exposure time into
+account \citep{Mandel:2002, Kipping:2010, Kipping:2013}.
+The results of this chain marginalized into the relevant physical dimensions
+are shown in \fig{corner}.
+The radius of the transiting body is measured to be $2.1 \pm
+0.4\,R_\mathrm{J}$.
+The period is very weakly constrained above a lower limit of
+$760\,\mathrm{days}$---set by the fact that a second transit is not
+detected---with 68~percent of the posterior mass in the range $760\,\mathrm{d}
+< \period < 1347\,\mathrm{d}$.
 
-In practice, we directly model the light curve as being generated by a planet
-on an eccentric Keplerian orbit transiting a limb darkened star and
-marginalize over all the orbital elements and physical parameters.
-We take limb darkening and the finite exposure time into account
-\citep{Mandel:2002, Kipping:2010, Kipping:2013} and use an empirical
-Beta function prior on the eccentricity \citep{Kipping:2013a}.
+Given the large radius of this candidate, it is probably stellar in nature
+instead of planetary but this could be easily confirmed using radial velocity
+follow-up.
 
 \begin{figure}[p]
 \begin{center}
@@ -933,7 +979,64 @@ Posterior constraints on the physical parameters of the body transiting KIC
 
 \section{Discussion}\sectlabel{discussion}
 
+The discovery and characterization of transiting planets based on a single
+transit event is crucial for the future of transiting exoplanet surveys.
+Many of the most dynamically influential planets---like Jupiter in our Solar
+system---exhibit only a single transit in the full observational baseline of
+the \kepler.
+This will become even more of a problem as upcoming surveys move to shorter
+contiguous observations.
+For example, the \tess\ Mission is planned to get full-sky coverage at
+half-hour cadence but most of the sky will only be targeted for a month.
+This means that even habitable zone planets orbiting cool stars will transit
+their host \emph{at most once in the entire lifetime of the Mission}!
 
+To date, no methods exist for systematically and robustly discovering single
+transit events based on large photometric surveys.
+In this \paper, we present a novel and conceptually unique solution to this
+problem drawing on machine learning methods for supervised classification.
+This method has immense potential because it can be designed to be very robust
+to false positives and it can exploit the detailed shape of physical transits.
+
+Despite the fact that single transits are unlikely even if these long-period
+planets are intrinsically common, we estimate that $\sim 60$ events should be
+detectable in the \kepler\ archival dataset by extrapolating recent models of
+planet occurrence rates and taking selection effects into account.
+When applied to 3500 light curves from the \kepler\ dataset, this method
+recovers one previously unknown single transit event at
+$830.8093\pm0.0002$~KBJD in the light curve of KIC 10602068.
+This rate is consistent with the predicted yield of 60 events in the full
+dataset of 190,000 light curves.
+
+Assuming a bound Keplerian orbit, we place constraints on the physical
+properties of this transit candidate KIC 10602068.01.
+Using photometrically derived stellar properties, we find that this candidate
+has a radius of $2.1 \pm 0.4\,R_\mathrm{J}$ placing it as a very large planet
+or brown dwarf or a small star.
+
+This method for transit search is built using supervised classification and
+its performance relies on several strong assumptions about the datasets and
+these assumptions are sometimes violated leading to some transit-like signals
+that appear to be caused by noise to be misclassified as transits.
+The most severe assumption is that the noise properties of the data are
+stationary.
+In other words, we assume that variability in one subset of a light curve is
+completely spanned by the variability in the other sections.
+This assumption is, in general, false because the stochastic processes that
+cause stellar variability are complicated and non-stationary and the detector
+is plagued by non-negligible catastrophic changes in sensitivity and response.
+We attempt to mitigate this problem by using light curves that have been
+preprocessed to remove most of the instrumental effects and carefully dividing
+the data into subsets but some false positives are still incorrectly
+identified as candidates.
+
+One possible method for reducing the false positive rate would be to augment
+the training dataset using heuristic simulations of common false positives or
+the light curves of ``similar'' stars.
+Another option is to recognize that this search drastically reduces the
+parameter space requiring evaluation and comparing the predictive power of
+a transit model to other heuristic models including stellar variability or
+instrumental effects.
 
 
 \acknowledgments

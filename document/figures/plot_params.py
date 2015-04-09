@@ -38,6 +38,8 @@ for p in np.concatenate((phys.T, [t0]), axis=0):
     q = triangle.quantile(p, [0.16, 0.5, 0.84])
     print(q[1], np.diff(q))
 
+print(10 ** (triangle.quantile(log10p, [0.68])))
+
 fig = triangle.corner(phys,
                       levels=[0.68, 0.95],
                       smooth=1.0, smooth1d=1.0,

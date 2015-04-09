@@ -12,7 +12,6 @@ import triangle
 import peerless
 import numpy as np
 import pandas as pd
-from scipy.stats import beta
 import matplotlib.pyplot as pl
 
 
@@ -28,23 +27,26 @@ pl.savefig("time.png")
 flat = samples[::10].reshape((-1, samples.shape[-1]))
 
 e = np.sum(flat[:, -2:]**2, axis=1)
-pl.clf()
-pl.hist(e, 40, normed=True)
-x = np.linspace(1e-5, 0.8, 500)
-pl.plot(x, beta.pdf(x, 1.12, 3.09))
-pl.savefig("blah.png")
-
-
 r_star = np.exp(flat[:, 1])
 r_p = np.exp(flat[:, 5]) / 0.0995
+log10p = np.log10(np.exp(flat[:, 6]))
+b = flat[:, 8]
+t0 = flat[:, 7]
+t00 = np.round(np.median(t0) * 10) * 0.1
+phys = np.vstack([r_p, log10p, (t0-t00)*24, b, e]).T
+for p in np.concatenate((phys.T, [t0]), axis=0):
+    q = triangle.quantile(p, [0.16, 0.5, 0.84])
+    print(q[1], np.diff(q))
 
-fig = triangle.corner(np.vstack([r_p, np.log10(np.exp(flat[:, 6])),
-                                 flat[:, 8], e]).T,
+fig = triangle.corner(phys,
                       levels=[0.68, 0.95],
                       smooth=1.0, smooth1d=1.0,
                       fill_contours=True, plot_datapoints=False,
-                      labels=["$R_p / R_\mathrm{J}$",
-                              r"$\log_{10}\,P/\mathrm{day}$", "$b$", "$e$"])
+                      labels=["$R_p\,[R_\mathrm{J}]$",
+                              r"$\log_{10}\,P/\mathrm{day}$",
+                              (r"$t_0 - {0:.1f}\,\mathrm{{KBJD}}\,"
+                               "[\mathrm{{hr}}]$").format(t00),
+                              "$b$", "$e$"])
 fig.savefig("corner.pdf")
 
 assert 0

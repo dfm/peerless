@@ -6,6 +6,7 @@ from plot_setup import COLORS
 from matplotlib import rcParams
 rcParams["font.size"] = 16
 
+import h5py
 import emcee
 import transit
 import peerless
@@ -33,15 +34,15 @@ rstar = float(cand.radius)
 rstar_err1 = float(cand.radius_err1)
 rstar_err2 = float(cand.radius_err2)
 ln_rstar = np.log(rstar)
-ln_rstar_err = 0.5 * (np.log(rstar + rstar_err1) - np.log(rstar) +
-                      np.log(rstar) - np.log(rstar + rstar_err2))
+ln_rstar_err = max(np.log(rstar + rstar_err1) - np.log(rstar),
+                   np.log(rstar) - np.log(rstar + rstar_err2))
 
 mstar = float(cand.mass)
 mstar_err1 = float(cand.mass_err1)
 mstar_err2 = float(cand.mass_err2)
 ln_mstar = np.log(mstar)
-ln_mstar_err = 0.5 * (np.log(mstar + mstar_err1) - np.log(mstar) +
-                      np.log(mstar) - np.log(mstar + mstar_err2))
+ln_mstar_err = max(np.log(mstar + mstar_err1) - np.log(mstar),
+                   np.log(mstar) - np.log(mstar + mstar_err2))
 
 # Set up the model.
 system = transit.System(transit.Central(mass=mstar, radius=rstar))
@@ -138,6 +139,14 @@ ensemble = emcee.Ensemble(TransitWalker(), coords)
 print("Burn-in 2")
 sampler.reset()
 ensemble = sampler.run(ensemble, 5000)
+
+print("Production")
+sampler.reset()
+ensemble = sampler.run(ensemble, 50000)
+
+with h5py.File("params.h5", "w") as fh:
+    fh.create_dataset("coords", data=sampler.get_coords())
+    fh.create_dataset("lnprob", data=sampler.get_lnprob())
 
 # Find best sample and plot.
 samples = sampler.get_coords(flat=True)

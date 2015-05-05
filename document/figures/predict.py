@@ -24,7 +24,8 @@ sig_k = 1e-6 * kic.rrmscdpp15p0
 r_k = np.array(np.sqrt(sig_k) * kic.radius)
 
 # We'll integrate for all periods above 1500 days.
-P_min = 1500.
+P_max = 5000.
+P_min = 1000.
 
 # These are the fits in radial bins from Dong & Zhu (2013)
 rad_rngs = [
@@ -40,6 +41,7 @@ rad_rngs = [
 # threshold.
 def compute_expected_number(threshold):
     N = np.zeros((3, len(factor)))
+    Ntot = np.zeros((3, len(factor)))
     for rmn, rmx, C, C_err, beta, beta_err in rad_rngs:
         for j, (bb, cc) in enumerate(zip(beta + beta_err*np.array([-1, 0, 1]),
                                          C + C_err*np.array([-1, 0, 1]))):
@@ -48,16 +50,19 @@ def compute_expected_number(threshold):
             rmin[rmin < rmn] = rmn
             rmin[rmin > rmx] = rmx
 
+            # Convert the Dong & Zhu rate to natural logarithms.
+            dong_fac = cc / (np.log(10)**2 * 10**bb)
+            p_fac = (P_max**bb-P_min**bb) / bb
+            Ntot[j] += dong_fac * (np.log(rmx) - np.log(rmn)) * p_fac
+
             # Compute the integral over period.
             p = bb - 5./3
-            p_fac = -P_min**p / p
-
-            # Convert the Dong & Zhu rate to natural logarithms.
-            dong_fac = cc / (np.log(10) * 10**bb)
+            p_fac = (P_max**p-P_min**p) / p
 
             N[j] += p_fac * dong_fac * (np.log(rmx) - np.log(rmin))
 
     m = np.isfinite(factor)
+    print(Ntot[:, m].sum(axis=1) / np.sum(m))
     return (factor[None, m] * N[:, m]).sum(axis=1)
 
 q = compute_expected_number(15)
@@ -72,14 +77,14 @@ ax.fill_between(fs, N[:, 0], N[:, 2], color=color, alpha=0.2)
 ax.plot(fs, N[:, 0], color=color, lw=0.5)
 ax.plot(fs, N[:, 2], color=color, lw=0.5)
 ax.set_xlim(5, 100)
-ax.set_ylim(10, 400)
+ax.set_ylim(5, 175)
 
 ax.set_xscale("log")
 ax.set_yscale("log")
 ax.set_xlabel("$f$")
 ax.set_ylabel("$N$")
 
-ax.set_yticks([10, 30, 100, 300])
+ax.set_yticks([10, 30, 100])
 ax.get_yaxis().set_major_formatter(ScalarFormatter())
 ax.set_xticks([10, 100])
 ax.get_xaxis().set_major_formatter(ScalarFormatter())

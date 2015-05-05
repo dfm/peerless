@@ -5,3 +5,4 @@ results*
 *.ipynb
 out
 papers
+*.h5

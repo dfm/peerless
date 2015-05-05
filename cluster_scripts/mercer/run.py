@@ -16,6 +16,8 @@ parser.add_argument("-n", "--number", default=100, type=int,
                     help="the number of targets to search")
 parser.add_argument("-p", "--profile-dir", default=None,
                     help="the IPython profile dir")
+parser.add_argument("--kois", action="store_true",
+                    help="run on the KOIs")
 args = parser.parse_args()
 
 if not os.path.exists(args.out_dir):
@@ -26,16 +28,20 @@ if args.profile_dir is not None:
     poolargs["profile_dir"] = args.profile_dir
 
 # Only select G-stars.
-kois = peerless.catalogs.KOICatalog().df
-kois = kois[kois.koi_pdisposition == "CANDIDATE"]
 stlr = peerless.catalogs.KICatalog().df
-stlr = pd.merge(kois, stlr, on="kepid", how="left")
+
+if args.kois:
+    kois = peerless.catalogs.KOICatalog().df
+    kois = kois[kois.koi_pdisposition == "CANDIDATE"]
+    stlr = pd.merge(kois, stlr, on="kepid", how="left")
+
+# Shuffle the order.
+stlr["order_by"] = np.random.rand(len(stlr))
 
 select = (stlr.teff > 4100) & (stlr.teff < 6100)
 select &= (stlr.logg > 4.0) & (stlr.logg < 4.9)
 select &= (stlr.kepmag > 10.0) & (stlr.kepmag < 15)
-kicids = np.array(stlr[select].kepid)
-print(len(kicids))
+kicids = np.array(stlr[select].sort("order_by").kepid)
 
 # Set up the lock files.
 fns = map(os.path.join(args.out_dir, "{0}.lock").format, kicids)

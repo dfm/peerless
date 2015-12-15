@@ -94,7 +94,8 @@ class ExoplanetArchiveCatalog(Catalog):
 
 
 class KOICatalog(ExoplanetArchiveCatalog):
-    name = "cumulative"
+    name = "q1_q17_dr24_koi"
+    # name = "cumulative"
 
     def join_stars(self, df=None):
         if df is None:
@@ -104,7 +105,8 @@ class KOICatalog(ExoplanetArchiveCatalog):
 
 
 class KICatalog(ExoplanetArchiveCatalog):
-    name = "q1_q16_stellar"
+    name = "q1_q17_dr24_stellar"
+    # name = "q1_q16_stellar"
 
 
 class CatalogDownloadError(Exception):

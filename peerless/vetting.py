@@ -36,7 +36,7 @@ def fit_gp(x, y, yerr):
     p0 = gp.kernel.vector
     init = nll(p0)
     result = minimize(nll, p0, jac=grad_nll, method="L-BFGS-B",
-                      bounds=[(None, None), (0.0, None)])
+                      bounds=[(None, 0.0), (-10.0, None)])
     gp.kernel[:] = result.x
 
     # Save the results.
@@ -132,7 +132,7 @@ def fit_linear(x, y, gp, model, parameters):
     return r
 
 
-def fit_transit(x, y, yerr, t0, gp=None, ror=0.05, period=1500.):
+def fit_transit(x, y, yerr, t0, gp=None, nrestart=10, delta_t0=0.2):
     if gp is None:
         gp = init_gp(x, y, yerr)
 
@@ -148,14 +148,16 @@ def fit_transit(x, y, yerr, t0, gp=None, ror=0.05, period=1500.):
         return -gp.lnlikelihood(r, quiet=True)
 
     # Optimize.
-    p0 = np.append(np.log([ror, period]), [t0, 0.5])
-    init = nll(p0)
-    t0rng = (max(xm.min(), t0-1.0), min(xm.max(), t0+1.0))
-    result = minimize(nll, p0, method="L-BFGS-B",
-                      bounds=[(-5.0, 0.0), (5.0, 9.0), t0rng, (0.0, 1.0)])
+    t0rng = (max(xm.min(), t0-delta_t0), min(xm.max(), t0+delta_t0))
+    bounds = [(-5.0, 0.0), (5.0, 9.0), t0rng, (0.0, 1.0)]
+    result = None
+    for i in range(nrestart):
+        p0 = [np.random.uniform(*r) for r in bounds]
+        r = minimize(nll, p0, method="L-BFGS-B", bounds=bounds)
+        if result is None or result.fun >= r.fun:
+            result = r
 
     # Save the results.
-    result.initial_lnlike = -init
     result.system = get_system(result.x)
     result.gp = gp
     result.lnlike = -result.fun

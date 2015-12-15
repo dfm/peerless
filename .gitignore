@@ -6,3 +6,4 @@ results*
 out
 papers
 *.h5
+*.c

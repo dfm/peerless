@@ -1,3 +1,14 @@
 # -*- coding: utf-8 -*-
-__all__ = ["data", "model", "search", "catalogs", "settings", "vetting"]
-from . import data, model, search, catalogs, settings, vetting
+
+__version__ = "0.0.0.dev0"
+
+try:
+    __PEERLESS_SETUP__  # NOQA
+except NameError:
+    __PEERLESS_SETUP__ = False
+
+if not __PEERLESS_SETUP__:
+    __all__ = [
+        "data",
+    ]
+    from . import data

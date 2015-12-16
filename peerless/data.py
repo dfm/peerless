@@ -84,7 +84,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False):
         )
 
         # Remove any KOI points.
-        if remove_kois is not None:
+        if remove_kois:
             for _, koi in kois.iterrows():
                 period = float(koi.koi_period)
                 t0 = float(koi.koi_time0bk) % period
@@ -123,11 +123,11 @@ class LightCurve(object):
         self.trend = running_median_trend(time, flux, hw=hw)
         self.median = np.median(flux)
 
-        self.time = np.ascontiguousarray(time, dtype=float)
-
+        self.raw_time = np.ascontiguousarray(time, dtype=float)
         self.raw_flux = np.ascontiguousarray(flux/self.median, dtype=float)
         self.raw_ferr = np.ascontiguousarray(ferr/self.median, dtype=float)
 
+        self.time = np.ascontiguousarray(time, dtype=float)
         self.flux = np.ascontiguousarray(flux/self.trend, dtype=float)
         self.ferr = np.ascontiguousarray(ferr/self.trend, dtype=float)
 

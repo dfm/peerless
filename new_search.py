@@ -9,8 +9,8 @@ from peerless.catalogs import KICatalog
 from peerless.data import load_light_curves_for_kic, running_median_trend
 
 
-def get_peaks(kicid, tau=0.6):
-    lcs = load_light_curves_for_kic(kicid)
+def get_peaks(kicid, tau=0.6, delete=True):
+    lcs = load_light_curves_for_kic(kicid, delete=delete)
 
     # Sort the times.
     time = np.concatenate([lc.time for lc in lcs])
@@ -61,34 +61,38 @@ if __name__ == "__main__":
     m &= stlr.dataspan > 365.25*2.
     m &= stlr.dutycycle > 0.6
     m &= stlr.rrmscdpp07p5 <= 1000.
+    m &= stlr.kepmag < 15.
 
-    # kepids = np.array(stlr[m].kepid)
-    kepids = [
-        2158850,
-        3558849,
-        5010054,
-        5536555,
-        5951458,
-        8410697,
-        8510748,
-        8540376,
-        9704149,
-        9838291,
-        10024862,
-        10403228,
-        10842718,
-        10960865,
-        11558724,
-        12066509,
-    ]
+    kepids = np.array(stlr[m].kepid)
+    # kepids = [
+    #     2158850,
+    #     3558849,
+    #     5010054,
+    #     5536555,
+    #     5951458,
+    #     8410697,
+    #     8510748,
+    #     8540376,
+    #     9704149,
+    #     9838291,
+    #     10024862,
+    #     10403228,
+    #     10842718,
+    #     10960865,
+    #     11558724,
+    #     12066509,
+    # ]
 
     open("results.txt", "w").close()
     pool = Pool()
-    for kepid, peaks in pool.imap_unordered(get_peaks, kepids):
+    for i, (kepid, peaks) in enumerate(pool.imap_unordered(get_peaks, kepids)):
+        if (i + 1) % 500 == 0:
+            print(100 * (i + 1) / len(kepids))
         if not len(peaks):
             continue
         with open("results.txt", "a") as f:
-            f.write("\n".join("{0}, {1}".format(kepid, p[0]) for p in peaks)
+            f.write("\n".join("{0}, {1}, {2}".format(kepid, p[0], p[1])
+                              for p in peaks)
                     + "\n")
 
     # print(get_peaks(8410697))

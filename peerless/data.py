@@ -49,7 +49,8 @@ def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True,
     return load_light_curves(fns, **kwargs)
 
 
-def load_light_curves(fns, pdc=True, delete=False, remove_kois=False):
+def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
+                      detrend_hw=2.0):
     # Find any KOIs.
     if remove_kois:
         df = KOICatalog().df
@@ -102,7 +103,8 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False):
             m0 = m & (labels == i)
             if not np.any(m0):
                 continue
-            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, texp=texp))
+            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, texp=texp,
+                                  hw=detrend_hw))
 
         if delete:
             os.remove(fn)

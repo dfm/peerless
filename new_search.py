@@ -12,32 +12,28 @@ from peerless.data import load_light_curves_for_kic, running_median_trend
 def get_peaks(kicid, tau=0.6, delete=True):
     lcs = load_light_curves_for_kic(kicid, delete=delete)
 
-    # Sort the times.
-    time = np.concatenate([lc.time for lc in lcs])
-    flux = np.concatenate([lc.flux for lc in lcs])
-    ferr = np.concatenate([lc.ferr for lc in lcs])
-    chunk = np.concatenate([i + np.zeros(len(lc), dtype=int)
-                            for i, lc in enumerate(lcs)])
+    time = []
+    depth = []
+    depth_ivar = []
 
-    inds = np.argsort(time)
-    time = np.ascontiguousarray(time[inds])
-    flux = np.ascontiguousarray(flux[inds])
-    ferr = np.ascontiguousarray(ferr[inds])
-    chunk = np.ascontiguousarray(chunk[inds])
+    for lc in lcs:
+        time.append(np.arange(lc.time.min(), lc.time.max(), 0.25 * tau))
+        d, ivar = search(tau, time[-1], lc.time, lc.flux - 1.0, 1.0/lc.ferr**2)
+        depth.append(d)
+        depth_ivar.append(ivar)
 
-    flux_ivar = 1.0/ferr**2
-    time_grid = np.arange(time.min(), time.max(), 0.25 * tau)
+    time = np.concatenate(time)
+    depth = np.concatenate(depth)
+    depth_ivar = np.concatenate(depth_ivar)
 
-    depth, depth_ivar = search(tau, time_grid, time, flux - 1.0, flux_ivar)
     s2n = depth * np.sqrt(depth_ivar)
-
     m = depth_ivar > 0.0
     noise = np.nan + np.zeros_like(s2n)
-    noise[m] = running_median_trend(time_grid[m], np.abs(s2n[m]), 15.0)
+    noise[m] = running_median_trend(time[m], np.abs(s2n[m]), 15.0)
 
     m = s2n > 20 * noise
     s2n_thresh = s2n[m]
-    t0_thresh = time_grid[m]
+    t0_thresh = time[m]
     peaks = []
 
     while len(s2n_thresh):

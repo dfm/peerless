@@ -33,7 +33,7 @@ def get_peaks(kicid, tau=0.6, delete=True):
 
     m = depth_ivar > 0.0
     noise = np.nan + np.zeros_like(s2n)
-    noise[m] = running_median_trend(time_grid[m], np.abs(s2n[m]), 10.0)
+    noise[m] = running_median_trend(time_grid[m], np.abs(s2n[m]), 15.0)
 
     m = s2n > 20 * noise
     s2n_thresh = s2n[m]
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     m &= stlr.rrmscdpp07p5 <= 1000.
     m &= stlr.kepmag < 15.
 
-    kepids = np.array(stlr[m].kepid)
+    kepids = np.array(stlr[m].kepid)[:100]
     # kepids = [
     #     2158850,
     #     3558849,

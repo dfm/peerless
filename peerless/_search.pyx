@@ -60,8 +60,9 @@ def search(double tau,
         out_depth[n] = depth
         out_depth_ivar[n] = depth_ivar
 
+    s2n = out_depth * np.sqrt(out_depth_ivar)
     if apodize > 0.0:
-        out_depth /= 1.0 + np.exp(-(t - (t[0] + apodize * tau)) / tau)
-        out_depth /= 1.0 + np.exp((t - (t[-1] - apodize * tau)) / tau)
+        s2n /= 1.0 + np.exp(-(t - (t[0] + apodize * tau)) / tau)
+        s2n /= 1.0 + np.exp((t - (t[-1] - apodize * tau)) / tau)
 
-    return out_depth, out_depth_ivar
+    return out_depth, out_depth_ivar, s2n

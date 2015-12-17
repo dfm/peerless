@@ -92,8 +92,11 @@ def get_peaks(kicid=None,
         t0_thresh = t0_thresh[m]
         noise_thresh = noise_thresh[m]
 
+    if not len(peaks):
+        return []
+
     # For each peak, plot the diagnostic plots.
-    d = os.path.join(output_dir, kicid)
+    d = os.path.join(output_dir, "{0}".format(kicid))
     os.makedirs(d, exist_ok=True)
     for i, peak in enumerate(peaks):
         t0 = peak[1]
@@ -103,14 +106,18 @@ def get_peaks(kicid=None,
         # Raw flux.
         row = axes[0]
         for ax in row:
-            [ax.plot(lc.raw_time, lc.raw_flux, "-k") for lc in lcs]
+            [ax.plot(lc.raw_time, (lc.raw_flux-1)*1e3, "-k") for lc in lcs]
             ax.set_xticklabels([])
+            ax.yaxis.set_major_locator(pl.MaxNLocator(4))
+            ax.xaxis.set_major_locator(pl.MaxNLocator(5))
 
         # De-trended flux.
         row = axes[1]
         for ax in row:
-            [ax.plot(lc.time, lc.flux, "-k") for lc in lcs]
+            [ax.plot(lc.time, (lc.flux-1)*1e3, "-k") for lc in lcs]
             ax.set_xticklabels([])
+            ax.yaxis.set_major_locator(pl.MaxNLocator(4))
+            ax.xaxis.set_major_locator(pl.MaxNLocator(5))
 
         # Periodogram.
         row = axes[2]
@@ -118,6 +125,8 @@ def get_peaks(kicid=None,
             ax.plot(time + 0.5*tau, s2n, "k")
             ax.plot(time + 0.5*tau, noise, "g")
             ax.plot(time + 0.5*tau, detect_thresh * noise, ":g")
+            ax.yaxis.set_major_locator(pl.MaxNLocator(4))
+            ax.xaxis.set_major_locator(pl.MaxNLocator(5))
 
         for ax1, ax2 in axes:
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
@@ -127,8 +136,12 @@ def get_peaks(kicid=None,
             ax2.axvline(t0, color="g", lw=5, alpha=0.3)
             ax2.axvline(t0 - 0.5*tau, color="k", ls="dashed")
             ax2.axvline(t0 + 0.5*tau, color="k", ls="dashed")
+            ax2.set_yticklabels([])
 
-        fig.tight_layout()
+        fig.subplots_adjust(
+            left=0.1, bottom=0.1, right=0.98, top=0.97,
+            wspace=0.05, hspace=0.12
+        )
         fig.savefig(os.path.join(d, "{0:04d}.png".format(i + 1)))
         pl.close(fig)
 
@@ -202,6 +215,7 @@ if __name__ == "__main__":
         m &= stlr.rrmscdpp07p5 <= 1000.
         m &= stlr.kepmag < 15.
         kicids += list(np.array(stlr[m].kepid))
+    kicids = np.array(kicids, dtype=int)
 
     # Limit the target list.
     if args.max_targets is not None:
@@ -221,6 +235,9 @@ if __name__ == "__main__":
         f.write("# {0}\n".format(
             ", ".join(["kicid", "time", "s2n", "s2n_bkg"])
         ))
+
+    with open(os.path.join(args.output_dir, "targets.csv"), "w") as f:
+        f.write("\n".join(map("{0}".format, kicids)))
 
     if len(kicids):
         # Deal with parallelization.

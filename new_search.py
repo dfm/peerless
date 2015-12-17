@@ -155,6 +155,7 @@ def get_peaks(kicid=None,
             impact=0.5,
         )
         system.freeze_parameter("ln_period")
+        system.freeze_parameter("impact")
 
         # Loop over models and compare them.
         preds = []
@@ -170,8 +171,6 @@ def get_peaks(kicid=None,
             n = gp.get_parameter_names()
             if "mean:t0" in n:
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
-            if "mean:impact" in n:
-                bounds[n.index("mean:impact")] = (0, 1.0)
             if "kernel:k2:ln_M_0_0" in n:
                 bounds[n.index("kernel:k2:ln_M_0_0")] = (
                     np.log(0.1), None
@@ -198,7 +197,6 @@ def get_peaks(kicid=None,
             peak["transit_duration"] = system.duration
             peak["transit_ror"] = system.ror
             peak["transit_time"] = system.t0
-            peak["transit_impact"] = system.impact
 
         if peak["bic_transit"] < peak["bic_gp"] and not plot_all:
             continue
@@ -374,7 +372,7 @@ if __name__ == "__main__":
     columns = [
         "kicid", "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
         "lnlike_gp", "lnlike_transit", "bic_gp", "bic_transit",
-        "transit_time", "transit_ror", "transit_duration", "transit_impact",
+        "transit_time", "transit_ror", "transit_duration",
     ]
     with open(cand_fn, "w") as f:
         f.write("# {0}\n".format(", ".join(columns)))

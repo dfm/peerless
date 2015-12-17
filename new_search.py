@@ -126,6 +126,10 @@ def get_peaks(kicid=None,
     if not len(peaks):
         return []
 
+    for i, peak in enumerate(peaks):
+        peak["num_peaks"] = len(peaks)
+        peak["peak_id"] = i
+
     if len(peaks) > max_peaks:
         logging.warning("truncating peak list")
     peaks = peaks[:max_peaks]
@@ -141,6 +145,9 @@ def get_peaks(kicid=None,
         x = lc0.raw_time
         y = lc0.raw_flux
         yerr = lc0.raw_ferr
+
+        peak["chunk_min_time"] = x.min()
+        peak["chunk_max_time"] = x.max()
 
         # Mean models:
         # 1. constant
@@ -198,7 +205,19 @@ def get_peaks(kicid=None,
             peak["transit_ror"] = system.ror
             peak["transit_time"] = system.t0
 
-        if peak["bic_transit"] < peak["bic_gp"] and not plot_all:
+        # Accept the peak?
+        accept_bic = peak["bic_transit"] > peak["bic_gp"]
+        accept_time = (
+            (peak["transit_time"] - 0.5*peak["transit_duration"]
+             > peak["chunk_min_time"]) and
+            (peak["transit_time"] + 0.5*peak["transit_duration"]
+             < peak["chunk_max_time"])
+        )
+        accept = accept_bic and accept_time
+        peak["accept_bic"] = accept_bic
+        peak["accept_time"] = accept_time
+
+        if (not accept) and (not plot_all):
             continue
 
         # Plots.
@@ -370,9 +389,12 @@ if __name__ == "__main__":
         os.makedirs(args.output_dir)
     cand_fn = os.path.join(args.output_dir, "candidates.txt")
     columns = [
-        "kicid", "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
+        "kicid", "num_peaks", "peak_id",
+        "accept_bic", "accept_time",
+        "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
         "lnlike_gp", "lnlike_transit", "bic_gp", "bic_transit",
-        "transit_time", "transit_ror", "transit_duration",
+        "transit_ror", "transit_duration", "transit_time",
+        "chunk_min_time", "chunk_max_time",
     ]
     with open(cand_fn, "w") as f:
         f.write("# {0}\n".format(", ".join(columns)))

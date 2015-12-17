@@ -4,6 +4,7 @@
 import os
 import sys
 import logging
+import traceback
 import numpy as np
 from functools import partial
 import matplotlib.pyplot as pl
@@ -12,7 +13,6 @@ from scipy.optimize import minimize
 
 import george
 from george import kernels
-from george.modeling import ModelingMixin
 
 import transit
 
@@ -241,7 +241,7 @@ def get_peaks(kicid=None,
         row[0].set_ylabel("s/n")
 
         for ax1, ax2 in axes:
-            ax1.yaxis.set_label_coords(-0.1, 0.5)
+            ax1.yaxis.set_label_coords(-0.15, 0.5)
 
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
             ax1.axvline(t0, color="g", lw=5, alpha=0.3)
@@ -253,7 +253,7 @@ def get_peaks(kicid=None,
             ax2.set_yticklabels([])
 
         fig.subplots_adjust(
-            left=0.1, bottom=0.1, right=0.98, top=0.97,
+            left=0.15, bottom=0.1, right=0.98, top=0.97,
             wspace=0.05, hspace=0.12
         )
         os.makedirs(basedir, exist_ok=True)
@@ -261,6 +261,15 @@ def get_peaks(kicid=None,
         pl.close(fig)
 
     return peaks
+
+
+def _wrapper(*args, **kwargs):
+    try:
+        return get_peaks(*args, **kwargs)
+    except:
+        print("{0} failed with exception:".format(args))
+        traceback.print_exc()
+    return []
 
 
 if __name__ == "__main__":
@@ -310,7 +319,7 @@ if __name__ == "__main__":
 
     # Build the dictionary of search keywords.
     function = partial(
-        get_peaks,
+        _wrapper,
         tau=args.duration,
         detrend_hw=args.detrend_hw,
         remove_kois=not args.no_remove_kois,

@@ -267,8 +267,10 @@ def _wrapper(*args, **kwargs):
     try:
         return get_peaks(*args, **kwargs)
     except:
-        print("{0} failed with exception:".format(args))
-        traceback.print_exc()
+        with open(os.path.join(kwargs.get("output_dir", "output"),
+                               "errors.txt"), "a") as f:
+            f.write("{0} failed with exception:\n{1}"
+                    .format(args, traceback.format_exc()))
     return []
 
 
@@ -368,7 +370,7 @@ if __name__ == "__main__":
                         .format(args.output_dir))
     else:
         os.makedirs(args.output_dir)
-    cand_fn = os.path.join(args.output_dir, "candidates.csv")
+    cand_fn = os.path.join(args.output_dir, "candidates.txt")
     columns = [
         "kicid", "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
         "lnlike_gp", "lnlike_transit", "bic_gp", "bic_transit",
@@ -376,7 +378,7 @@ if __name__ == "__main__":
     ]
     with open(cand_fn, "w") as f:
         f.write("# {0}\n".format(", ".join(columns)))
-    with open(os.path.join(args.output_dir, "targets.csv"), "w") as f:
+    with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
         f.write("\n".join(map("{0}".format, kicids)))
 
     if len(kicids):
@@ -388,8 +390,8 @@ if __name__ == "__main__":
             M = map
 
         for i, peaks in enumerate(M(function, kicids)):
-            if (i + 1) % 500 == 0:
-                sys.stderr.write('\rdone {0:%}'.format((i + 1)/len(kicids)))
+            sys.stderr.write("\r{0:.2f} percent complete"
+                             .format(100*(i + 1.0)/len(kicids)))
             if not len(peaks):
                 continue
             with open(cand_fn, "a") as f:

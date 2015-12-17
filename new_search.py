@@ -132,7 +132,6 @@ def get_peaks(kicid=None,
 
     # For each peak, plot the diagnostic plots and vet.
     basedir = os.path.join(output_dir, "{0}".format(kicid))
-    os.makedirs(basedir, exist_ok=True)
     for i, peak in enumerate(peaks):
         # Vetting.
         t0 = peak["t0"]
@@ -205,7 +204,7 @@ def get_peaks(kicid=None,
             continue
 
         # Plots.
-        fig, axes = pl.subplots(3, 2, figsize=(10, 6))
+        fig, axes = pl.subplots(3, 2, figsize=(10, 8))
 
         # Raw flux.
         row = axes[0]
@@ -216,6 +215,7 @@ def get_peaks(kicid=None,
             ax.yaxis.set_major_locator(pl.MaxNLocator(4))
             ax.xaxis.set_major_locator(pl.MaxNLocator(5))
 
+        row[0].set_ylabel("raw [ppt]")
         ax = row[1]
         [ax.plot(x, (p-1)*1e3) for p in preds]
         ax.plot(x, (system.get_value(x)-1)*1e3)
@@ -227,6 +227,7 @@ def get_peaks(kicid=None,
             ax.set_xticklabels([])
             ax.yaxis.set_major_locator(pl.MaxNLocator(4))
             ax.xaxis.set_major_locator(pl.MaxNLocator(5))
+        row[0].set_ylabel("de-trended [ppt]")
 
         # Periodogram.
         row = axes[2]
@@ -236,8 +237,12 @@ def get_peaks(kicid=None,
             ax.plot(time + 0.5*tau, detect_thresh * noise, ":g")
             ax.yaxis.set_major_locator(pl.MaxNLocator(4))
             ax.xaxis.set_major_locator(pl.MaxNLocator(5))
+            ax.set_xlabel("time [KBJD]")
+        row[0].set_ylabel("s/n")
 
         for ax1, ax2 in axes:
+            ax1.yaxis.set_label_coords(-0.1, 0.5)
+
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
             ax1.axvline(t0, color="g", lw=5, alpha=0.3)
 
@@ -251,6 +256,7 @@ def get_peaks(kicid=None,
             left=0.1, bottom=0.1, right=0.98, top=0.97,
             wspace=0.05, hspace=0.12
         )
+        os.makedirs(basedir, exist_ok=True)
         fig.savefig(os.path.join(basedir, "{0:04d}.png".format(i + 1)))
         pl.close(fig)
 

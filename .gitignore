@@ -8,3 +8,6 @@ papers
 *.h5
 *.c
 output
+build
+dist
+*.egg-info

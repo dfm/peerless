@@ -166,11 +166,15 @@ def get_peaks(kicid=None,
 
         # 3. step
         step = StepModel(
-            min_value=1-d,
-            max_value=1,
-            width=10.0,
-            t0=t0,
+            height=d,
+            frac_var=0.0,
+            value=1.0,
+            width=1.0,
+            t0=t0 - 0.5*tau,
         )
+
+        # from george.modeling import check_gradient
+        # print(check_gradient(step, x))
 
         # Loop over models and compare them.
         preds = []
@@ -192,6 +196,9 @@ def get_peaks(kicid=None,
                 bounds[n.index("kernel:k2:ln_M_0_0")] = (
                     np.log(0.1), None
                 )
+            bounds[n.index("white:value")] = (2*np.log(np.median(yerr)), None)
+            bounds[n.index("kernel:k1:ln_constant")] = \
+                (2*np.log(np.median(yerr)), None)
 
             # Optimize.
             print(gp.nll(gp.get_vector(), y))
@@ -217,11 +224,14 @@ def get_peaks(kicid=None,
         peak["transit_time"] = system.t0
 
         # Accept the peak?
-        accept_bic = peak["bic_transit"] > peak["bic_gp"]
+        accept_bic = (
+            (peak["bic_transit"] > peak["bic_gp"]) &
+            (peak["bic_transit"] > peak["bic_step"])
+        )
         accept_time = (
-            (peak["transit_time"] - 0.5*peak["transit_duration"]
+            (peak["transit_time"] - peak["transit_duration"]
              > peak["chunk_min_time"]) and
-            (peak["transit_time"] + 0.5*peak["transit_duration"]
+            (peak["transit_time"] + peak["transit_duration"]
              < peak["chunk_max_time"])
         )
         accept = accept_bic and accept_time
@@ -237,7 +247,7 @@ def get_peaks(kicid=None,
         # Raw flux.
         row = axes[0]
         for ax in row:
-            [ax.plot(lc.raw_time, (lc.raw_flux-1)*1e3, "-k") for lc in lcs]
+            [ax.plot(lc.raw_time, (lc.raw_flux-1)*1e3, ".k") for lc in lcs]
 
             ax.set_xticklabels([])
             ax.yaxis.set_major_locator(pl.MaxNLocator(4))
@@ -275,7 +285,8 @@ def get_peaks(kicid=None,
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
             ax1.axvline(t0, color="g", lw=5, alpha=0.3)
 
-            ax2.set_xlim(t0 - 5.0, t0 + 5.0)
+            ax2.set_xlim(x.min(), x.max())
+            # ax2.set_xlim(t0 - 5.0, t0 + 5.0)
             ax2.axvline(t0, color="g", lw=5, alpha=0.3)
             ax2.axvline(t0 - 0.5*tau, color="k", ls="dashed")
             ax2.axvline(t0 + 0.5*tau, color="k", ls="dashed")
@@ -307,27 +318,52 @@ class StepModel(ModelingMixin):
 
     def get_value(self, t):
         dt = self.width * (t - self.t0)
-        mn, mx = self.min_value, self.max_value
-        return (mx - mn) / (1 + np.exp(dt)) + mn
+        f = 1.0 / (1.0 + np.exp(self.frac_var))
+        v = self.value + self.height * f * np.exp(dt) * (t < self.t0)
+        v -= self.height * (1 - f) * np.exp(-dt) * (t >= self.t0)
+        return v
 
     @ModelingMixin.parameter_sort
     def get_gradient(self, t):
         delta = t - self.t0
         dt = self.width * delta
-        ew = np.exp(dt)
-        f = 1. / (1.0 + ew)
-        f2 = f * f * ew * (self.max_value - self.min_value)
-        # print(ew)
-        # print(f)
-        # print(f2)
-        grad = dict(
-            min_value=1 - f,
-            max_value=f,
-            t0=f2*self.width,
-            width=-f2*delta,
+        ep = np.exp(dt)
+        em = np.exp(-dt)
+        mp = t < self.t0
+        mm = t >= self.t0
+        f = 1.0 / (1.0 + np.exp(self.frac_var))
+
+        factor = self.height * (f * mp * ep + (1 - f) * mm * em)
+
+        return dict(
+            value=np.ones_like(t),
+            width=delta*factor,
+            t0=-self.width*factor,
+            height=f * mp * ep - (1 - f) * mm * em,
+            frac_var=-f*f*self.height*(mp*ep + mm*em),
         )
-        # print(self.get_vector(), grad)
-        return grad
+
+
+# class StepModel(ModelingMixin):
+
+#     def get_value(self, t):
+#         dt = self.width * (t - self.t0)
+#         return self.height / (1 + np.exp(dt)) + self.value - 0.5*self.height
+
+#     @ModelingMixin.parameter_sort
+#     def get_gradient(self, t):
+#         delta = t - self.t0
+#         dt = self.width * delta
+#         ew = np.exp(dt)
+#         f = 1. / (1.0 + ew)
+#         f2 = f * f * ew * self.height
+#         grad = dict(
+#             height=f - 0.5,
+#             value=np.ones_like(t),
+#             t0=f2*self.width,
+#             width=-f2*delta,
+#         )
+#         return grad
 
 
 if __name__ == "__main__":

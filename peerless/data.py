@@ -97,8 +97,12 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
         y[q != 0] = np.nan
         m = np.isfinite(x) & np.isfinite(y) & np.isfinite(yerr)
 
+        # Deal with big gaps.
+        lt = np.isfinite(x)
+        lt[m] &= np.append(np.diff(x[m]) < 0.5, True)
+
         # Loop over contiguous chunks and build light curves.
-        labels, nlabels = label(np.isfinite(x))
+        labels, nlabels = label(lt)
         for i in range(1, nlabels + 1):
             m0 = m & (labels == i)
             if not np.any(m0):

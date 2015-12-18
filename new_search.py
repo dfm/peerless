@@ -12,7 +12,7 @@ from multiprocessing import Pool
 from scipy.optimize import minimize
 
 import george
-from george import kernels
+from george import kernels, ModelingMixin
 
 import transit
 
@@ -157,10 +157,20 @@ def get_peaks(kicid=None,
         system.freeze_parameter("ln_period")
         system.freeze_parameter("impact")
 
+        # 3. step
+        step = StepModel(
+            min_value=1-d,
+            max_value=1,
+            width=10.0,
+            t0=t0,
+        )
+
         # Loop over models and compare them.
         preds = []
-        for name, mean_model in [("gp", constant),
-                                 ("transit", system)]:
+        for name, mean_model in [
+                                 ("step", step),
+                                 ("gp", constant),
+                                 ("transit", system), ]:
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
                            white_noise=2*np.log(np.mean(yerr)),
@@ -169,7 +179,7 @@ def get_peaks(kicid=None,
 
             bounds = gp.get_bounds()
             n = gp.get_parameter_names()
-            if "mean:t0" in n:
+            if name == "transit":
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
             if "kernel:k2:ln_M_0_0" in n:
                 bounds[n.index("kernel:k2:ln_M_0_0")] = (
@@ -177,6 +187,7 @@ def get_peaks(kicid=None,
                 )
 
             # Optimize.
+            print(gp.nll(gp.get_vector(), y))
             r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(y,),
                          method="L-BFGS-B", bounds=bounds)
             if verbose:
@@ -193,10 +204,10 @@ def get_peaks(kicid=None,
             peak["lnlike_{0}".format(name)] = -r.fun
             peak["bic_{0}".format(name)] = -r.fun - 0.5*len(r.x)*np.log(len(x))
 
-            # Save the transit parameters.
-            peak["transit_duration"] = system.duration
-            peak["transit_ror"] = system.ror
-            peak["transit_time"] = system.t0
+        # Save the transit parameters.
+        peak["transit_duration"] = system.duration
+        peak["transit_ror"] = system.ror
+        peak["transit_time"] = system.t0
 
         if peak["bic_transit"] < peak["bic_gp"] and not plot_all:
             continue
@@ -217,6 +228,7 @@ def get_peaks(kicid=None,
         ax = row[1]
         [ax.plot(x, (p-1)*1e3) for p in preds]
         ax.plot(x, (system.get_value(x)-1)*1e3)
+        ax.plot(x, (step.get_value(x)-1)*1e3)
 
         # De-trended flux.
         row = axes[1]
@@ -270,6 +282,33 @@ def _wrapper(*args, **kwargs):
             f.write("{0} failed with exception:\n{1}"
                     .format(args, traceback.format_exc()))
     return []
+
+
+class StepModel(ModelingMixin):
+
+    def get_value(self, t):
+        dt = self.width * (t - self.t0)
+        mn, mx = self.min_value, self.max_value
+        return (mx - mn) / (1 + np.exp(dt)) + mn
+
+    @ModelingMixin.parameter_sort
+    def get_gradient(self, t):
+        delta = t - self.t0
+        dt = self.width * delta
+        ew = np.exp(dt)
+        f = 1. / (1.0 + ew)
+        f2 = f * f * ew * (self.max_value - self.min_value)
+        # print(ew)
+        # print(f)
+        # print(f2)
+        grad = dict(
+            min_value=1 - f,
+            max_value=f,
+            t0=f2*self.width,
+            width=-f2*delta,
+        )
+        # print(self.get_vector(), grad)
+        return grad
 
 
 if __name__ == "__main__":
@@ -371,7 +410,8 @@ if __name__ == "__main__":
     cand_fn = os.path.join(args.output_dir, "candidates.txt")
     columns = [
         "kicid", "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
-        "lnlike_gp", "lnlike_transit", "bic_gp", "bic_transit",
+        "lnlike_gp", "lnlike_step", "lnlike_transit",
+        "bic_gp", "bic_step", "bic_transit",
         "transit_time", "transit_ror", "transit_duration",
     ]
     with open(cand_fn, "w") as f:

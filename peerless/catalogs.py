@@ -6,10 +6,11 @@ Code for interfacing with the Exoplanet Archive catalogs.
 
 from __future__ import division, print_function
 
-__all__ = ["KOICatalog", "KICatalog"]
+__all__ = ["KOICatalog", "KICatalog", "EBCatalog"]
 
 import os
 import logging
+from pkg_resources import resource_filename
 
 import pandas as pd
 
@@ -95,7 +96,6 @@ class ExoplanetArchiveCatalog(Catalog):
 
 class KOICatalog(ExoplanetArchiveCatalog):
     name = "q1_q17_dr24_koi"
-    # name = "cumulative"
 
     def join_stars(self, df=None):
         if df is None:
@@ -106,7 +106,6 @@ class KOICatalog(ExoplanetArchiveCatalog):
 
 class KICatalog(ExoplanetArchiveCatalog):
     name = "q1_q17_dr24_stellar"
-    # name = "q1_q16_stellar"
 
 
 class CatalogDownloadError(Exception):
@@ -132,6 +131,19 @@ class CatalogDownloadError(Exception):
         self.url = url
 
 
+class EBCatalog(object):
+
+    def __init__(self):
+        self._df = None
+
+    @property
+    def df(self):
+        if self._df is None:
+            self._df = pd.read_csv(resource_filename(__name__, "data/ebs.csv"),
+                                   skiprows=7)
+        return self._df
+
+
 class singleton(object):
 
     def __init__(self, cls):
@@ -148,3 +160,4 @@ class singleton(object):
 # instances.
 KOICatalog = singleton(KOICatalog)
 KICatalog = singleton(KICatalog)
+EBCatalog = singleton(EBCatalog)

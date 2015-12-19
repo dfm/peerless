@@ -17,7 +17,7 @@ from george import kernels, ModelingMixin
 import transit
 
 from peerless._search import search
-from peerless.catalogs import KICatalog
+from peerless.catalogs import KICatalog, EBCatalog
 from peerless.data import (load_light_curves_for_kic, running_median_trend,
                            load_light_curves)
 
@@ -372,6 +372,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="search for single transits")
 
     parser.add_argument("kicids", nargs="*", help="some KIC IDs")
+    parser.add_argument("--include-ebs", action="store_true",
+                        help="by default known EBs are excluded")
     parser.add_argument("--max-targets", type=int,
                         help="the maximum number of targets")
     parser.add_argument("-f", "--filenames", nargs="+",
@@ -455,6 +457,13 @@ if __name__ == "__main__":
                 len(kicids), args.max_targets
             ))
         kicids = kicids[:args.max_targets]
+
+    # Remove EBs from the target list.
+    if not args.include_ebs:
+        ebs = set(np.array(EBCatalog().df["#KIC"]))
+        l0 = len(kicids)
+        kicids = np.array([i for i in kicids if i not in ebs])
+        print("Removed {0} known EBs from target list".format(l0-len(kicids)))
 
     # Check and create the output directory.
     if os.path.exists(args.output_dir):

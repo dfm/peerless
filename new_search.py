@@ -191,21 +191,24 @@ def get_peaks(kicid=None,
         # 4. box:
         inds = np.argsort(np.diff(y))
         inds = np.sort([inds[0], inds[-1]])
-        m = (i < np.arange(len(x))) & (np.arange(len(x)) <= inds[1])
-        tmn, tmx = 0.5 * (x[inds] + x[inds + 1])
-        fin = np.mean(y[m])
-        fout = np.mean(y[~m])
-        box = BoxModel(tmn, tmx, in_value=fin, out_value=fout)
+        boxes = []
+        for tmn, tmx in (0.5 * (x[inds] + x[inds + 1]),
+                         (t0-0.5*tau, t0+0.5*tau)):
+            m = (tmn < x) & (x < tmx)
+            fin = np.mean(y[m])
+            fout = np.mean(y[~m])
+            boxes.append(BoxModel(tmn, tmx, in_value=fin, out_value=fout))
 
         # from george.modeling import check_gradient
         # print(check_gradient(box, x))
 
         # Loop over models and compare them.
         models = [
-            ("gp", constant),
-            ("box", box),
-            ("step", step),
             ("transit", system),
+            ("gp", constant),
+            ("box1", boxes[0]),
+            ("step", step),
+            ("box2", boxes[1]),
         ]
         preds = dict()
         for name, mean_model in models:
@@ -235,6 +238,10 @@ def get_peaks(kicid=None,
             gp.set_vector(r.x)
             preds[name] = gp.predict(y, x, return_cov=False)
 
+            if name == "transit":
+                models[-1][1].mn = system.t0 - 0.5*system.duration
+                models[-1][1].mx = system.t0 + 0.5*system.duration
+
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
             peak["bic_{0}".format(name)] = -r.fun-0.5*len(r.x)*np.log(len(x))
@@ -251,6 +258,9 @@ def get_peaks(kicid=None,
                 for k, v in zip(gp.get_parameter_names(), gp.get_vector()):
                     print("  {0}: {1:.4f}".format(k, v))
                 print()
+
+            if peak["bic_{0}".format(name)] > peak["bic_transit"]:
+                break
 
             # Deal with outliers.
             if name != "gp":
@@ -300,13 +310,9 @@ def get_peaks(kicid=None,
         peak["transit_time"] = system.t0
 
         # Accept the peak?
-        accept_bic = (
-            (peak["bic_transit"] > peak["bic_gp"]) &
-            (peak["bic_transit"] > peak["bic_outlier"]) &
-            (peak["bic_transit"] > peak["bic_box"]) &
-            (peak["bic_transit"] > peak["bic_step"]) &
-            True
-        )
+        accept_bic = all(
+            peak["bic_transit"] > peak["bic_{0}".format(k)] for k, _ in models
+        ) and (peak["bic_transit"] > peak["bic_outlier"])
         accept_time = (
             (peak["transit_time"] - peak["transit_duration"]
              > peak["chunk_min_time"]) and
@@ -340,7 +346,7 @@ def get_peaks(kicid=None,
         ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
         ax.plot(x, (step.get_value(x)-1)*1e3, "b", lw=1.5)
-        ax.plot(x, (box.get_value(x)-1)*1e3, "m", lw=1.5)
+        [ax.plot(x, (b.get_value(x)-1)*1e3, "m", lw=1.5) for b in boxes]
 
         # De-trended flux.
         row = axes[1]
@@ -566,17 +572,16 @@ if __name__ == "__main__":
     else:
         os.makedirs(args.output_dir)
     cand_fn = os.path.join(args.output_dir, "candidates.txt")
+    models = ["gp", "outlier", "box1", "box2", "step", "transit"]
     columns = [
         "kicid", "num_peaks", "peak_id",
         "accept_bic", "accept_time",
         "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
-        "lnlike_gp", "lnlike_outlier", "lnlike_step", "lnlike_box",
-        "lnlike_transit",
-        "bic_gp", "bic_outlier", "bic_step", "bic_box",
-        "bic_transit",
         "transit_ror", "transit_duration", "transit_time",
         "chunk_min_time", "chunk_max_time",
     ]
+    columns += ["lnlike_{0}".format(k) for k in models]
+    columns += ["bic_{0}".format(k) for k in models]
     with open(cand_fn, "w") as f:
         f.write("# {0}\n".format(", ".join(columns)))
     with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
@@ -610,5 +615,5 @@ if __name__ == "__main__":
         if len(peaks):
             with open(cand_fn, "a") as f:
                 f.write("\n".join(
-                    ", ".join("{0}".format(p[k]) for k in columns)
+                    ", ".join("{0}".format(p.get(k, np.nan)) for k in columns)
                     for p in peaks) + "\n")

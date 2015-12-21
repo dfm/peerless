@@ -156,6 +156,10 @@ def get_peaks(kicid=None,
                             .format(ndata))
             continue
 
+        for k in ["channel", "skygroup", "module", "output", "quarter",
+                  "season"]:
+            peak[k] = lc0.meta[k]
+
         peak["chunk_min_time"] = x.min()
         peak["chunk_max_time"] = x.max()
 
@@ -217,10 +221,10 @@ def get_peaks(kicid=None,
         # Loop over models and compare them.
         models = [
             ("transit", system),
+            ("box1", boxes[1]),
             ("gp", constant),
-            ("box1", boxes[0]),
+            ("box2", boxes[0]),
             ("step", step),
-            ("box2", boxes[1]),
         ]
         preds = dict()
         for name, mean_model in models:
@@ -250,9 +254,10 @@ def get_peaks(kicid=None,
             gp.set_vector(r.x)
             preds[name] = gp.predict(y, x, return_cov=False)
 
+            # Initialize one of the boxes using the transit shape.
             if name == "transit":
-                models[-1][1].mn = system.t0 - 0.5*system.duration
-                models[-1][1].mx = system.t0 + 0.5*system.duration
+                models[1][1].mn = system.t0 - 0.5*system.duration
+                models[1][1].mx = system.t0 + 0.5*system.duration
 
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
@@ -327,9 +332,9 @@ def get_peaks(kicid=None,
             for k, _ in models
         ) and (peak["bic_transit"] > peak["bic_outlier"])
         accept_time = (
-            (peak["transit_time"] - peak["transit_duration"]
+            (peak["transit_time"] - 0.5*peak["transit_duration"]
              > peak["chunk_min_time"]) and
-            (peak["transit_time"] + peak["transit_duration"]
+            (peak["transit_time"] + 0.5*peak["transit_duration"]
              < peak["chunk_max_time"])
         )
         accept = accept_bic and accept_time
@@ -590,6 +595,7 @@ if __name__ == "__main__":
     columns = [
         "kicid", "num_peaks", "peak_id",
         "accept_bic", "accept_time",
+        "channel", "skygroup", "module", "output", "quarter", "season",
         "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
         "transit_ror", "transit_duration", "transit_time",
         "chunk_min_time", "chunk_max_time",

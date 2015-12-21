@@ -93,7 +93,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
                 period = float(koi.koi_period)
                 t0 = float(koi.koi_time0bk) % period
                 tau = float(koi.koi_duration) / 24.
-                m = np.abs((x-t0+0.5*period) % period-0.5*period) < tau
+                m = np.abs((x-t0+0.5*period) % period-0.5*period) < 0.8 * tau
                 y[m] = np.nan
 
         # Remove bad quality points.

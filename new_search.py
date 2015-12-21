@@ -188,11 +188,27 @@ def get_peaks(kicid=None,
                 best = (d, w)
         step.width = best[1]
 
+        # 4. box:
+        inds = np.argsort(np.diff(y))
+        inds = np.sort([inds[0], inds[-1]])
+        m = (i < np.arange(len(x))) & (np.arange(len(x)) <= inds[1])
+        tmn, tmx = 0.5 * (x[inds] + x[inds + 1])
+        fin = np.mean(y[m])
+        fout = np.mean(y[~m])
+        box = BoxModel(tmn, tmx, in_value=fin, out_value=fout)
+
+        # from george.modeling import check_gradient
+        # print(check_gradient(box, x))
+
         # Loop over models and compare them.
+        models = [
+            ("gp", constant),
+            ("box", box),
+            ("step", step),
+            ("transit", system),
+        ]
         preds = []
-        for name, mean_model in [("gp", constant),
-                                 ("step", step),
-                                 ("transit", system), ]:
+        for name, mean_model in models:
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
                            white_noise=2*np.log(np.mean(yerr)),
@@ -288,6 +304,7 @@ def get_peaks(kicid=None,
         accept_bic = (
             (peak["bic_transit"] > peak["bic_gp"]) &
             (peak["bic_transit"] > peak["bic_outlier"]) &
+            (peak["bic_transit"] > peak["bic_box"]) &
             (peak["bic_transit"] > peak["bic_step"]) &
             True
         )
@@ -322,6 +339,7 @@ def get_peaks(kicid=None,
         [ax.plot(x, (p-1)*1e3) for p in preds]
         ax.plot(x, (system.get_value(x)-1)*1e3)
         ax.plot(x, (step.get_value(x)-1)*1e3)
+        ax.plot(x, (box.get_value(x)-1)*1e3)
 
         # De-trended flux.
         row = axes[1]
@@ -408,6 +426,26 @@ class StepModel(ModelingMixin):
             t0=-ew*factor,
             height=f * mp * ep - (1 - f) * mm * em,
             frac_var=-f*f*self.height*(mp*ep + mm*em),
+        )
+
+
+class BoxModel(ModelingMixin):
+
+    def __init__(self, mn, mx, **kwargs):
+        self.mn = mn
+        self.mx = mx
+        super(BoxModel, self).__init__(**kwargs)
+
+    def get_value(self, t):
+        m = (self.mn < t) & (t < self.mx)
+        return self.in_value * m + self.out_value * (~m)
+
+    @ModelingMixin.parameter_sort
+    def get_gradient(self, t):
+        m = (self.mn < t) & (t < self.mx)
+        return dict(
+            in_value=np.ones_like(t) * m,
+            out_value=np.ones_like(t) * (~m),
         )
 
 

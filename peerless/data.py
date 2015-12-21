@@ -7,6 +7,7 @@ __all__ = ["load_light_curves_for_kic", "load_light_curves", "LightCurve",
 
 import os
 import fitsio
+import logging
 import requests
 import numpy as np
 from scipy.ndimage.measurements import label
@@ -71,6 +72,9 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
         else:
             y = data["SAP_FLUX"]
             yerr = data["SAP_FLUX_ERR"]
+        if np.any(y[np.isfinite(y)] < 0.0):
+            logging.warning("invalid data: flux < 0")
+            continue
 
         # Load the meta data.
         hdr = fitsio.read_header(fn, 0)

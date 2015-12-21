@@ -31,6 +31,7 @@ def get_peaks(kicid=None,
               noise_hw=15.0,
               detect_thresh=20.0,
               max_peaks=3,
+              min_datapoints=10,
               output_dir="output",
               plot_all=False,
               delete=True,
@@ -56,6 +57,9 @@ def get_peaks(kicid=None,
 
     :param max_peaks:
         The maximum number of peaks to analyze in detail. (default: 3)
+
+    :param min_datapoints:
+        The minimum number of in-transit data points. (default: 10)
 
     :param output_dir:
         The parent directory for the plots. (default: output)
@@ -103,7 +107,7 @@ def get_peaks(kicid=None,
     noise = np.nan + np.zeros_like(s2n)
     noise[m] = running_median_trend(time[m], np.abs(s2n[m]), noise_hw)
 
-    # Find peaks about the fiducial threshold.
+    # Find peaks above the fiducial threshold.
     m = s2n > detect_thresh * noise
     peaks = []
     while np.any(m):
@@ -136,6 +140,7 @@ def get_peaks(kicid=None,
 
     # For each peak, plot the diagnostic plots and vet.
     basedir = os.path.join(output_dir, "{0}".format(kicid))
+    final_peaks = []
     for i, peak in enumerate(peaks):
         # Vetting.
         t0 = peak["t0"]
@@ -145,13 +150,15 @@ def get_peaks(kicid=None,
         x = lc0.raw_time
         y = lc0.raw_flux
         yerr = lc0.raw_ferr
+        if np.sum(np.abs(x - t0) < 0.5*tau) < min_datapoints:
+            continue
 
         peak["chunk_min_time"] = x.min()
         peak["chunk_max_time"] = x.max()
 
         # Mean models:
         # 1. constant
-        constant = np.mean(y)
+        constant = np.median(y)
 
         # 2. transit
         system = transit.SimpleSystem(
@@ -165,22 +172,26 @@ def get_peaks(kicid=None,
         system.freeze_parameter("impact")
 
         # 3. step
+        ind = np.argmax(np.abs(np.diff(y)))
         step = StepModel(
-            height=d,
+            height=y[ind] - y[ind+1],
             frac_var=0.0,
             value=1.0,
-            width=1.0,
-            t0=t0 - 0.5*tau,
+            width=0.0,
+            t0=0.5*(x[ind] + x[ind+1]),
         )
-
-        # from george.modeling import check_gradient
-        # print(check_gradient(step, x))
+        best = (np.inf, 0.0)
+        for w in np.linspace(-2, 2, 50):
+            step.width = w
+            d = np.sum((y - step.get_value(x))**2)
+            if d < best[0]:
+                best = (d, w)
+        step.width = best[1]
 
         # Loop over models and compare them.
         preds = []
-        for name, mean_model in [
+        for name, mean_model in [("gp", constant),
                                  ("step", step),
-                                 ("gp", constant),
                                  ("transit", system), ]:
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
@@ -188,16 +199,16 @@ def get_peaks(kicid=None,
                            fit_white_noise=True)
             gp.compute(x, yerr)
 
+            # Set up some bounds.
             bounds = gp.get_bounds()
             n = gp.get_parameter_names()
+
             if name == "transit":
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
-                bounds[n.index("mean:q1")] = (-10, 10)
-                bounds[n.index("mean:q2")] = (-10, 10)
-            if "kernel:k2:ln_M_0_0" in n:
-                bounds[n.index("kernel:k2:ln_M_0_0")] = (
-                    np.log(0.1), None
-                )
+                bounds[n.index("mean:q1_param")] = (-10, 10)
+                bounds[n.index("mean:q2_param")] = (-10, 10)
+
+            bounds[n.index("kernel:k2:ln_M_0_0")] = (np.log(0.1), None)
             bounds[n.index("white:value")] = (2*np.log(np.median(yerr)), None)
             bounds[n.index("kernel:k1:ln_constant")] = \
                 (2*np.log(np.median(yerr)), None)
@@ -207,25 +218,62 @@ def get_peaks(kicid=None,
                          method="L-BFGS-B", bounds=bounds)
             gp.set_vector(r.x)
 
-            if not r.success:
-                peak["lnlike_{0}".format(name)] = -r.fun
-                peak["bic_{0}".format(name)] = -np.inf
-                continue
-            else:
+            if r.success:
                 preds.append(gp.predict(y, x, return_cov=False))
-                # Compute the -0.5*BIC.
-                peak["lnlike_{0}".format(name)] = -r.fun
-                peak["bic_{0}".format(name)] = (-r.fun -
-                                                0.5*len(r.x)*np.log(len(x)))
+
+            # Compute the -0.5*BIC.
+            peak["lnlike_{0}".format(name)] = -r.fun
+            peak["bic_{0}".format(name)] = -r.fun-0.5*len(r.x)*np.log(len(x))
 
             if verbose:
                 print("Peak {0}:".format(i))
-                print("For model: '{0}'".format(name))
-                print("Converged? {0}".format(r.success))
+                print("Model: '{0}'".format(name))
+                print("Converged: {0}".format(r.success))
                 print("Log-likelihood: {0}"
                       .format(peak["lnlike_{0}".format(name)]))
                 print("-0.5 * BIC: {0}"
                       .format(peak["bic_{0}".format(name)]))
+                print("Parameters:")
+                for k, v in zip(gp.get_parameter_names(), gp.get_vector()):
+                    print("  {0}: {1:.4f}".format(k, v))
+                print()
+
+            # Deal with outliers.
+            if name != "gp":
+                continue
+            N = len(r.x) + 1
+            peak["lnlike_outlier"] = -r.fun
+            peak["bic_outlier"] = -r.fun-0.5*N*np.log(len(x))
+            best = (-r.fun, 0)
+            for j in np.arange(len(x))[np.abs(x - t0) < 0.5*tau]:
+                y0 = np.array(y)
+                y0[j] = np.median(y[np.arange(len(y)) != j])
+                ll = gp.lnlikelihood(y0)
+                if ll > best[0]:
+                    best = (ll, j)
+
+            # Optimize the outlier model:
+            m = np.arange(len(y)) != best[1]
+            y0 = np.array(y)
+            y0[~m] = np.median(y0[m])
+            kernel = np.var(y0) * kernels.Matern32Kernel(2**2)
+            gp = george.GP(kernel, mean=np.median(y0), fit_mean=True,
+                           white_noise=2*np.log(np.mean(yerr)),
+                           fit_white_noise=True)
+            gp.compute(x, yerr)
+
+            r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(y0,),
+                         method="L-BFGS-B", bounds=bounds)
+            gp.set_vector(r.x)
+            peak["lnlike_outlier"] = -r.fun
+            peak["bic_outlier"] = -r.fun-0.5*N*np.log(len(x))
+
+            if verbose:
+                print("Peak {0}:".format(i))
+                print("Model: 'outlier'")
+                print("Converged: {0}".format(r.success))
+                print("Log-likelihood: {0}".format(peak["lnlike_outlier"]))
+                print("-0.5 * BIC: {0}".format(peak["bic_outlier"]))
                 print("Parameters:")
                 for k, v in zip(gp.get_parameter_names(), gp.get_vector()):
                     print("  {0}: {1:.4f}".format(k, v))
@@ -239,7 +287,9 @@ def get_peaks(kicid=None,
         # Accept the peak?
         accept_bic = (
             (peak["bic_transit"] > peak["bic_gp"]) &
-            (peak["bic_transit"] > peak["bic_step"])
+            (peak["bic_transit"] > peak["bic_outlier"]) &
+            (peak["bic_transit"] > peak["bic_step"]) &
+            True
         )
         accept_time = (
             (peak["transit_time"] - peak["transit_duration"]
@@ -250,6 +300,7 @@ def get_peaks(kicid=None,
         accept = accept_bic and accept_time
         peak["accept_bic"] = accept_bic
         peak["accept_time"] = accept_time
+        final_peaks.append(peak)
 
         if (not accept) and (not plot_all):
             continue
@@ -298,7 +349,6 @@ def get_peaks(kicid=None,
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
             ax1.axvline(t0, color="g", lw=5, alpha=0.3)
 
-            # ax2.set_xlim(x.min(), x.max())
             ax2.set_xlim(t0 - 5.0, t0 + 5.0)
             ax2.axvline(t0, color="g", lw=5, alpha=0.3)
             ax2.axvline(t0 - 0.5*tau, color="k", ls="dashed")
@@ -313,7 +363,7 @@ def get_peaks(kicid=None,
         fig.savefig(os.path.join(basedir, "{0:04d}.png".format(i + 1)))
         pl.close(fig)
 
-    return peaks
+    return final_peaks
 
 
 def _wrapper(*args, **kwargs):
@@ -333,7 +383,7 @@ def _wrapper(*args, **kwargs):
 class StepModel(ModelingMixin):
 
     def get_value(self, t):
-        dt = self.width * (t - self.t0)
+        dt = (t - self.t0) * np.exp(-self.width)
         f = 1.0 / (1.0 + np.exp(self.frac_var))
         v = self.value + self.height * f * np.exp(dt) * (t < self.t0)
         v -= self.height * (1 - f) * np.exp(-dt) * (t >= self.t0)
@@ -342,7 +392,8 @@ class StepModel(ModelingMixin):
     @ModelingMixin.parameter_sort
     def get_gradient(self, t):
         delta = t - self.t0
-        dt = self.width * delta
+        ew = np.exp(-self.width)
+        dt = delta * ew
         ep = np.exp(dt)
         em = np.exp(-dt)
         mp = t < self.t0
@@ -353,33 +404,11 @@ class StepModel(ModelingMixin):
 
         return dict(
             value=np.ones_like(t),
-            width=delta*factor,
-            t0=-self.width*factor,
+            width=-dt*factor,
+            t0=-ew*factor,
             height=f * mp * ep - (1 - f) * mm * em,
             frac_var=-f*f*self.height*(mp*ep + mm*em),
         )
-
-
-# class StepModel(ModelingMixin):
-
-#     def get_value(self, t):
-#         dt = self.width * (t - self.t0)
-#         return self.height / (1 + np.exp(dt)) + self.value - 0.5*self.height
-
-#     @ModelingMixin.parameter_sort
-#     def get_gradient(self, t):
-#         delta = t - self.t0
-#         dt = self.width * delta
-#         ew = np.exp(dt)
-#         f = 1. / (1.0 + ew)
-#         f2 = f * f * ew * self.height
-#         grad = dict(
-#             height=f - 0.5,
-#             value=np.ones_like(t),
-#             t0=f2*self.width,
-#             width=-f2*delta,
-#         )
-#         return grad
 
 
 if __name__ == "__main__":
@@ -502,8 +531,8 @@ if __name__ == "__main__":
         "kicid", "num_peaks", "peak_id",
         "accept_bic", "accept_time",
         "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
-        "lnlike_gp", "lnlike_step", "lnlike_transit",
-        "bic_gp", "bic_step", "bic_transit",
+        "lnlike_gp", "lnlike_outlier", "lnlike_step", "lnlike_transit",
+        "bic_gp", "bic_outlier", "bic_step", "bic_transit",
         "transit_ror", "transit_duration", "transit_time",
         "chunk_min_time", "chunk_max_time",
     ]

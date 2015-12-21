@@ -360,7 +360,8 @@ def get_peaks(kicid=None,
         row[0].set_ylabel("raw [ppt]")
         ax = row[1]
 
-        ax.plot(x, (preds["gp"]-1)*1e3, "g", lw=1.5)
+        if "gp" in preds:
+            ax.plot(x, (preds["gp"]-1)*1e3, "g", lw=1.5)
         if "outlier" in preds:
             ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)

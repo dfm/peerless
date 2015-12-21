@@ -55,8 +55,8 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
     if remove_kois:
         df = KOICatalog().df
         kois = df[df.kepid == remove_kois]
-        if len(kois):
-            print("Removing {0} known KOIs".format(len(kois)))
+        # if len(kois):
+        #     print("Removing {0} known KOIs".format(len(kois)))
 
     # Load the light curves.
     lcs = []

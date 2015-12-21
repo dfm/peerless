@@ -150,7 +150,10 @@ def get_peaks(kicid=None,
         x = lc0.raw_time
         y = lc0.raw_flux
         yerr = lc0.raw_ferr
-        if np.sum(np.abs(x - t0) < 0.5*tau) < min_datapoints:
+        ndata = np.sum(np.abs(x - t0) < 0.5*tau)
+        if ndata < min_datapoints:
+            logging.warning("there are only {0} data points in transit"
+                            .format(ndata))
             continue
 
         peak["chunk_min_time"] = x.min()
@@ -161,15 +164,24 @@ def get_peaks(kicid=None,
         constant = np.median(y)
 
         # 2. transit
+        m = np.abs(x - t0) < tau
+        ind = np.arange(len(x))[m][np.argmin(y[m])]
         system = transit.SimpleSystem(
             period=3000.0,
-            t0=t0,
-            ror=np.sqrt(d),
+            t0=x[ind],
+            ror=np.sqrt(max(d, 1.0 - y[ind])),
             duration=tau,
             impact=0.5,
         )
         system.freeze_parameter("ln_period")
         system.freeze_parameter("impact")
+        best = (np.inf, 0.0)
+        for dur in np.linspace(0.1*tau, 2*tau, 50):
+            system.duration = dur
+            d = np.sum((y - system.get_value(x))**2)
+            if d < best[0]:
+                best = (d, dur)
+        system.duration = best[1]
 
         # 3. step
         ind = np.argmax(np.abs(np.diff(y)))
@@ -224,8 +236,8 @@ def get_peaks(kicid=None,
 
             if name == "transit":
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
-                bounds[n.index("mean:q1_param")] = (-10, 10)
-                bounds[n.index("mean:q2_param")] = (-10, 10)
+                bounds[n.index("mean:q1_param")] = (-20, 20)
+                bounds[n.index("mean:q2_param")] = (-20, 20)
 
             bounds[n.index("kernel:k2:ln_M_0_0")] = (np.log(0.1), None)
             bounds[n.index("white:value")] = (2*np.log(np.median(yerr)), None)
@@ -311,7 +323,8 @@ def get_peaks(kicid=None,
 
         # Accept the peak?
         accept_bic = all(
-            peak["bic_transit"] > peak["bic_{0}".format(k)] for k, _ in models
+            peak["bic_transit"] >= peak.get("bic_{0}".format(k), -np.inf)
+            for k, _ in models
         ) and (peak["bic_transit"] > peak["bic_outlier"])
         accept_time = (
             (peak["transit_time"] - peak["transit_duration"]
@@ -343,7 +356,8 @@ def get_peaks(kicid=None,
         ax = row[1]
 
         ax.plot(x, (preds["gp"]-1)*1e3, "g", lw=1.5)
-        ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
+        if "outlier" in preds:
+            ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
         ax.plot(x, (step.get_value(x)-1)*1e3, "b", lw=1.5)
         [ax.plot(x, (b.get_value(x)-1)*1e3, "m", lw=1.5) for b in boxes]
@@ -571,7 +585,7 @@ if __name__ == "__main__":
                         .format(args.output_dir))
     else:
         os.makedirs(args.output_dir)
-    cand_fn = os.path.join(args.output_dir, "candidates.txt")
+    cand_fn = os.path.join(args.output_dir, "candidates.csv")
     models = ["gp", "outlier", "box1", "box2", "step", "transit"]
     columns = [
         "kicid", "num_peaks", "peak_id",
@@ -602,7 +616,7 @@ if __name__ == "__main__":
                 continue
             with open(cand_fn, "a") as f:
                 f.write("\n".join(
-                    ", ".join("{0}".format(p[k]) for k in columns)
+                    ", ".join("{0}".format(p.get(k, np.nan)) for k in columns)
                     for p in peaks) + "\n")
 
     if args.filenames is not None:

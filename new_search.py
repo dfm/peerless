@@ -17,7 +17,7 @@ from george import kernels, ModelingMixin
 import transit
 
 from peerless._search import search
-from peerless.catalogs import KICatalog, EBCatalog
+from peerless.catalogs import KICatalog, EBCatalog, KOICatalog
 from peerless.data import (load_light_curves_for_kic, running_median_trend,
                            load_light_curves)
 
@@ -460,9 +460,17 @@ if __name__ == "__main__":
 
     # Remove EBs from the target list.
     if not args.include_ebs:
+        # Start with EB catalog:
         ebs = set(np.array(EBCatalog().df["#KIC"]))
         l0 = len(kicids)
         kicids = np.array([i for i in kicids if i not in ebs])
+
+        # Then the KOI false positives:
+        kois = KOICatalog().df
+        kois = kois[kois.koi_disposition == "FALSE POSITIVE"]
+        kois = set(np.array(kois.kepid))
+        kicids = np.array([i for i in kicids if i not in kois])
+
         print("Removed {0} known EBs from target list".format(l0-len(kicids)))
 
     # Check and create the output directory.

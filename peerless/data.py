@@ -7,7 +7,6 @@ __all__ = ["load_light_curves_for_kic", "load_light_curves", "LightCurve",
 
 import os
 import fitsio
-import logging
 import requests
 import numpy as np
 from scipy.ndimage.measurements import label
@@ -56,7 +55,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
         df = KOICatalog().df
         kois = df[df.kepid == remove_kois]
         if len(kois):
-            logging.info("Removing {0} known KOIs".format(len(kois)))
+            print("Removing {0} known KOIs".format(len(kois)))
 
     # Load the light curves.
     lcs = []

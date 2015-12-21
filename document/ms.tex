@@ -130,28 +130,7 @@ Automated detection \& characterization of long-period transits in the
 
 \begin{abstract}
 
-Many of the most dynamically important planets have orbits longer than the
-baseline of existing transit surveys (\kepler, \KT).
-Future surveys (\tess, \plato) are planned to have shorter continuous coverage
-that even habitable zone planets around M-dwarfs will only present a single
-transit event.
-Searches for these long-period transiting planets are plagued by false
-signals---especially when pushed to low signal-to-noise---and statistical
-studies of their population are complicated by weak constraints on the
-physical parameters of the system and high rates of false positives.
-We develop and present a computationally expensive but tractable method of
-searching for single transits using supervised classification methods from
-the machine learning literature.
-For each star, we train several random forest classifiers on simulated signals
-injected into different subsets of the data.
-These models are evaluated on the raw photometry to assign a transit
-probability at each time.
-As a proof of concept, we apply this method to 3500 light curves from the
-\kepler\ archival dataset and discover a previously unknown single transit
-candidate.
-Assuming a bound Keplerian orbit and using an informative prior on the
-eccentricity, we measure a radius of $2\,R_\mathrm{J}$ and derive a weak
-constraint on the orbital period.
+Hi.
 
 \end{abstract}
 
@@ -237,197 +216,6 @@ in the transit search literature.
 This means that the PH sample of candidates cannot be used for robust
 population inference.
 
-We propose a transit search method that shares some similarities with the PH
-model but, instead of human classifiers, we use a supervised classification
-model trained on large numbers of simulated transit signals injected into
-real \kepler\ light curves.
-This procedure is motivated because, by definition, most randomly selected
-sections of light curve contain no transits and there is an excellent physical
-model for the signals of interest.
-If we can train a classification model to robustly separate light curve
-sections with transits from sections without then we should be able to use
-this in-place of the humans to find single transit events.
-This method is novel as a means to transit search and it differs substantially
-from the standard methods.
-
-Automated classification processes have been hugely successful in the machine
-learning literature.
-% when applied to the right datasets \dfmtodo{cite some things}.
-Many astronomical problems can't be naturally solved by the standard machine
-learning models because of their heterogeneous character and heteroscedastic
-uncertainties.
-The search for single transits, however, is an excellent use case when applied
-with care.
-The noise in the light curve of a given star is relatively consistent for the
-full baseline of observation and we have a very good physical generative model
-for the transit signal so we can simulate arbitrarily large sets of training
-examples.
-
-In the training step, a Random Forest (RF) classifier is trained to
-distinguish---based only on the light curve itself---between sections of light
-curve that contain transits from sections of the same size that do not.
-This model is then used to find candidates in left-out sections of the light
-curve.
-In principle, this model can capture arbitrarily complicated non-linear
-structure in the decision space and if the training set is large and complete
-it will ``learn'' the shape of a physical transit.
-In practice, classification algorithms like this also require a complete set
-of ``negative'' training examples so further vetting using physical models
-is necessary.
-
-In \sect{est}, we extrapolate a recent model of the distribution of exoplanets
-to the long periods considered in this \paper.
-Using an approximate but realistic model for the detection efficiency of a
-search for single transits, we estimate that $\sim 60$ single transit events
-should be detectable in the archival \kepler\ dataset.
-In \sect{data}, we describe the data and outline the structure exploited by
-our transit search procedure.
-In \sect{rfc}, we briefly describe the Random Forest classification framework
-and in \sect{search} we outline the steps used to apply this model for transit
-search.
-This method requires the setting of many tuning parameters and the
-optimization of these choices is both computationally and intellectually
-challenging so in \sect{tuning} we discuss some steps in this direction.
-In \sect{demo}, we demonstrate the feasibility of this method, present a
-single transit discovery, and indicate some interesting weaknesses of the
-method.
-In \sectionname s~\sectref{params} we describe the parameter estimation that
-is possible given a single transit.
-
-% and outline the prospects for exoplanet
-% population inference given a catalog of single transit discoveries.
-
-
-\section{Estimated yield}\sectlabel{est}
-
-Before the launch of the \kepler\ Mission, \citet{Yee:2008} predicted the
-yield of single transit events based on the planet occurrence rates estimated
-based on small catalog of radial velocity discoveries \citep{Butler:2006} and
-a fit to their occurrence rate \citep{Cumming:2008}.
-Using these early results and the pre-launch specifications of the \kepler\
-Mission, \citet{Yee:2008} predicted that \kepler\ would discover $\sim 6$
-single transit events in the full dataset.
-Now that the Mission is complete and we have better estimates of the
-occurrence rate and distribution of planets \citep[for example][]{Dong:2013,
-Petigura:2013, Foreman-Mackey:2014, Dressing:2015}, we can update the
-predicted yield for single transit events in the \kepler\ light curves.
-To make this estimate, we extrapolate the distribution of large planets on
-relatively short orbits out to longer periods, taking detection efficiency
-and the survey and targeting properties into account.
-
-We will base our estimate on an assumed model $Q_k(\rp,\,\period)$ for the
-absolute probability of detecting a planet with radius \rp\ and period
-\period\ orbiting the star $k$, and the occurrence rate distribution
-\begin{eqnarray}
-\rate (\rp,\,\period) &=& \frac{\dd N}{\dd\ln\rp\dd\ln\period} \quad,
-\end{eqnarray}
-the expected number of planets per star, per logarithmic radius, per
-logarithmic period.
-Given these two quantities, the expected number of single transits in the
-\kepler\ data is given by
-\begin{eqnarray}
-N &=& \sum_{k=1}^K N_k
-\end{eqnarray}
-where the sum is over the $K$ stars in the sample and $N_k$ is the expected
-number of observable transits around star $k$
-\begin{eqnarray}\eqlabel{nk}
-N_k &=& \int Q_k(\rp,\,\period) \, \rate (\rp,\,\period)
-    \dd\ln\rp \dd\ln\period \quad.
-\end{eqnarray}
-The integral in \eq{nk} is over the full range of target parameters.
-
-For the purposes of this discussion, we assume an approximate simple detection
-efficiency model with three contributions: the geometric transit probability,
-the temporal transit probability, and signal-to-noise ratio threshold of the
-search technique.
-Assuming circular orbits, the geometric transit probability is given by
-\citep{Winn:2010}
-\begin{eqnarray}\eqlabel{q-geom}
-Q_k^\mathrm{(geom)}(\rp,\,\period) &=& \frac{R_k}{a} \\
-&=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, \period^{-2/3}
-\end{eqnarray}
-where $R_k$ and $M_k$ are the radius and mass of the star $k$ respectively.
-The eccentricity distribution of these long-period planets will affect this
-transit probability \citep{Kipping:2014} but this simple prescription should
-be sufficient for a rough estimate.
-For long-period orbits, the temporal transit probability will be given by
-\begin{eqnarray}\eqlabel{q-time}
-Q_k^\mathrm{(time)}(\rp,\,\period) &=& \frac{T_k}{\period}
-\end{eqnarray}
-where $T_k$ is the total time that \kepler\ spent observing the star $k$.
-Finally, the detection threshold depends on the detailed sensitivity of the
-search procedure but we will approximate it as a simple step function in
-signal-to-noise ratio of the transit.
-This contribution will be given approximately by
-\begin{eqnarray}
-Q_k^\mathrm{(detect)}(\rp,\,\period) &=& \left\{\begin{array}{ll}
-1 & \mathrm{if}\,\left(\rp/R_k\right)^2 > f\,\sigma_k \\
-0 & \mathrm{otherwise}
-\end{array}\right.
-\end{eqnarray}
-where $\sigma_k$ is an estimate of the noise in light curve of star $k$ and
-$f$ is the detection threshold for the method.
-
-Combining the detection efficiency components, the integral from \eq{nk}
-becomes
-\begin{eqnarray}\eqlabel{nk-2}
-N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k
-    \int_{\rp_\mathrm{min}} ^{\rp_\mathrm{max}} \frac{\dd\rp}{\rp}
-    \int_{\period_\mathrm{min}} ^{\period_\mathrm{max}}
-        \period^{-8/3}\,\rate(\rp,\,\period) \dd\period
-\end{eqnarray}
-where all the integration limits are set by the target parameter space.
-Because of the detection probability threshold, $\rp_\mathrm{min}$ can be no
-smaller than $R_k\,\sqrt{f\,\sigma_k}$.
-\citet{Dong:2013} used the catalog of short period transiting planets found
-by \kepler\ to constrain a model for the occurrence rate of large planets of
-the form
-\begin{eqnarray}
-\rate(\rp,\,\period) &=& C\,\left(\frac{\period}{10\,\mathrm{d}}\right)^\beta
-\end{eqnarray}
-in a set of radius bins.
-Using this model, the integral in \eq{nk-2} becomes
-\begin{eqnarray}
-N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k \,
-    \sum_{j=1}^J \frac{C_j}{(10\,\mathrm{d})^{\beta_j}}\,
-    \ln \left( \frac{\rp_{\mathrm{max},j}}{\rp_{\mathrm{min},j}} \right) \,
-    \left[ \frac{{\period_\mathrm{min}}^{\beta_j - 5/3}}{5/3-\beta_j} \right]
-\end{eqnarray}
-where the sum is over the $J$ radial bins studied by \citet{Dong:2013}.
-It's important to note that the model used by \citet{Dong:2013} is given in
-base-10 logarithms so the units must be converted to natural logarithms as
-appropriate.
-
-Assuming the stellar parameters provided by the NASA Exoplanet
-Archive\footnote{We downloaded the \texttt{q1\_q16\_stellar} table from
-\url{http://exoplanetarchive.ipac.caltech.edu/} on 2015-04-03.}
-\citep{Huber:2014} and approximating the stellar noise using the 15-hour CDPP
-\citep{Christiansen:2012}, \fig{predict} shows the extrapolated number of
-transiting planets with $1500\,\mathrm{d} < \period < 5000\,\mathrm{d}$ based
-on the \citet{Dong:2013} power-law model.
-For a detection threshold $f\sim10$, the expected number of single transit
-events in the \kepler\ light curves is $\sim 60$.
-
-This results is much more optimistic than the pre-launch estimate from
-\citet{Yee:2008} for a few reasons.
-One effect is that, the \kepler\ Mission ran for more than four
-years---longer than the fiducial Mission goal---and $\sim190,000$ stars were
-targeted for nearly the full baseline instead of the original 100,000.
-\dfmtodo{Explain the other reasons.}
-
-\begin{figure}[p]
-\begin{center}
-\includegraphics{figures/predict.pdf}
-\end{center}
-\caption{%
-The expected number of single transit events---extrapolated from the
-\citet{Dong:2013} power-law model fit to the shorter period \kepler\
-candidates---as a function of the effective signal-to-noise threshold of the
-search procedure.
-The shaded region indicates the uncertainties propagated from the model
-parameters.
-\figlabel{predict}}
-\end{figure}
 
 
 \section{Data preparation}\sectlabel{data}
@@ -1073,7 +861,201 @@ NNX13AC07G and by other grants and contracts.
 
 \appendix
 
-\section{Some appendix}
+\section{Estimated yield}\sectlabel{est}
+
+Before the launch of the \kepler\ Mission, \citet{Yee:2008} predicted the
+yield of single transit events based on the planet occurrence rates estimated
+based on small catalog of radial velocity discoveries \citep{Butler:2006} and
+a fit to their occurrence rate \citep{Cumming:2008}.
+Using these early results and the pre-launch specifications of the \kepler\
+Mission, \citet{Yee:2008} predicted that \kepler\ would discover $\sim 6$
+single transit events in the full dataset.
+Now that the Mission is complete and we have better estimates of the
+occurrence rate and distribution of planets \citep[for example][]{Dong:2013,
+Petigura:2013, Foreman-Mackey:2014, Dressing:2015}, we can update the
+predicted yield for single transit events in the \kepler\ light curves.
+To make this estimate, we extrapolate the distribution of large planets on
+relatively short orbits out to longer periods, taking detection efficiency
+and the survey and targeting properties into account.
+
+We will base our estimate on an assumed model $Q_k(\rp,\,\period)$ for the
+absolute probability of detecting a planet with radius \rp\ and period
+\period\ orbiting the star $k$, and the occurrence rate distribution
+\begin{eqnarray}
+\rate (\rp,\,\period) &=& \frac{\dd N}{\dd\ln\rp\dd\ln\period} \quad,
+\end{eqnarray}
+the expected number of planets per star, per logarithmic radius, per
+logarithmic period.
+Given these two quantities, the expected number of single transits in the
+\kepler\ data is given by
+\begin{eqnarray}
+N &=& \sum_{k=1}^K N_k
+\end{eqnarray}
+where the sum is over the $K$ stars in the sample and $N_k$ is the expected
+number of observable transits around star $k$
+\begin{eqnarray}\eqlabel{nk}
+N_k &=& \int Q_k(\rp,\,\period) \, \rate (\rp,\,\period)
+    \dd\ln\rp \dd\ln\period \quad.
+\end{eqnarray}
+The integral in \eq{nk} is over the full range of target parameters.
+
+For the purposes of this discussion, we assume an approximate simple detection
+efficiency model with three contributions: the geometric transit probability,
+the temporal transit probability, and signal-to-noise ratio threshold of the
+search technique.
+Assuming circular orbits, the geometric transit probability is given by
+\citep{Winn:2010}
+\begin{eqnarray}\eqlabel{q-geom}
+Q_k^\mathrm{(geom)}(\rp,\,\period) &=& \frac{R_k}{a} \\
+&=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, \period^{-2/3}
+\end{eqnarray}
+where $R_k$ and $M_k$ are the radius and mass of the star $k$ respectively.
+The eccentricity distribution of these long-period planets will affect this
+transit probability \citep{Kipping:2014} but this simple prescription should
+be sufficient for a rough estimate.
+For long-period orbits, the temporal transit probability will be given by
+\begin{eqnarray}\eqlabel{q-time}
+Q_k^\mathrm{(time)}(\rp,\,\period) &=& \frac{T_k}{\period}
+\end{eqnarray}
+where $T_k$ is the total time that \kepler\ spent observing the star $k$.
+Finally, the detection threshold depends on the detailed sensitivity of the
+search procedure but we will approximate it as a simple step function in
+signal-to-noise ratio of the transit.
+This contribution will be given approximately by
+\begin{eqnarray}
+Q_k^\mathrm{(detect)}(\rp,\,\period) &=& \left\{\begin{array}{ll}
+1 & \mathrm{if}\,\left(\rp/R_k\right)^2 > f\,\sigma_k \\
+0 & \mathrm{otherwise}
+\end{array}\right.
+\end{eqnarray}
+where $\sigma_k$ is an estimate of the noise in light curve of star $k$ and
+$f$ is the detection threshold for the method.
+
+Combining the detection efficiency components, the integral from \eq{nk}
+becomes
+\begin{eqnarray}\eqlabel{nk-2}
+N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k
+    \int_{\rp_\mathrm{min}} ^{\rp_\mathrm{max}} \frac{\dd\rp}{\rp}
+    \int_{\period_\mathrm{min}} ^{\period_\mathrm{max}}
+        \period^{-8/3}\,\rate(\rp,\,\period) \dd\period
+\end{eqnarray}
+where all the integration limits are set by the target parameter space.
+Because of the detection probability threshold, $\rp_\mathrm{min}$ can be no
+smaller than $R_k\,\sqrt{f\,\sigma_k}$.
+\citet{Dong:2013} used the catalog of short period transiting planets found
+by \kepler\ to constrain a model for the occurrence rate of large planets of
+the form
+\begin{eqnarray}
+\rate(\rp,\,\period) &=& C\,\left(\frac{\period}{10\,\mathrm{d}}\right)^\beta
+\end{eqnarray}
+in a set of radius bins.
+Using this model, the integral in \eq{nk-2} becomes
+\begin{eqnarray}
+N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k \,
+    \sum_{j=1}^J \frac{C_j}{(10\,\mathrm{d})^{\beta_j}}\,
+    \ln \left( \frac{\rp_{\mathrm{max},j}}{\rp_{\mathrm{min},j}} \right) \,
+    \left[ \frac{{\period_\mathrm{min}}^{\beta_j - 5/3}}{5/3-\beta_j} \right]
+\end{eqnarray}
+where the sum is over the $J$ radial bins studied by \citet{Dong:2013}.
+It's important to note that the model used by \citet{Dong:2013} is given in
+base-10 logarithms so the units must be converted to natural logarithms as
+appropriate.
+
+Assuming the stellar parameters provided by the NASA Exoplanet
+Archive\footnote{We downloaded the \texttt{q1\_q16\_stellar} table from
+\url{http://exoplanetarchive.ipac.caltech.edu/} on 2015-04-03.}
+\citep{Huber:2014} and approximating the stellar noise using the 15-hour CDPP
+\citep{Christiansen:2012}, \fig{predict} shows the extrapolated number of
+transiting planets with $1500\,\mathrm{d} < \period < 5000\,\mathrm{d}$ based
+on the \citet{Dong:2013} power-law model.
+For a detection threshold $f\sim10$, the expected number of single transit
+events in the \kepler\ light curves is $\sim 60$.
+
+This results is much more optimistic than the pre-launch estimate from
+\citet{Yee:2008} for a few reasons.
+One effect is that, the \kepler\ Mission ran for more than four
+years---longer than the fiducial Mission goal---and $\sim190,000$ stars were
+targeted for nearly the full baseline instead of the original 100,000.
+\dfmtodo{Explain the other reasons.}
+
+\begin{figure}[p]
+\begin{center}
+\includegraphics{figures/predict.pdf}
+\end{center}
+\caption{%
+The expected number of single transit events---extrapolated from the
+\citet{Dong:2013} power-law model fit to the shorter period \kepler\
+candidates---as a function of the effective signal-to-noise threshold of the
+search procedure.
+The shaded region indicates the uncertainties propagated from the model
+parameters.
+\figlabel{predict}}
+\end{figure}
+
+
+\section{Supervised classification}
+
+We propose a transit search method that shares some similarities with the PH
+model but, instead of human classifiers, we use a supervised classification
+model trained on large numbers of simulated transit signals injected into
+real \kepler\ light curves.
+This procedure is motivated because, by definition, most randomly selected
+sections of light curve contain no transits and there is an excellent physical
+model for the signals of interest.
+If we can train a classification model to robustly separate light curve
+sections with transits from sections without then we should be able to use
+this in-place of the humans to find single transit events.
+This method is novel as a means to transit search and it differs substantially
+from the standard methods.
+
+Automated classification processes have been hugely successful in the machine
+learning literature.
+% when applied to the right datasets \dfmtodo{cite some things}.
+Many astronomical problems can't be naturally solved by the standard machine
+learning models because of their heterogeneous character and heteroscedastic
+uncertainties.
+The search for single transits, however, is an excellent use case when applied
+with care.
+The noise in the light curve of a given star is relatively consistent for the
+full baseline of observation and we have a very good physical generative model
+for the transit signal so we can simulate arbitrarily large sets of training
+examples.
+
+In the training step, a Random Forest (RF) classifier is trained to
+distinguish---based only on the light curve itself---between sections of light
+curve that contain transits from sections of the same size that do not.
+This model is then used to find candidates in left-out sections of the light
+curve.
+In principle, this model can capture arbitrarily complicated non-linear
+structure in the decision space and if the training set is large and complete
+it will ``learn'' the shape of a physical transit.
+In practice, classification algorithms like this also require a complete set
+of ``negative'' training examples so further vetting using physical models
+is necessary.
+
+% In \sect{est}, we extrapolate a recent model of the distribution of exoplanets
+% to the long periods considered in this \paper.
+% Using an approximate but realistic model for the detection efficiency of a
+% search for single transits, we estimate that $\sim 60$ single transit events
+% should be detectable in the archival \kepler\ dataset.
+% In \sect{data}, we describe the data and outline the structure exploited by
+% our transit search procedure.
+% In \sect{rfc}, we briefly describe the Random Forest classification framework
+% and in \sect{search} we outline the steps used to apply this model for transit
+% search.
+% This method requires the setting of many tuning parameters and the
+% optimization of these choices is both computationally and intellectually
+% challenging so in \sect{tuning} we discuss some steps in this direction.
+% In \sect{demo}, we demonstrate the feasibility of this method, present a
+% single transit discovery, and indicate some interesting weaknesses of the
+% method.
+% In \sectionname s~\sectref{params} we describe the parameter estimation that
+% is possible given a single transit.
+
+% and outline the prospects for exoplanet
+% population inference given a catalog of single transit discoveries.
+
+
 
 \clearpage
 \bibliography{peerless}

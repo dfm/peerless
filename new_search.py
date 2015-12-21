@@ -188,21 +188,25 @@ def get_peaks(kicid=None,
         system.duration = best[1]
 
         # 3. step
-        ind = np.argmax(np.abs(np.diff(y)))
-        step = StepModel(
-            height=y[ind] - y[ind+1],
-            frac_var=0.0,
-            value=1.0,
-            width=0.0,
-            t0=0.5*(x[ind] + x[ind+1]),
-        )
-        best = (np.inf, 0.0)
-        for w in np.linspace(-2, 2, 50):
-            step.width = w
-            d = np.sum((y - step.get_value(x))**2)
-            if d < best[0]:
-                best = (d, w)
-        step.width = best[1]
+        steps = []
+        for ind in [np.argmax(np.abs(np.diff(y))),
+                    np.argmin(np.abs(x - (t0 - 0.5*tau))),
+                    np.argmin(np.abs(x - (t0 + 0.5*tau)))]:
+            step = StepModel(
+                height=y[ind] - y[ind+1],
+                frac_var=0.0,
+                value=1.0,
+                width=0.0,
+                t0=0.5*(x[ind] + x[ind+1]),
+            )
+            best = (np.inf, 0.0)
+            for w in np.linspace(-2, 2, 50):
+                step.width = w
+                d = np.sum((y - step.get_value(x))**2)
+                if d < best[0]:
+                    best = (d, w)
+            step.width = best[1]
+            steps.append(step)
 
         # 4. box:
         inds = np.argsort(np.diff(y))
@@ -224,7 +228,9 @@ def get_peaks(kicid=None,
             ("box1", boxes[1]),
             ("gp", constant),
             ("box2", boxes[0]),
-            ("step", step),
+            ("step1", steps[0]),
+            ("step2", steps[1]),
+            ("step3", steps[2]),
         ]
         preds = dict()
         for name, mean_model in models:
@@ -365,7 +371,7 @@ def get_peaks(kicid=None,
         if "outlier" in preds:
             ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
-        ax.plot(x, (step.get_value(x)-1)*1e3, "b", lw=1.5)
+        [ax.plot(x, (st.get_value(x)-1)*1e3, "b", lw=1.5) for st in steps]
         [ax.plot(x, (b.get_value(x)-1)*1e3, "m", lw=1.5) for b in boxes]
 
         # De-trended flux.
@@ -592,7 +598,8 @@ if __name__ == "__main__":
     else:
         os.makedirs(args.output_dir)
     cand_fn = os.path.join(args.output_dir, "candidates.csv")
-    models = ["gp", "outlier", "box1", "box2", "step", "transit"]
+    models = ["gp", "outlier", "box1", "box2", "step1", "step2", "step3",
+              "transit"]
     columns = [
         "kicid", "num_peaks", "peak_id",
         "accept_bic", "accept_time",

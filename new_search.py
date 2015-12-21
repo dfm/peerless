@@ -207,7 +207,7 @@ def get_peaks(kicid=None,
             ("step", step),
             ("transit", system),
         ]
-        preds = []
+        preds = dict()
         for name, mean_model in models:
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
@@ -233,9 +233,7 @@ def get_peaks(kicid=None,
             r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(y,),
                          method="L-BFGS-B", bounds=bounds)
             gp.set_vector(r.x)
-
-            if r.success:
-                preds.append(gp.predict(y, x, return_cov=False))
+            preds[name] = gp.predict(y, x, return_cov=False)
 
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
@@ -283,6 +281,7 @@ def get_peaks(kicid=None,
             gp.set_vector(r.x)
             peak["lnlike_outlier"] = -r.fun
             peak["bic_outlier"] = -r.fun-0.5*N*np.log(len(x))
+            preds["outlier"] = gp.predict(y0, x, return_cov=False)
 
             if verbose:
                 print("Peak {0}:".format(i))
@@ -336,15 +335,17 @@ def get_peaks(kicid=None,
 
         row[0].set_ylabel("raw [ppt]")
         ax = row[1]
-        [ax.plot(x, (p-1)*1e3) for p in preds]
-        ax.plot(x, (system.get_value(x)-1)*1e3)
-        ax.plot(x, (step.get_value(x)-1)*1e3)
-        ax.plot(x, (box.get_value(x)-1)*1e3)
+
+        ax.plot(x, (preds["gp"]-1)*1e3, "g", lw=1.5)
+        ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
+        ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
+        ax.plot(x, (step.get_value(x)-1)*1e3, "b", lw=1.5)
+        ax.plot(x, (box.get_value(x)-1)*1e3, "m", lw=1.5)
 
         # De-trended flux.
         row = axes[1]
         for ax in row:
-            [ax.plot(lc.time, (lc.flux-1)*1e3, "-k") for lc in lcs]
+            [ax.plot(lc.time, (lc.flux-1)*1e3, ".k") for lc in lcs]
             ax.set_xticklabels([])
             ax.yaxis.set_major_locator(pl.MaxNLocator(4))
             ax.xaxis.set_major_locator(pl.MaxNLocator(5))
@@ -569,8 +570,10 @@ if __name__ == "__main__":
         "kicid", "num_peaks", "peak_id",
         "accept_bic", "accept_time",
         "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
-        "lnlike_gp", "lnlike_outlier", "lnlike_step", "lnlike_transit",
-        "bic_gp", "bic_outlier", "bic_step", "bic_transit",
+        "lnlike_gp", "lnlike_outlier", "lnlike_step", "lnlike_box",
+        "lnlike_transit",
+        "bic_gp", "bic_outlier", "bic_step", "bic_box",
+        "bic_transit",
         "transit_ror", "transit_duration", "transit_time",
         "chunk_min_time", "chunk_max_time",
     ]

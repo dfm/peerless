@@ -192,6 +192,8 @@ def get_peaks(kicid=None,
             n = gp.get_parameter_names()
             if name == "transit":
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
+                bounds[n.index("mean:q1")] = (-10, 10)
+                bounds[n.index("mean:q2")] = (-10, 10)
             if "kernel:k2:ln_M_0_0" in n:
                 bounds[n.index("kernel:k2:ln_M_0_0")] = (
                     np.log(0.1), None
@@ -201,22 +203,33 @@ def get_peaks(kicid=None,
                 (2*np.log(np.median(yerr)), None)
 
             # Optimize.
-            print(gp.nll(gp.get_vector(), y))
             r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(y,),
                          method="L-BFGS-B", bounds=bounds)
-            if verbose:
-                print(r)
+            gp.set_vector(r.x)
+
             if not r.success:
                 peak["lnlike_{0}".format(name)] = -r.fun
                 peak["bic_{0}".format(name)] = -np.inf
                 continue
+            else:
+                preds.append(gp.predict(y, x, return_cov=False))
+                # Compute the -0.5*BIC.
+                peak["lnlike_{0}".format(name)] = -r.fun
+                peak["bic_{0}".format(name)] = (-r.fun -
+                                                0.5*len(r.x)*np.log(len(x)))
 
-            gp.set_vector(r.x)
-            preds.append(gp.predict(y, x, return_cov=False))
-
-            # Compute the -0.5*BIC.
-            peak["lnlike_{0}".format(name)] = -r.fun
-            peak["bic_{0}".format(name)] = -r.fun - 0.5*len(r.x)*np.log(len(x))
+            if verbose:
+                print("Peak {0}:".format(i))
+                print("For model: '{0}'".format(name))
+                print("Converged? {0}".format(r.success))
+                print("Log-likelihood: {0}"
+                      .format(peak["lnlike_{0}".format(name)]))
+                print("-0.5 * BIC: {0}"
+                      .format(peak["bic_{0}".format(name)]))
+                print("Parameters:")
+                for k, v in zip(gp.get_parameter_names(), gp.get_vector()):
+                    print("  {0}: {1:.4f}".format(k, v))
+                print()
 
         # Save the transit parameters.
         peak["transit_duration"] = system.duration
@@ -285,8 +298,8 @@ def get_peaks(kicid=None,
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
             ax1.axvline(t0, color="g", lw=5, alpha=0.3)
 
-            ax2.set_xlim(x.min(), x.max())
-            # ax2.set_xlim(t0 - 5.0, t0 + 5.0)
+            # ax2.set_xlim(x.min(), x.max())
+            ax2.set_xlim(t0 - 5.0, t0 + 5.0)
             ax2.axvline(t0, color="g", lw=5, alpha=0.3)
             ax2.axvline(t0 - 0.5*tau, color="k", ls="dashed")
             ax2.axvline(t0 + 0.5*tau, color="k", ls="dashed")
@@ -304,9 +317,12 @@ def get_peaks(kicid=None,
 
 
 def _wrapper(*args, **kwargs):
+    quiet = kwargs.pop("quiet", False)
     try:
         return get_peaks(*args, **kwargs)
     except:
+        if not quiet:
+            raise
         with open(os.path.join(kwargs.get("output_dir", "output"),
                                "errors.txt"), "a") as f:
             f.write("{0} failed with exception:\n{1}"
@@ -380,6 +396,8 @@ if __name__ == "__main__":
                         help="some light curve filenames")
     parser.add_argument("-p", "--parallel", action="store_true",
                         help="parallelize across targets")
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="log errors instead of raising")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="more output to the screen")
     parser.add_argument("-c", "--clean", action="store_true",

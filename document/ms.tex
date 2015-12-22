@@ -217,7 +217,23 @@ This means that the PH sample of candidates cannot be used for robust
 population inference.
 
 
+\section{Single transit search}
+
+Previous automated searches for transits in the \kepler\ light
+curves have restricted their results to candidates with at least three
+observable transits in the dataset.
+This restriction minimizes contamination by false alarms at low
+signal-to-noise.
+Noise in the light curves introduced by stellar or instrumental variability
+can easily masquerade as a small planet with a long orbital period and lead to
+
+
 \section{Data preparation}\sectlabel{data}
+
+We start with the PDC-MAP light curves downloaded from
+MAST\footnote{\url{https://archive.stsci.edu/kepler/}}.
+
+
 
 The \kepler\ Mission measured photometric time series for about 190,000 stars
 at half-hour cadence for a baseline of over four years.
@@ -248,8 +264,6 @@ Archive}\footnote{\url{http://exoplanetarchive.ipac.caltech.edu/}; We
 downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 2015-03-25.}.
 
-
-\section{Single transit search}
 
 
 \section{Candidate vetting}

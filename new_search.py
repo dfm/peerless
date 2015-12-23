@@ -240,8 +240,8 @@ def get_peaks(kicid=None,
 
             if name == "transit":
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
-                bounds[n.index("mean:q1_param")] = (-20, 20)
-                bounds[n.index("mean:q2_param")] = (-20, 20)
+                bounds[n.index("mean:q1_param")] = (-10, 10)
+                bounds[n.index("mean:q2_param")] = (-10, 10)
 
             bounds[n.index("kernel:k2:ln_M_0_0")] = (np.log(0.1), None)
             bounds[n.index("white:value")] = (2*np.log(np.median(yerr)), None)
@@ -538,6 +538,7 @@ if __name__ == "__main__":
         plot_all=args.plot_all,
         max_peaks=args.max_peaks,
         verbose=args.verbose,
+        quiet=args.quiet,
         delete=args.clean,
     )
 

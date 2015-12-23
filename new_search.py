@@ -10,6 +10,7 @@ from functools import partial
 import matplotlib.pyplot as pl
 from multiprocessing import Pool
 from scipy.optimize import minimize
+from collections import OrderedDict
 
 import george
 from george import kernels, ModelingMixin
@@ -188,10 +189,11 @@ def get_peaks(kicid=None,
         system.duration = best[1]
 
         # 3. step
-        steps = []
-        for ind in [np.argmax(np.abs(np.diff(y))),
-                    np.argmin(np.abs(x - (t0 - 0.5*tau))),
-                    np.argmin(np.abs(x - (t0 + 0.5*tau)))]:
+        best = (np.inf, 0, 0.0)
+        # for ind in [np.argmax(np.abs(np.diff(y))),
+        #             np.argmin(np.abs(x - (t0 - 0.5*tau))),
+        #             np.argmin(np.abs(x - (t0 + 0.5*tau)))]:
+        for ind in range(len(y) - 1):
             step = StepModel(
                 height=y[ind] - y[ind+1],
                 frac_var=0.0,
@@ -199,14 +201,19 @@ def get_peaks(kicid=None,
                 width=0.0,
                 t0=0.5*(x[ind] + x[ind+1]),
             )
-            best = (np.inf, 0.0)
-            for w in np.linspace(-2, 2, 50):
+            for w in np.linspace(-2, 2, 10):
                 step.width = w
                 d = np.sum((y - step.get_value(x))**2)
                 if d < best[0]:
-                    best = (d, w)
-            step.width = best[1]
-            steps.append(step)
+                    best = (d, ind, w)
+        _, ind, w = best
+        step = StepModel(
+            height=y[ind] - y[ind+1],
+            frac_var=0.0,
+            value=1.0,
+            width=w,
+            t0=0.5*(x[ind] + x[ind+1]),
+        )
 
         # 4. box:
         inds = np.argsort(np.diff(y))
@@ -223,17 +230,17 @@ def get_peaks(kicid=None,
         # print(check_gradient(box, x))
 
         # Loop over models and compare them.
-        models = [
+        models = OrderedDict([
             ("transit", system),
             ("box1", boxes[1]),
+            ("step", step),
             ("gp", constant),
             ("box2", boxes[0]),
-            ("step1", steps[0]),
-            ("step2", steps[1]),
-            ("step3", steps[2]),
-        ]
+            # ("step2", steps[1]),
+            # ("step3", steps[2]),
+        ])
         preds = dict()
-        for name, mean_model in models:
+        for name, mean_model in models.items():
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
                            white_noise=2*np.log(np.mean(yerr)),
@@ -262,8 +269,8 @@ def get_peaks(kicid=None,
 
             # Initialize one of the boxes using the transit shape.
             if name == "transit":
-                models[1][1].mn = system.t0 - 0.5*system.duration
-                models[1][1].mx = system.t0 + 0.5*system.duration
+                models["box1"].mn = system.t0 - 0.5*system.duration
+                models["box1"].mx = system.t0 + 0.5*system.duration
 
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
@@ -335,7 +342,7 @@ def get_peaks(kicid=None,
         # Accept the peak?
         accept_bic = all(
             peak["bic_transit"] >= peak.get("bic_{0}".format(k), -np.inf)
-            for k, _ in models
+            for k in models
         ) and (peak["bic_transit"] > peak["bic_outlier"])
         accept_time = (
             (peak["transit_time"] - 0.5*peak["transit_duration"]
@@ -371,7 +378,7 @@ def get_peaks(kicid=None,
         if "outlier" in preds:
             ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
-        [ax.plot(x, (st.get_value(x)-1)*1e3, "b", lw=1.5) for st in steps]
+        ax.plot(x, (step.get_value(x)-1)*1e3, "b", lw=1.5)
         [ax.plot(x, (b.get_value(x)-1)*1e3, "m", lw=1.5) for b in boxes]
 
         # De-trended flux.
@@ -598,8 +605,7 @@ if __name__ == "__main__":
     else:
         os.makedirs(args.output_dir)
     cand_fn = os.path.join(args.output_dir, "candidates.csv")
-    models = ["gp", "outlier", "box1", "box2", "step1", "step2", "step3",
-              "transit"]
+    models = ["gp", "outlier", "box1", "box2", "step", "transit"]
     columns = [
         "kicid", "num_peaks", "peak_id",
         "accept_bic", "accept_time",

@@ -221,10 +221,7 @@ def get_peaks(kicid=None,
         boxes = []
         for tmn, tmx in (0.5 * (x[inds] + x[inds + 1]),
                          (t0-0.5*tau, t0+0.5*tau)):
-            m = (tmn < x) & (x < tmx)
-            fin = np.mean(y[m])
-            fout = np.mean(y[~m])
-            boxes.append(BoxModel(tmn, tmx, in_value=fin, out_value=fout))
+            boxes.append(BoxModel(tmn, tmx, data=(x, y)))
 
         # from george.modeling import check_gradient
         # print(check_gradient(box, x))
@@ -345,9 +342,9 @@ def get_peaks(kicid=None,
             for k in models
         ) and (peak["bic_transit"] > peak["bic_outlier"])
         accept_time = (
-            (peak["transit_time"] - 0.5*peak["transit_duration"]
+            (peak["transit_time"] - 1.0*peak["transit_duration"]
              > peak["chunk_min_time"]) and
-            (peak["transit_time"] + 0.5*peak["transit_duration"]
+            (peak["transit_time"] + 1.0*peak["transit_duration"]
              < peak["chunk_max_time"])
         )
         accept = accept_bic and accept_time
@@ -471,21 +468,36 @@ class StepModel(ModelingMixin):
 
 class BoxModel(ModelingMixin):
 
-    def __init__(self, mn, mx, **kwargs):
+    def __init__(self, mn, mx, data=None, **kwargs):
         self.mn = mn
         self.mx = mx
+        if data is not None:
+            t, y = data
+            a = t <= self.mn
+            b = self.mx < t
+            c = ~(a | b)
+            kwargs = dict(
+                before_value=np.mean(y[a]),
+                in_value=np.mean(y[c]),
+                after_value=np.mean(y[b]),
+            )
         super(BoxModel, self).__init__(**kwargs)
 
     def get_value(self, t):
-        m = (self.mn < t) & (t < self.mx)
-        return self.in_value * m + self.out_value * (~m)
+        a = t <= self.mn
+        b = self.mx < t
+        c = ~(a | b)
+        return self.before_value*a + self.in_value*c + self.after_value*b
 
     @ModelingMixin.parameter_sort
     def get_gradient(self, t):
-        m = (self.mn < t) & (t < self.mx)
+        a = t <= self.mn
+        b = self.mx < t
+        c = ~(a | b)
         return dict(
-            in_value=np.ones_like(t) * m,
-            out_value=np.ones_like(t) * (~m),
+            before_value=np.ones_like(t) * a,
+            in_value=np.ones_like(t) * c,
+            after_value=np.ones_like(t) * b,
         )
 
 

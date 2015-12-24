@@ -14,6 +14,7 @@ from collections import OrderedDict
 
 import george
 from george import kernels, ModelingMixin
+from george.modeling import check_gradient
 
 import transit
 
@@ -30,7 +31,8 @@ def get_peaks(kicid=None,
               remove_kois=True,
               grid_frac=0.25,
               noise_hw=15.0,
-              detect_thresh=20.0,
+              detect_thresh=25.0,
+              max_fit_data=500,
               max_peaks=3,
               min_datapoints=10,
               output_dir="output",
@@ -54,7 +56,10 @@ def get_peaks(kicid=None,
         Half width of running window for noise estimation. (default: 15.0)
 
     :param detect_thresh:
-        Relative S/N detection threshold. (default: 20.0)
+        Relative S/N detection threshold. (default: 25.0)
+
+    :param max_fit_data:
+        The maximum number of data points for fitting. (default: 500)
 
     :param max_peaks:
         The maximum number of peaks to analyze in detail. (default: 3)
@@ -157,6 +162,15 @@ def get_peaks(kicid=None,
                             .format(ndata))
             continue
 
+        # Limit number of data points in chunk.
+        inds = np.sort(np.argsort(np.abs(t0 - x))[:max_fit_data])
+        x = np.ascontiguousarray(x[inds])
+        y = np.ascontiguousarray(y[inds])
+        yerr = np.ascontiguousarray(yerr[inds])
+
+        if verbose:
+            print("{0} data points in chunk".format(len(x)))
+
         for k in ["channel", "skygroup", "module", "output", "quarter",
                   "season"]:
             peak[k] = lc0.meta[k]
@@ -189,31 +203,52 @@ def get_peaks(kicid=None,
         system.duration = best[1]
 
         # 3. step
-        best = (np.inf, 0, 0.0)
-        # for ind in [np.argmax(np.abs(np.diff(y))),
-        #             np.argmin(np.abs(x - (t0 - 0.5*tau))),
-        #             np.argmin(np.abs(x - (t0 + 0.5*tau)))]:
-        for ind in range(len(y) - 1):
+        best = (np.inf, 0, 0.0, 0.0)
+        n = 2
+        for ind in range(len(y) - 2*n + 1):
+            a = slice(ind, ind+n)
+            b = slice(ind+n, ind+2*n)
             step = StepModel(
-                height=y[ind] - y[ind+1],
+                height=np.mean(y[a]) - np.mean(y[b]),
                 frac_var=0.0,
-                value=1.0,
-                width=0.0,
-                t0=0.5*(x[ind] + x[ind+1]),
+                value=0.5*(np.mean(y[a]) + np.mean(y[b])),
+                log_width_plus=0.0,
+                log_width_minus=0.0,
+                t0=0.5*(x[ind+n-1] + x[ind+n]),
             )
-            for w in np.linspace(-2, 2, 10):
-                step.width = w
-                d = np.sum((y - step.get_value(x))**2)
-                if d < best[0]:
-                    best = (d, ind, w)
-        _, ind, w = best
+
+            best_minus = (np.inf, 0.0)
+            m = x < step.t0
+            for w in np.linspace(-4, 2, 20):
+                step.log_width_minus = w
+                d = np.sum((y[m] - step.get_value(x[m]))**2)
+                if d < best_minus[0]:
+                    best_minus = (d, w)
+
+            best_plus = (np.inf, 0.0)
+            m = x >= step.t0
+            for w in np.linspace(-4, 2, 20):
+                step.log_width_plus = w
+                d = np.sum((y[m] - step.get_value(x[m]))**2)
+                if d < best_plus[0]:
+                    best_plus = (d, w)
+
+            d = best_minus[0] + best_plus[0]
+            if d < best[0]:
+                best = (d, ind, best_minus[1], best_plus[1])
+
+        _, ind, wm, wp = best
+        a = slice(ind, ind+n)
+        b = slice(ind+n, ind+2*n)
         step = StepModel(
-            height=y[ind] - y[ind+1],
+            height=np.mean(y[a]) - np.mean(y[b]),
             frac_var=0.0,
-            value=1.0,
-            width=w,
-            t0=0.5*(x[ind] + x[ind+1]),
+            value=0.5*(np.mean(y[a]) + np.mean(y[b])),
+            log_width_plus=wp,
+            log_width_minus=wm,
+            t0=0.5*(x[ind+n-1] + x[ind+n]),
         )
+        check_gradient(step, x)
 
         # 4. box:
         inds = np.argsort(np.diff(y))
@@ -222,9 +257,7 @@ def get_peaks(kicid=None,
         for tmn, tmx in (0.5 * (x[inds] + x[inds + 1]),
                          (t0-0.5*tau, t0+0.5*tau)):
             boxes.append(BoxModel(tmn, tmx, data=(x, y)))
-
-        # from george.modeling import check_gradient
-        # print(check_gradient(box, x))
+            check_gradient(boxes[-1], x)
 
         # Loop over models and compare them.
         models = OrderedDict([
@@ -233,8 +266,6 @@ def get_peaks(kicid=None,
             ("step", step),
             ("gp", constant),
             ("box2", boxes[0]),
-            # ("step2", steps[1]),
-            # ("step3", steps[2]),
         ])
         preds = dict()
         for name, mean_model in models.items():
@@ -254,7 +285,8 @@ def get_peaks(kicid=None,
                 bounds[n.index("mean:q2_param")] = (-10, 10)
 
             bounds[n.index("kernel:k2:ln_M_0_0")] = (np.log(0.1), None)
-            bounds[n.index("white:value")] = (2*np.log(np.median(yerr)), None)
+            bounds[n.index("white:value")] = (2*np.log(0.5*np.median(yerr)),
+                                              None)
             bounds[n.index("kernel:k1:ln_constant")] = \
                 (2*np.log(np.median(yerr)), None)
 
@@ -277,6 +309,8 @@ def get_peaks(kicid=None,
                 print("Peak {0}:".format(i))
                 print("Model: '{0}'".format(name))
                 print("Converged: {0}".format(r.success))
+                if not r.success:
+                    print("Message: {0}".format(r.message))
                 print("Log-likelihood: {0}"
                       .format(peak["lnlike_{0}".format(name)]))
                 print("-0.5 * BIC: {0}"
@@ -376,7 +410,7 @@ def get_peaks(kicid=None,
             ax.plot(x, (preds["outlier"]-1)*1e3, "--g", lw=1.5)
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
         ax.plot(x, (step.get_value(x)-1)*1e3, "b", lw=1.5)
-        [ax.plot(x, (b.get_value(x)-1)*1e3, "m", lw=1.5) for b in boxes]
+        [ax.plot(x, (bx.get_value(x)-1)*1e3, "m", lw=1.5) for bx in boxes]
 
         # De-trended flux.
         row = axes[1]
@@ -438,31 +472,36 @@ def _wrapper(*args, **kwargs):
 class StepModel(ModelingMixin):
 
     def get_value(self, t):
-        dt = (t - self.t0) * np.exp(-self.width)
+        dt_plus = (t - self.t0) * np.exp(-self.log_width_plus)
+        dt_minus = (t - self.t0) * np.exp(-self.log_width_minus)
         f = 1.0 / (1.0 + np.exp(self.frac_var))
-        v = self.value + self.height * f * np.exp(dt) * (t < self.t0)
-        v -= self.height * (1 - f) * np.exp(-dt) * (t >= self.t0)
+        v = self.value
+        v += self.height * f * np.exp(dt_minus) * (t < self.t0)
+        v -= self.height * (1 - f) * np.exp(-dt_plus) * (t >= self.t0)
         return v
 
     @ModelingMixin.parameter_sort
     def get_gradient(self, t):
-        delta = t - self.t0
-        ew = np.exp(-self.width)
-        dt = delta * ew
-        ep = np.exp(dt)
-        em = np.exp(-dt)
-        mp = t < self.t0
-        mm = t >= self.t0
-        f = 1.0 / (1.0 + np.exp(self.frac_var))
+        ef = np.exp(self.frac_var)
+        f = 1.0 / (1.0 + ef)
+        h = self.height
 
-        factor = self.height * (f * mp * ep + (1 - f) * mm * em)
+        wp = np.exp(self.log_width_plus)
+        wm = np.exp(self.log_width_minus)
+        dtp = (t - self.t0) / wp
+        dtm = (t - self.t0) / wm
+        ep = np.exp(-dtp)
+        em = np.exp(dtm)
+        mm = t < self.t0
+        mp = t >= self.t0
 
         return dict(
             value=np.ones_like(t),
-            width=-dt*factor,
-            t0=-ew*factor,
-            height=f * mp * ep - (1 - f) * mm * em,
-            frac_var=-f*f*self.height*(mp*ep + mm*em),
+            height=f*em*mm - (1-f)*ep*mp,
+            frac_var=-f*f*ef*h*(em*mm + ep*mp),
+            log_width_minus=-h*f*em*dtm*mm,
+            log_width_plus=-h*(1-f)*ep*dtp*mp,
+            t0=-h*(f*em*mm/wm + (1-f)*ep*mp/wp),
         )
 
 
@@ -543,8 +582,10 @@ if __name__ == "__main__":
                         help="search grid spacing in units of the duration")
     parser.add_argument("--noise-hw", type=float,  default=15.0,
                         help="the half width of the noise estimation window")
-    parser.add_argument("--detect-thresh", type=float,  default=20.0,
+    parser.add_argument("--detect-thresh", type=float,  default=25.0,
                         help="the relative detection threshold")
+    parser.add_argument("--max-fit-data", type=int,  default=500,
+                        help="maximum number of points to fit")
     parser.add_argument("--max-peaks", type=int,  default=3,
                         help="the maximum number of peaks to consider")
 
@@ -561,8 +602,10 @@ if __name__ == "__main__":
         detect_thresh=args.detect_thresh,
         output_dir=args.output_dir,
         plot_all=args.plot_all,
+        max_fit_data=args.max_fit_data,
         max_peaks=args.max_peaks,
         verbose=args.verbose,
+        quiet=args.quiet,
         delete=args.clean,
     )
 

@@ -191,9 +191,10 @@ def get_peaks(kicid=None,
         y = lc0.raw_flux
         yerr = lc0.raw_ferr
         ndata = np.sum(np.abs(x - t0) < 0.5*tau)
-        if verbose and ndata < min_datapoints:
-            logging.warning("there are only {0} data points in transit"
-                            .format(ndata))
+        if ndata < min_datapoints:
+            if verbose:
+                logging.warning("there are only {0} data points in transit"
+                                .format(ndata))
             continue
 
         # Limit number of data points in chunk.

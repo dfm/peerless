@@ -37,6 +37,7 @@ def get_peaks(kicid=None,
               min_datapoints=10,
               output_dir="output",
               plot_all=False,
+              no_plots=False,
               delete=True,
               verbose=False):
     """
@@ -72,6 +73,9 @@ def get_peaks(kicid=None,
 
     :param plot_all:
         Make all the plots instead of just the transit plots. (default: False)
+
+    :param no_plots:
+        Suppress all plotting. (default: False)
 
     :param delete:
         Delete the light curve files after loading them. (default: True)
@@ -205,13 +209,14 @@ def get_peaks(kicid=None,
         # 3. step
         best = (np.inf, 0, 0.0, 0.0)
         n = 2
-        for ind in range(len(y) - 2*n + 1):
+        for ind in range(1, len(y) - 2*n):
             a = slice(ind, ind+n)
             b = slice(ind+n, ind+2*n)
             step = StepModel(
-                height=np.mean(y[a]) - np.mean(y[b]),
-                frac_var=0.0,
-                value=0.5*(np.mean(y[a]) + np.mean(y[b])),
+                value1=np.mean(y[:ind]),
+                value2=np.mean(y[ind+2*n:]),
+                height1=np.mean(y[a]) - np.mean(y[:ind]),
+                height2=np.mean(y[ind+2*n:]) - np.mean(y[b]),
                 log_width_plus=0.0,
                 log_width_minus=0.0,
                 t0=0.5*(x[ind+n-1] + x[ind+n]),
@@ -241,9 +246,10 @@ def get_peaks(kicid=None,
         a = slice(ind, ind+n)
         b = slice(ind+n, ind+2*n)
         step = StepModel(
-            height=np.mean(y[a]) - np.mean(y[b]),
-            frac_var=0.0,
-            value=0.5*(np.mean(y[a]) + np.mean(y[b])),
+            value1=np.mean(y[:ind]),
+            value2=np.mean(y[ind+2*n:]),
+            height1=np.mean(y[a]) - np.mean(y[:ind]),
+            height2=np.mean(y[ind+2*n:]) - np.mean(y[b]),
             log_width_plus=wp,
             log_width_minus=wm,
             t0=0.5*(x[ind+n-1] + x[ind+n]),
@@ -291,6 +297,7 @@ def get_peaks(kicid=None,
                 (2*np.log(np.median(yerr)), None)
 
             # Optimize.
+            initial_vector = np.array(gp.get_vector())
             r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(y,),
                          method="L-BFGS-B", bounds=bounds)
             gp.set_vector(r.x)
@@ -316,8 +323,9 @@ def get_peaks(kicid=None,
                 print("-0.5 * BIC: {0}"
                       .format(peak["bic_{0}".format(name)]))
                 print("Parameters:")
-                for k, v in zip(gp.get_parameter_names(), gp.get_vector()):
-                    print("  {0}: {1:.4f}".format(k, v))
+                for k, v0, v in zip(gp.get_parameter_names(), initial_vector,
+                                    gp.get_vector()):
+                    print("  {0}: {1:.4f} -> {2:.4f}".format(k, v0, v))
                 print()
 
             if peak["bic_{0}".format(name)] > peak["bic_transit"]:
@@ -474,18 +482,14 @@ class StepModel(ModelingMixin):
     def get_value(self, t):
         dt_plus = (t - self.t0) * np.exp(-self.log_width_plus)
         dt_minus = (t - self.t0) * np.exp(-self.log_width_minus)
-        f = 1.0 / (1.0 + np.exp(self.frac_var))
-        v = self.value
-        v += self.height * f * np.exp(dt_minus) * (t < self.t0)
-        v -= self.height * (1 - f) * np.exp(-dt_plus) * (t >= self.t0)
+        v = (self.value1 + self.height1 * np.exp(dt_minus))*(t < self.t0)
+        v += (self.value2 - self.height2 * np.exp(-dt_plus))*(t >= self.t0)
         return v
 
     @ModelingMixin.parameter_sort
     def get_gradient(self, t):
-        ef = np.exp(self.frac_var)
-        f = 1.0 / (1.0 + ef)
-        h = self.height
-
+        h1 = self.height1
+        h2 = self.height2
         wp = np.exp(self.log_width_plus)
         wm = np.exp(self.log_width_minus)
         dtp = (t - self.t0) / wp
@@ -496,12 +500,13 @@ class StepModel(ModelingMixin):
         mp = t >= self.t0
 
         return dict(
-            value=np.ones_like(t),
-            height=f*em*mm - (1-f)*ep*mp,
-            frac_var=-f*f*ef*h*(em*mm + ep*mp),
-            log_width_minus=-h*f*em*dtm*mm,
-            log_width_plus=-h*(1-f)*ep*dtp*mp,
-            t0=-h*(f*em*mm/wm + (1-f)*ep*mp/wp),
+            value1=np.ones_like(t) * mm,
+            value2=np.ones_like(t) * mp,
+            height1=em*mm,
+            height2=-ep*mp,
+            log_width_minus=-h1*em*dtm*mm,
+            log_width_plus=-h2*ep*dtp*mp,
+            t0=-(h1*em*mm/wm + h2*ep*mp/wp),
         )
 
 
@@ -564,6 +569,8 @@ if __name__ == "__main__":
                         help="the output directory")
     parser.add_argument("--plot-all", action="store_true",
                         help="make all the plots")
+    parser.add_argument("--no-plots", action="store_true",
+                        help="don't make any plots")
 
     # Preset target lists:
     parser.add_argument("--planet-hunters", action="store_true",
@@ -602,6 +609,7 @@ if __name__ == "__main__":
         detect_thresh=args.detect_thresh,
         output_dir=args.output_dir,
         plot_all=args.plot_all,
+        no_plots=args.no_plots,
         max_fit_data=args.max_fit_data,
         max_peaks=args.max_peaks,
         verbose=args.verbose,

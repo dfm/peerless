@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import logging
 import traceback
 import numpy as np
+from scipy.stats import beta
 from functools import partial
 import matplotlib.pyplot as pl
 from multiprocessing import Pool
@@ -28,6 +28,7 @@ from peerless.data import (load_light_curves_for_kic, running_median_trend,
 
 def get_peaks(kicid=None,
               lcs=None,
+              inject=False,
               tau=0.6,
               detrend_hw=2.0,
               remove_kois=True,
@@ -48,6 +49,9 @@ def get_peaks(kicid=None,
 
     :param detrend_hw:
         Half width of running window for de-trending. (default: 2.0)
+
+    :param inject:
+        Inject a transit into the light curves. (default: False)
 
     :param remove_kois:
         Remove data points near known KOI transits. (default: True)
@@ -86,11 +90,35 @@ def get_peaks(kicid=None,
         Moar printing. (default: False)
 
     """
+    system = None
+    if inject:
+        system = transit.System(transit.Central(q1=np.random.rand(),
+                                                q2=np.random.rand()))
+        r = np.exp(np.random.uniform(np.log(0.04), np.log(0.2)))
+        system.add_body(transit.Body(
+            radius=r,
+            period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
+            b=np.random.uniform(0, 1+r),
+            e=beta.rvs(0.867, 3.03),
+            omega=np.random.uniform(0, 2*np.pi),
+            t0=np.random.uniform(120, 1600),
+        ))
+        injection = dict(
+            t0=system.bodies[0].t0,
+            period=system.bodies[0].period,
+            ror=system.bodies[0].radius,
+            b=system.bodies[0].b,
+            e=system.bodies[0].e,
+            omega=system.bodies[0].omega,
+        )
+
     if lcs is None and kicid is None:
         raise ValueError("you must specify 'lcs' or 'kicid'")
     if lcs is None:
         lcs = load_light_curves_for_kic(kicid, delete=delete,
-                                        remove_kois=remove_kois)
+                                        detrend_hw=detrend_hw,
+                                        remove_kois=remove_kois,
+                                        inject_system=system)
     else:
         kicid = "unknown-target"
 
@@ -380,6 +408,16 @@ def get_peaks(kicid=None,
         peak["transit_ror"] = system.ror
         peak["transit_time"] = system.t0
 
+        # Save the injected parameters.
+        if inject:
+            for k in ["t0", "period", "ror", "b", "e", "omega"]:
+                peak["injected_{0}".format(k)] = injection[k]
+
+            # Check for recovery.
+            p = injection["period"]
+            d = (peak["transit_time"] - injection["t0"] + 0.5*p) % p - 0.5*p
+            peak["recovered"] = np.abs(d) < peak["transit_duration"]
+
         # Accept the peak?
         accept_bic = all(
             peak["bic_transit"] >= peak.get("bic_{0}".format(k), -np.inf)
@@ -553,6 +591,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="search for single transits")
 
     parser.add_argument("kicids", nargs="*", help="some KIC IDs")
+    parser.add_argument("--inject", action="store_true",
+                        help="inject transits into the light curves")
     parser.add_argument("--include-ebs", action="store_true",
                         help="by default known EBs are excluded")
     parser.add_argument("--max-targets", type=int,
@@ -603,6 +643,7 @@ if __name__ == "__main__":
     # Build the dictionary of search keywords.
     function = partial(
         _wrapper,
+        inject=args.inject,
         tau=args.duration,
         detrend_hw=args.detrend_hw,
         remove_kois=not args.no_remove_kois,
@@ -681,6 +722,10 @@ if __name__ == "__main__":
     ]
     columns += ["lnlike_{0}".format(k) for k in models]
     columns += ["bic_{0}".format(k) for k in models]
+    if args.inject:
+        columns += ["injected_{0}".format(k) for k in ["t0", "period", "ror",
+                                                       "b", "e", "omega"]]
+        columns += ["recovered"]
     with open(cand_fn, "w") as f:
         f.write("# {0}\n".format(", ".join(columns)))
     with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:

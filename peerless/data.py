@@ -50,7 +50,7 @@ def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True,
 
 
 def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
-                      detrend_hw=2.0):
+                      detrend_hw=2.0, inject_system=None):
     # Find any KOIs.
     if remove_kois:
         df = KOICatalog().df
@@ -97,6 +97,11 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
         # Remove bad quality points.
         y[q != 0] = np.nan
         m = np.isfinite(x) & np.isfinite(y) & np.isfinite(yerr)
+
+        if inject_system is not None:
+            model = inject_system.get_value(
+                np.ascontiguousarray(x[m], dtype=float), texp=texp)
+            y[m] *= model
 
         # Deal with big gaps.
         lt = np.isfinite(x)

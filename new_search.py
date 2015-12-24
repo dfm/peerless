@@ -435,7 +435,7 @@ def get_peaks(kicid=None,
         peak["accept_time"] = accept_time
         final_peaks.append(peak)
 
-        if (not accept) and (not plot_all):
+        if no_plots or ((not accept) and (not plot_all)):
             continue
 
         # Plots.

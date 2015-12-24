@@ -12,6 +12,8 @@ from multiprocessing import Pool
 from scipy.optimize import minimize
 from collections import OrderedDict
 
+from tqdm import tqdm
+
 import george
 from george import kernels, ModelingMixin
 from george.modeling import check_gradient
@@ -144,7 +146,7 @@ def get_peaks(kicid=None,
         peak["num_peaks"] = len(peaks)
         peak["peak_id"] = i
 
-    if len(peaks) > max_peaks:
+    if verbose and len(peaks) > max_peaks:
         logging.warning("truncating peak list")
     peaks = peaks[:max_peaks]
 
@@ -161,7 +163,7 @@ def get_peaks(kicid=None,
         y = lc0.raw_flux
         yerr = lc0.raw_ferr
         ndata = np.sum(np.abs(x - t0) < 0.5*tau)
-        if ndata < min_datapoints:
+        if verbose and ndata < min_datapoints:
             logging.warning("there are only {0} data points in transit"
                             .format(ndata))
             continue
@@ -692,9 +694,7 @@ if __name__ == "__main__":
         else:
             M = map
 
-        for i, peaks in enumerate(M(function, kicids)):
-            sys.stderr.write("\r{0:.2f} percent complete"
-                             .format(100*(i + 1.0)/len(kicids)))
+        for peaks in tqdm(M(function, kicids), total=len(kicids)):
             if not len(peaks):
                 continue
             with open(cand_fn, "a") as f:

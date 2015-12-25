@@ -707,20 +707,22 @@ if __name__ == "__main__":
 
     # Build injections.
     if args.inject:
-        r = np.exp(np.random.uniform(np.log(0.04), np.log(0.2)))
-        injections = [dict(
-            kicid=k,
-            q1=np.random.rand(),
-            q2=np.random.rand(),
-            ror=r,
-            period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
-            b=np.random.uniform(0, 1+r),
-            e=beta.rvs(0.867, 3.03),
-            omega=np.random.uniform(0, 2*np.pi),
-            t0=np.random.uniform(120, 1600),
-            recovered=False,
-            ncadences=0,
-        ) for k in kicids]
+        injections = []
+        for k in kicids:
+            r = np.exp(np.random.uniform(np.log(0.04), np.log(0.2)))
+            injections.append(dict(
+                kicid=k,
+                q1=np.random.rand(),
+                q2=np.random.rand(),
+                ror=r,
+                period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
+                b=np.random.uniform(0, 1+r),
+                e=beta.rvs(0.867, 3.03),
+                omega=np.random.uniform(0, 2*np.pi),
+                t0=np.random.uniform(120, 1600),
+                recovered=False,
+                ncadences=0,
+            ))
     else:
         injections = [None for _ in range(len(kicids))]
 

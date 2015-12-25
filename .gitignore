@@ -11,3 +11,5 @@ output
 build
 dist
 *.egg-info
+*.so
+*.o[0-9]*

@@ -26,9 +26,8 @@ from peerless.data import (load_light_curves_for_kic, running_median_trend,
                            load_light_curves)
 
 
-def get_peaks(kicid=None,
+def get_peaks(kicid_and_injection=None,
               lcs=None,
-              inject=False,
               tau=0.6,
               detrend_hw=2.0,
               remove_kois=True,
@@ -49,9 +48,6 @@ def get_peaks(kicid=None,
 
     :param detrend_hw:
         Half width of running window for de-trending. (default: 2.0)
-
-    :param inject:
-        Inject a transit into the light curves. (default: False)
 
     :param remove_kois:
         Remove data points near known KOI transits. (default: True)
@@ -90,30 +86,27 @@ def get_peaks(kicid=None,
         Moar printing. (default: False)
 
     """
+
+    if kicid_and_injection is not None:
+        kicid, injection = kicid_and_injection
+    else:
+        kicid, injection = None, None
+    inject = injection is not None
+
     system = None
-    injection = None
     if inject:
-        system = transit.System(transit.Central(q1=np.random.rand(),
-                                                q2=np.random.rand()))
-        r = np.exp(np.random.uniform(np.log(0.02), np.log(0.2)))
+        system = transit.System(transit.Central(q1=injection["q1"],
+                                                q2=injection["q2"]))
         system.add_body(transit.Body(
-            radius=r,
-            period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
-            b=np.random.uniform(0, 1+r),
-            e=beta.rvs(0.867, 3.03),
-            omega=np.random.uniform(0, 2*np.pi),
-            t0=np.random.uniform(120, 1600),
+            radius=injection["ror"],
+            period=injection["period"],
+            b=injection["b"],
+            e=injection["e"],
+            omega=injection["omega"],
+            t0=injection["t0"],
         ))
-        injection = dict(
-            t0=system.bodies[0].t0,
-            period=system.bodies[0].period,
-            ror=system.bodies[0].radius,
-            b=system.bodies[0].b,
-            e=system.bodies[0].e,
-            omega=system.bodies[0].omega,
-            recovered=False,
-            ncadences=0,
-        )
+        injection["ncadences"] = 0
+        injection["recovered"] = False
 
     if lcs is None and kicid is None:
         raise ValueError("you must specify 'lcs' or 'kicid'")
@@ -653,7 +646,6 @@ if __name__ == "__main__":
     # Build the dictionary of search keywords.
     function = partial(
         _wrapper,
-        inject=args.inject,
         tau=args.duration,
         detrend_hw=args.detrend_hw,
         remove_kois=not args.no_remove_kois,
@@ -714,6 +706,24 @@ if __name__ == "__main__":
 
         print("Removed {0} known EBs from target list".format(l0-len(kicids)))
 
+    # Build injections.
+    if args.inject:
+        r = np.exp(np.random.uniform(np.log(0.02), np.log(0.2)))
+        injections = [dict(
+            q1=np.random.rand(),
+            q2=np.random.rand(),
+            ror = r,
+            period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
+            b=np.random.uniform(0, 1+r),
+            e=beta.rvs(0.867, 3.03),
+            omega=np.random.uniform(0, 2*np.pi),
+            t0=np.random.uniform(120, 1600),
+            recovered=False,
+            ncadences=0,
+        ) for _ in range(len(kicids))]
+    else:
+        injections = [None for _ in range(len(kicids))]
+
     # Check and create the output directory.
     if os.path.exists(args.output_dir):
         logging.warning("Output directory '{0}' exists"
@@ -756,7 +766,7 @@ if __name__ == "__main__":
         else:
             M = map
 
-        for peaks, inj in tqdm(M(function, kicids), total=len(kicids)):
+        for peaks, inj in tqdm(M(function, zip(kicids, injections)), total=len(kicids)):
             if not len(peaks):
                 continue
             with open(cand_fn, "a") as f:

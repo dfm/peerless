@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -l nodes=1:ppn=20
-#PBS -l walltime=8:00:00
+#PBS -l walltime=12:00:00
 #PBS -l mem=60GB
 #PBS -N peerless
 #PBS -M danfm@nyu.edu

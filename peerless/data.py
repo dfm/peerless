@@ -58,6 +58,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
 
     # Load the light curves.
     lcs = []
+    n_inj_cad = 0
     for fn in fns:
         # Load the data.
         data, hdr = fitsio.read(fn, header=True)
@@ -101,6 +102,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
         if inject_system is not None:
             model = inject_system.get_value(
                 np.ascontiguousarray(x[m], dtype=float), texp=texp)
+            n_inj_cad += np.sum(model < 1.0)
             y[m] *= model
 
         # Deal with big gaps.
@@ -118,7 +120,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
 
         if delete:
             os.remove(fn)
-    return lcs
+    return lcs, n_inj_cad
 
 
 def running_median_trend(x, y, hw=2.0):

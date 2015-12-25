@@ -95,7 +95,7 @@ def get_peaks(kicid=None,
     if inject:
         system = transit.System(transit.Central(q1=np.random.rand(),
                                                 q2=np.random.rand()))
-        r = np.exp(np.random.uniform(np.log(0.04), np.log(0.2)))
+        r = np.exp(np.random.uniform(np.log(0.02), np.log(0.2)))
         system.add_body(transit.Body(
             radius=r,
             period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
@@ -112,15 +112,19 @@ def get_peaks(kicid=None,
             e=system.bodies[0].e,
             omega=system.bodies[0].omega,
             recovered=False,
+            ncadences=0,
         )
 
     if lcs is None and kicid is None:
         raise ValueError("you must specify 'lcs' or 'kicid'")
     if lcs is None:
-        lcs = load_light_curves_for_kic(kicid, delete=delete,
-                                        detrend_hw=detrend_hw,
-                                        remove_kois=remove_kois,
-                                        inject_system=system)
+        lcs, ncad = load_light_curves_for_kic(kicid, delete=delete,
+                                              detrend_hw=detrend_hw,
+                                              remove_kois=remove_kois,
+                                              inject_system=system)
+        if inject:
+            injection["ncadences"] += ncad
+
     else:
         kicid = "unknown-target"
 
@@ -411,17 +415,6 @@ def get_peaks(kicid=None,
         peak["transit_ror"] = system.ror
         peak["transit_time"] = system.t0
 
-        # Save the injected parameters.
-        if inject:
-            for k in ["t0", "period", "ror", "b", "e", "omega"]:
-                peak["injected_{0}".format(k)] = injection[k]
-
-            # Check for recovery.
-            p = injection["period"]
-            d = (peak["transit_time"] - injection["t0"] + 0.5*p) % p - 0.5*p
-            peak["recovered"] = np.abs(d) < peak["transit_duration"]
-            injection["recovered"] = True
-
         # Accept the peak?
         accept_bic = all(
             peak["bic_transit"] >= peak.get("bic_{0}".format(k), -np.inf)
@@ -436,6 +429,19 @@ def get_peaks(kicid=None,
         accept = accept_bic and accept_time
         peak["accept_bic"] = accept_bic
         peak["accept_time"] = accept_time
+
+        # Save the injected parameters.
+        if inject:
+            for k in ["t0", "period", "ror", "b", "e", "omega"]:
+                peak["injected_{0}".format(k)] = injection[k]
+
+            # Check for recovery.
+            p = injection["period"]
+            d = (peak["transit_time"] - injection["t0"] + 0.5*p) % p - 0.5*p
+            peak["is_injection"] = np.abs(d) < peak["transit_duration"]
+            injection["recovered"] |= accept
+
+        # Save the peak.
         final_peaks.append(peak)
 
         if no_plots or ((not accept) and (not plot_all)):
@@ -729,13 +735,14 @@ if __name__ == "__main__":
     if args.inject:
         columns += ["injected_{0}".format(k) for k in ["t0", "period", "ror",
                                                        "b", "e", "omega"]]
-        columns += ["recovered"]
+        columns += ["is_injection"]
     with open(cand_fn, "w") as f:
         f.write("{0}\n".format(",".join(columns)))
     with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
         f.write("\n".join(map("{0}".format, kicids)))
 
-    inj_columns = ["t0", "period", "ror", "b", "e", "omega", "recovered"]
+    inj_columns = ["t0", "period", "ror", "b", "e", "omega", "recovered",
+                   "ncadences"]
     inj_fn = os.path.join(args.output_dir, "injections.csv")
     if args.inject:
         with open(inj_fn, "w") as f:
@@ -762,7 +769,7 @@ if __name__ == "__main__":
                                      for k in inj_columns) + "\n")
 
     if args.filenames is not None:
-        lcs = load_light_curves(
+        lcs, _ = load_light_curves(
             args.filenames,
             detrend_hw=args.detrend_hw,
             remove_kois=not args.no_remove_kois,

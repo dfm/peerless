@@ -562,9 +562,9 @@ class BoxModel(ModelingMixin):
             b = self.mx < t
             c = ~(a | b)
             kwargs = dict(
-                before_value=np.mean(y[a]),
-                in_value=np.mean(y[c]),
-                after_value=np.mean(y[b]),
+                before_value=np.mean(y[a]) if np.any(a) else 0.0,
+                in_value=np.mean(y[c]) if np.any(c) else 0.0,
+                after_value=np.mean(y[b]) if np.any(b) else 0.0,
             )
         super(BoxModel, self).__init__(**kwargs)
 

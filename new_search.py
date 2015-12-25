@@ -707,7 +707,7 @@ if __name__ == "__main__":
 
     # Build injections.
     if args.inject:
-        r = np.exp(np.random.uniform(np.log(0.01), np.log(0.1)))
+        r = np.exp(np.random.uniform(np.log(0.04), np.log(0.2)))
         injections = [dict(
             kicid=k,
             q1=np.random.rand(),

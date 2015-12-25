@@ -86,7 +86,6 @@ def get_peaks(kicid_and_injection=None,
         Moar printing. (default: False)
 
     """
-
     if kicid_and_injection is not None:
         kicid, injection = kicid_and_injection
     else:
@@ -167,7 +166,7 @@ def get_peaks(kicid_and_injection=None,
         print("Found {0} raw peaks".format(len(peaks)))
 
     if not len(peaks):
-        return [], None
+        return [], injection
 
     for i, peak in enumerate(peaks):
         peak["num_peaks"] = len(peaks)
@@ -708,11 +707,12 @@ if __name__ == "__main__":
 
     # Build injections.
     if args.inject:
-        r = np.exp(np.random.uniform(np.log(0.02), np.log(0.2)))
+        r = np.exp(np.random.uniform(np.log(0.01), np.log(0.1)))
         injections = [dict(
+            kicid=k,
             q1=np.random.rand(),
             q2=np.random.rand(),
-            ror = r,
+            ror=r,
             period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
             b=np.random.uniform(0, 1+r),
             e=beta.rvs(0.867, 3.03),
@@ -720,7 +720,7 @@ if __name__ == "__main__":
             t0=np.random.uniform(120, 1600),
             recovered=False,
             ncadences=0,
-        ) for _ in range(len(kicids))]
+        ) for k in kicids]
     else:
         injections = [None for _ in range(len(kicids))]
 
@@ -751,7 +751,8 @@ if __name__ == "__main__":
     with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
         f.write("\n".join(map("{0}".format, kicids)))
 
-    inj_columns = ["t0", "period", "ror", "b", "e", "omega", "recovered",
+    inj_columns = ["kicid", "q1", "q2", "t0", "period", "ror", "b", "e",
+                   "omega", "recovered",
                    "ncadences"]
     inj_fn = os.path.join(args.output_dir, "injections.csv")
     if args.inject:
@@ -766,17 +767,18 @@ if __name__ == "__main__":
         else:
             M = map
 
-        for peaks, inj in tqdm(M(function, zip(kicids, injections)), total=len(kicids)):
+        for peaks, inj in tqdm(M(function, zip(kicids, injections)),
+                               total=len(kicids)):
+            if args.inject and inj is not None:
+                with open(inj_fn, "a") as f:
+                    f.write(",".join("{0}".format(inj.get(k, np.nan))
+                                     for k in inj_columns) + "\n")
             if not len(peaks):
                 continue
             with open(cand_fn, "a") as f:
                 f.write("\n".join(
                     ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
                     for p in peaks) + "\n")
-            if args.inject:
-                with open(inj_fn, "a") as f:
-                    f.write(",".join("{0}".format(inj.get(k, np.nan))
-                                     for k in inj_columns) + "\n")
 
     if args.filenames is not None:
         lcs, _ = load_light_curves(

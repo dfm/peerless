@@ -170,7 +170,7 @@ def get_peaks(kicid=None,
         print("Found {0} raw peaks".format(len(peaks)))
 
     if not len(peaks):
-        return []
+        return [], None
 
     for i, peak in enumerate(peaks):
         peak["num_peaks"] = len(peaks)

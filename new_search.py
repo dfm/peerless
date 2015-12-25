@@ -91,6 +91,7 @@ def get_peaks(kicid=None,
 
     """
     system = None
+    injection = None
     if inject:
         system = transit.System(transit.Central(q1=np.random.rand(),
                                                 q2=np.random.rand()))
@@ -110,6 +111,7 @@ def get_peaks(kicid=None,
             b=system.bodies[0].b,
             e=system.bodies[0].e,
             omega=system.bodies[0].omega,
+            recovered=False,
         )
 
     if lcs is None and kicid is None:
@@ -168,7 +170,7 @@ def get_peaks(kicid=None,
         print("Found {0} raw peaks".format(len(peaks)))
 
     if not len(peaks):
-        return []
+        return [], None
 
     for i, peak in enumerate(peaks):
         peak["num_peaks"] = len(peaks)
@@ -418,6 +420,7 @@ def get_peaks(kicid=None,
             p = injection["period"]
             d = (peak["transit_time"] - injection["t0"] + 0.5*p) % p - 0.5*p
             peak["recovered"] = np.abs(d) < peak["transit_duration"]
+            injection["recovered"] = True
 
         # Accept the peak?
         accept_bic = all(
@@ -435,7 +438,7 @@ def get_peaks(kicid=None,
         peak["accept_time"] = accept_time
         final_peaks.append(peak)
 
-        if (not accept) and (not plot_all):
+        if no_plots or ((not accept) and (not plot_all)):
             continue
 
         # Plots.
@@ -501,7 +504,7 @@ def get_peaks(kicid=None,
         fig.savefig(os.path.join(basedir, "{0:04d}.png".format(i + 1)))
         pl.close(fig)
 
-    return final_peaks
+    return final_peaks, injection
 
 
 def _wrapper(*args, **kwargs):
@@ -515,7 +518,7 @@ def _wrapper(*args, **kwargs):
                                "errors.txt"), "a") as f:
             f.write("{0} failed with exception:\n{1}"
                     .format(args, traceback.format_exc()))
-    return []
+    return [], None
 
 
 class StepModel(ModelingMixin):
@@ -728,9 +731,15 @@ if __name__ == "__main__":
                                                        "b", "e", "omega"]]
         columns += ["recovered"]
     with open(cand_fn, "w") as f:
-        f.write("# {0}\n".format(", ".join(columns)))
+        f.write("{0}\n".format(",".join(columns)))
     with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
         f.write("\n".join(map("{0}".format, kicids)))
+
+    inj_columns = ["t0", "period", "ror", "b", "e", "omega", "recovered"]
+    inj_fn = os.path.join(args.output_dir, "injections.csv")
+    if args.inject:
+        with open(inj_fn, "w") as f:
+            f.write("{0}\n".format(",".join(inj_columns)))
 
     if len(kicids):
         # Deal with parallelization.
@@ -740,13 +749,17 @@ if __name__ == "__main__":
         else:
             M = map
 
-        for peaks in tqdm(M(function, kicids), total=len(kicids)):
+        for peaks, inj in tqdm(M(function, kicids), total=len(kicids)):
             if not len(peaks):
                 continue
             with open(cand_fn, "a") as f:
                 f.write("\n".join(
-                    ", ".join("{0}".format(p.get(k, np.nan)) for k in columns)
+                    ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
                     for p in peaks) + "\n")
+            if args.inject:
+                with open(inj_fn, "a") as f:
+                    f.write(",".join("{0}".format(inj.get(k, np.nan))
+                                     for k in inj_columns) + "\n")
 
     if args.filenames is not None:
         lcs = load_light_curves(
@@ -754,9 +767,9 @@ if __name__ == "__main__":
             detrend_hw=args.detrend_hw,
             remove_kois=not args.no_remove_kois,
         )
-        peaks = function(lcs=lcs)
+        peaks, _ = function(lcs=lcs)
         if len(peaks):
             with open(cand_fn, "a") as f:
                 f.write("\n".join(
-                    ", ".join("{0}".format(p.get(k, np.nan)) for k in columns)
+                    ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
                     for p in peaks) + "\n")

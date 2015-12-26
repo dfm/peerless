@@ -709,7 +709,7 @@ if __name__ == "__main__":
     if args.inject:
         injections = []
         for k in kicids:
-            r = np.exp(np.random.uniform(np.log(0.04), np.log(0.2)))
+            r = np.exp(np.random.uniform(np.log(0.02), np.log(0.3)))
             injections.append(dict(
                 kicid=k,
                 q1=np.random.rand(),

@@ -17,5 +17,5 @@ RUNDIR=$SCRATCH/peerless/run-${PBS_JOBID/.*}
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python new_search.py --bright-g-dwarfs -p -q --no-plots --inject --clean -o $RUNDIR
+python search.py --bright-g-dwarfs -p -q --no-plots --inject --clean -o $RUNDIR
 

@@ -115,7 +115,12 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
             m0 = m & (labels == i)
             if not np.any(m0):
                 continue
-            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, texp=texp,
+            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta,
+                                  data["MOM_CENTR1"][m0],
+                                  data["MOM_CENTR2"][m0],
+                                  data["POS_CORR1"][m0],
+                                  data["POS_CORR2"][m0],
+                                  texp=texp,
                                   hw=detrend_hw))
 
         if delete:
@@ -133,7 +138,9 @@ def running_median_trend(x, y, hw=2.0):
 
 class LightCurve(object):
 
-    def __init__(self, time, flux, ferr, meta, texp=TEXP, hw=2.0):
+    def __init__(self, time, flux, ferr, meta,
+                 mom_cen_1, mom_cen_2, pos_corr_1, pos_corr_2,
+                 texp=TEXP, hw=2.0):
         self.trend = running_median_trend(time, flux, hw=hw)
         self.median = np.median(flux)
 
@@ -144,6 +151,11 @@ class LightCurve(object):
         self.time = np.ascontiguousarray(time, dtype=float)
         self.flux = np.ascontiguousarray(flux/self.trend, dtype=float)
         self.ferr = np.ascontiguousarray(ferr/self.trend, dtype=float)
+
+        self.mom_cen_1 = np.ascontiguousarray(mom_cen_1, dtype=float)
+        self.mom_cen_2 = np.ascontiguousarray(mom_cen_2, dtype=float)
+        self.pos_corr_1 = np.ascontiguousarray(pos_corr_1, dtype=float)
+        self.pos_corr_2 = np.ascontiguousarray(pos_corr_2, dtype=float)
 
         self.meta = meta
         self.footprint = self.time.max() - self.time.min()

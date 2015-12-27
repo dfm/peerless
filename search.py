@@ -200,6 +200,8 @@ def get_peaks(kicid_and_injection=None,
         x = np.ascontiguousarray(x[inds])
         y = np.ascontiguousarray(y[inds])
         yerr = np.ascontiguousarray(yerr[inds])
+        cen_x = np.ascontiguousarray(lc0.mom_cen_1[inds])
+        cen_y = np.ascontiguousarray(lc0.mom_cen_2[inds])
 
         if verbose:
             print("{0} data points in chunk".format(len(x)))
@@ -303,6 +305,8 @@ def get_peaks(kicid_and_injection=None,
             ("box2", boxes[0]),
         ])
         preds = dict()
+        pred_cen_x = None
+        pred_cen_y = None
         for name, mean_model in models.items():
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
@@ -336,6 +340,30 @@ def get_peaks(kicid_and_injection=None,
             if name == "transit":
                 models["box1"].mn = system.t0 - 0.5*system.duration
                 models["box1"].mx = system.t0 + 0.5*system.duration
+
+                # Fit the centroids.
+                tm = (system.get_value(x)-1) / (system.get_value(system.t0)-1)
+                A = np.vander(tm, 2)
+                AT = A.T
+                err = np.median(np.abs(np.concatenate((np.diff(cen_x),
+                                                       np.diff(cen_y)))))
+                C = gp.get_matrix(x)
+                C[np.diag_indices_from(C)] += err**2
+                alpha = np.linalg.solve(C, A)
+                ATA = np.dot(AT, alpha)
+                mu_x = np.mean(cen_x)
+                a_x = np.linalg.solve(C, cen_x - mu_x)
+                w_x = np.linalg.solve(ATA, np.dot(AT, a_x))
+                mu_y = np.mean(cen_y)
+                a_y = np.linalg.solve(C, cen_y - mu_y)
+                w_y = np.linalg.solve(ATA, np.dot(AT, a_y))
+                offset = np.sqrt(w_x[0]**2 + w_y[0]**2)
+                offset_err = np.sqrt(np.linalg.inv(ATA)[0, 0])
+                peak["centroid_offset"] = offset
+                peak["centroid_offset_err"] = offset_err
+
+                pred_cen_x = np.dot(A, w_x) + mu_x
+                pred_cen_y = np.dot(A, w_y) + mu_y
 
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
@@ -439,6 +467,47 @@ def get_peaks(kicid_and_injection=None,
         if no_plots or ((not accept) and (not plot_all)):
             continue
 
+        # Centroid plot.
+        fig, axes = pl.subplots(3, 1, figsize=(7, 8), sharex=True)
+
+        ax = axes[0]
+        ax.plot(x, (y-1)*1e3, "k")
+        ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
+        # ax.set_xticklabels([])
+        ax.set_ylabel("flux")
+
+        ax = axes[1]
+        mu_x = np.mean(cen_x)
+        ax.plot(x, cen_x - mu_x, "k")
+        if pred_cen_x is not None:
+            ax.plot(x, pred_cen_x - mu_x, "g")
+        # ax.set_xticklabels([])
+        ax.set_ylabel("x-centroid")
+
+        ax = axes[2]
+        mu_y = np.mean(cen_y)
+        ax.plot(x, cen_y - mu_y, "k")
+        if pred_cen_y is not None:
+            ax.plot(x, pred_cen_y - mu_y, "g")
+        ax.set_ylabel("y-centroid")
+        ax.set_xlabel("time [KBJD]")
+
+        for ax in axes:
+            ax.axvline(system.t0, color="g", lw=5, alpha=0.3)
+            ax.set_xlim(system.t0-5, system.t0+5)
+            ax.yaxis.set_major_locator(pl.MaxNLocator(4))
+            ax.xaxis.set_major_locator(pl.MaxNLocator(5))
+            ax.yaxis.set_label_coords(-0.15, 0.5)
+
+        fig.subplots_adjust(
+            left=0.18, bottom=0.1, right=0.98, top=0.97,
+            wspace=0.05, hspace=0.12
+        )
+
+        os.makedirs(basedir, exist_ok=True)
+        fig.savefig(os.path.join(basedir, "cen-{0:04d}.png".format(i + 1)))
+        pl.close(fig)
+
         # Plots.
         fig, axes = pl.subplots(3, 2, figsize=(10, 8))
 
@@ -486,19 +555,18 @@ def get_peaks(kicid_and_injection=None,
             ax1.yaxis.set_label_coords(-0.15, 0.5)
 
             ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
-            ax1.axvline(t0, color="g", lw=5, alpha=0.3)
+            ax1.axvline(system.t0, color="g", lw=5, alpha=0.3)
 
-            ax2.set_xlim(t0 - 5.0, t0 + 5.0)
-            ax2.axvline(t0, color="g", lw=5, alpha=0.3)
-            ax2.axvline(t0 - 0.5*tau, color="k", ls="dashed")
-            ax2.axvline(t0 + 0.5*tau, color="k", ls="dashed")
+            ax2.set_xlim(system.t0 - 5.0, system.t0 + 5.0)
+            ax2.axvline(system.t0, color="g", lw=5, alpha=0.3)
+            ax2.axvline(system.t0 - 0.5*tau, color="k", ls="dashed")
+            ax2.axvline(system.t0 + 0.5*tau, color="k", ls="dashed")
             ax2.set_yticklabels([])
 
         fig.subplots_adjust(
             left=0.15, bottom=0.1, right=0.98, top=0.97,
             wspace=0.05, hspace=0.12
         )
-        os.makedirs(basedir, exist_ok=True)
         fig.savefig(os.path.join(basedir, "{0:04d}.png".format(i + 1)))
         pl.close(fig)
 
@@ -621,6 +689,8 @@ if __name__ == "__main__":
                         help="search the planet hunter targets")
     parser.add_argument("--bright-g-dwarfs", action="store_true",
                         help="search bright G and K dwarfs")
+    parser.add_argument("--candidates", action="store_true",
+                        help="only search my candidates")
 
     # Search parameters:
     parser.add_argument("--duration", type=float,  default=0.6,
@@ -680,6 +750,12 @@ if __name__ == "__main__":
         m &= stlr.rrmscdpp07p5 <= 1000.
         m &= stlr.kepmag < 15.
         kicids += list(np.array(stlr[m].kepid))
+    if args.candidates:
+        kicids += [3218908, 3230491, 3239945, 4450472, 4586468, 4754460,
+                   5438845, 6342758, 6551440, 6751029, 8009496, 8410697,
+                   8426957, 8463272, 8505215, 8800954, 9306307, 9730194,
+                   10068041, 10287723, 10321319, 10602068, 10613792, 10842718,
+                   11038446, 11709124, ]
     kicids = np.array(kicids, dtype=int)
 
     # Limit the target list.
@@ -715,7 +791,8 @@ if __name__ == "__main__":
                 q1=np.random.rand(),
                 q2=np.random.rand(),
                 ror=r,
-                period=np.exp(np.random.uniform(np.log(3*365), np.log(15*365))),
+                period=np.exp(np.random.uniform(np.log(3*365),
+                                                np.log(15*365))),
                 b=np.random.uniform(0, 1+r),
                 e=beta.rvs(0.867, 3.03),
                 omega=np.random.uniform(0, 2*np.pi),
@@ -741,6 +818,7 @@ if __name__ == "__main__":
         "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
         "transit_ror", "transit_duration", "transit_time",
         "chunk_min_time", "chunk_max_time",
+        "centroid_offset", "centroid_offset_err",
     ]
     columns += ["lnlike_{0}".format(k) for k in models]
     columns += ["bic_{0}".format(k) for k in models]

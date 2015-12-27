@@ -5,7 +5,6 @@ import os
 import logging
 import traceback
 import numpy as np
-from copy import deepcopy
 from scipy.stats import beta
 from functools import partial
 import matplotlib.pyplot as pl
@@ -372,7 +371,9 @@ def get_peaks(kicid_and_injection=None,
                     err = np.median(np.abs(np.diff(c)))
                     kernel = np.var(c) * kernels.Matern32Kernel(2**2)
                     gp = george.GP(kernel, white_noise=2*np.log(np.mean(err)),
-                                   fit_white_noise=True)
+                                   fit_white_noise=True,
+                                   mean=CentroidModel(tm, a=0.0, b=0.0),
+                                   fit_mean=True)
                     gp.compute(x, err)
 
                     r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll,
@@ -660,6 +661,23 @@ class BoxModel(ModelingMixin):
             before_value=np.ones_like(t) * a,
             in_value=np.ones_like(t) * c,
             after_value=np.ones_like(t) * b,
+        )
+
+
+class CentroidModel(ModelingMixin):
+
+    def __init__(self, mdl, **kwargs):
+        self.mdl = mdl
+        super(CentroidModel, self).__init__(**kwargs)
+
+    def get_value(self, t):
+        return self.a + self.b * self.mdl
+
+    @ModelingMixin.parameter_sort
+    def get_gradient(self, t):
+        return dict(
+            a=np.ones_like(self.mdl),
+            b=self.mdl,
         )
 
 

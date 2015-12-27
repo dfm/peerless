@@ -5,6 +5,7 @@ import os
 import logging
 import traceback
 import numpy as np
+from copy import deepcopy
 from scipy.stats import beta
 from functools import partial
 import matplotlib.pyplot as pl
@@ -305,8 +306,7 @@ def get_peaks(kicid_and_injection=None,
             ("box2", boxes[0]),
         ])
         preds = dict()
-        pred_cen_x = None
-        pred_cen_y = None
+        pred_cens = []
         for name, mean_model in models.items():
             kernel = np.var(y) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, mean=mean_model, fit_mean=True,
@@ -336,35 +336,6 @@ def get_peaks(kicid_and_injection=None,
             gp.set_vector(r.x)
             preds[name] = gp.predict(y, x, return_cov=False)
 
-            # Initialize one of the boxes using the transit shape.
-            if name == "transit":
-                models["box1"].mn = system.t0 - 0.5*system.duration
-                models["box1"].mx = system.t0 + 0.5*system.duration
-
-                # Fit the centroids.
-                tm = (system.get_value(x)-1) / (system.get_value(system.t0)-1)
-                A = np.vander(tm, 2)
-                AT = A.T
-                err = np.median(np.abs(np.concatenate((np.diff(cen_x),
-                                                       np.diff(cen_y)))))
-                C = gp.get_matrix(x)
-                C[np.diag_indices_from(C)] += err**2
-                alpha = np.linalg.solve(C, A)
-                ATA = np.dot(AT, alpha)
-                mu_x = np.mean(cen_x)
-                a_x = np.linalg.solve(C, cen_x - mu_x)
-                w_x = np.linalg.solve(ATA, np.dot(AT, a_x))
-                mu_y = np.mean(cen_y)
-                a_y = np.linalg.solve(C, cen_y - mu_y)
-                w_y = np.linalg.solve(ATA, np.dot(AT, a_y))
-                offset = np.sqrt(w_x[0]**2 + w_y[0]**2)
-                offset_err = np.sqrt(np.linalg.inv(ATA)[0, 0])
-                peak["centroid_offset"] = offset
-                peak["centroid_offset_err"] = offset_err
-
-                pred_cen_x = np.dot(A, w_x) + mu_x
-                pred_cen_y = np.dot(A, w_y) + mu_y
-
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
             peak["bic_{0}".format(name)] = -r.fun-0.5*len(r.x)*np.log(len(x))
@@ -384,6 +355,46 @@ def get_peaks(kicid_and_injection=None,
                                     gp.get_vector()):
                     print("  {0}: {1:.4f} -> {2:.4f}".format(k, v0, v))
                 print()
+
+            # Initialize one of the boxes using the transit shape.
+            if name == "transit":
+                models["box1"].mn = system.t0 - 0.5*system.duration
+                models["box1"].mx = system.t0 + 0.5*system.duration
+
+                # Fit the centroids.
+                tm = (system.get_value(x)-1) / (system.get_value(system.t0)-1)
+                A = np.vander(tm, 2)
+                AT = A.T
+
+                offset = 0.0
+                offset_err = 0.0
+                for c in (cen_x, cen_y):
+                    err = np.median(np.abs(np.diff(c)))
+                    kernel = np.var(c) * kernels.Matern32Kernel(2**2)
+                    gp = george.GP(kernel, white_noise=2*np.log(np.mean(err)),
+                                   fit_white_noise=True)
+                    gp.compute(x, err)
+
+                    r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll,
+                                 args=(c - np.mean(c),), method="L-BFGS-B")
+                    gp.set_vector(r.x)
+
+                    C = gp.get_matrix(x)
+                    C[np.diag_indices_from(C)] += err**2
+                    alpha = np.linalg.solve(C, A)
+                    ATA = np.dot(AT, alpha)
+                    mu = np.mean(c)
+                    a = np.linalg.solve(C, c - mu)
+                    w = np.linalg.solve(ATA, np.dot(AT, a))
+
+                    offset += w[0]**2
+                    offset_err = np.linalg.inv(ATA)[0, 0] * w[0]**2
+                    pred_cens.append(np.dot(A, w) + mu)
+
+                offset_err = np.sqrt(offset_err / offset)
+                offset = np.sqrt(offset)
+                peak["centroid_offset"] = offset
+                peak["centroid_offset_err"] = offset_err
 
             if peak["bic_{0}".format(name)] > peak["bic_transit"]:
                 break
@@ -473,22 +484,19 @@ def get_peaks(kicid_and_injection=None,
         ax = axes[0]
         ax.plot(x, (y-1)*1e3, "k")
         ax.plot(x, (system.get_value(x)-1)*1e3, "r", lw=1.5)
-        # ax.set_xticklabels([])
         ax.set_ylabel("flux")
 
         ax = axes[1]
         mu_x = np.mean(cen_x)
         ax.plot(x, cen_x - mu_x, "k")
-        if pred_cen_x is not None:
-            ax.plot(x, pred_cen_x - mu_x, "g")
-        # ax.set_xticklabels([])
         ax.set_ylabel("x-centroid")
 
         ax = axes[2]
         mu_y = np.mean(cen_y)
         ax.plot(x, cen_y - mu_y, "k")
-        if pred_cen_y is not None:
-            ax.plot(x, pred_cen_y - mu_y, "g")
+        if len(pred_cens):
+            axes[1].plot(x, pred_cens[0] - mu_x, "g")
+            axes[2].plot(x, pred_cens[1] - mu_y, "g")
         ax.set_ylabel("y-centroid")
         ax.set_xlabel("time [KBJD]")
 

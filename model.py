@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import h5py
 import emcee
 import logging
 import traceback
@@ -13,13 +14,12 @@ import matplotlib.pyplot as pl
 from multiprocessing import Pool
 
 import george
-from george import kernels, ModelingMixin
-from george.modeling import check_gradient
+from george import kernels
 
 import transit
 
 from peerless.data import load_light_curves_for_kic
-from peerless.catalogs import KICatalog, EBCatalog, KOICatalog
+from peerless.catalogs import KICatalog
 
 
 # Newton's constant in $R_\odot^3 M_\odot^{-1} {days}^{-2}$.
@@ -27,8 +27,8 @@ _G = 2945.4625385377644
 
 
 def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
-                    no_plots=False, verbose=False, quiet=False, delete=False):
-    print(args)
+                    no_plots=False, verbose=False, quiet=False, delete=False,
+                    nburn=200, burniter=2, nsteps=1000):
     kicid = args["kicid"]
 
     # Initialize the system.
@@ -78,20 +78,34 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
 
     def lnlike():
         ll = 0.0
+        preds = []
         for gp, lc in zip(gps, fit_lcs):
-            r = lc.flux - system.light_curve(lc.time, texp=lc.texp)
+            mu = system.light_curve(lc.time, texp=lc.texp)
+            r = lc.flux - mu
             ll += gp.lnlikelihood(r, quiet=True)
             if not np.isfinite(ll):
-                return -np.inf, 0
+                return -np.inf, (0, None)
+            preds.append((gp.predict(lc.flux, lc.time, return_cov=False)+mu,
+                          mu))
 
         # Compute number of cadences with transits in the other light curves.
         ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
                    for lc in other_lcs)
 
-        return ll, ncad
+        return ll, (ncad, preds)
 
     def lnprob(theta):
-        system.set_vector(theta[:len(system)])
+        blob = [None, 0, None]
+        try:
+            system.set_vector(theta[:len(system)])
+        except ValueError:
+            return -np.inf, blob
+        blob[0] = (
+            system.bodies[0].period,
+            system.bodies[0].e,
+            system.bodies[0].b,
+        )
+
         i = len(system)
         for gp in gps:
             n = len(gp)
@@ -100,19 +114,74 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
 
         lp = lnprior()
         if not np.isfinite(lp):
-            return -np.inf, (0, )
+            return -np.inf, blob
 
-        ll, ncad = lnlike()
+        ll, (blob[1], blob[2]) = lnlike()
         if not np.isfinite(ll):
-            return -np.inf, (0, )
+            return -np.inf, blob
 
-        return lp + ll, ncad
+        return lp + ll, blob
 
+    cols = system.get_parameter_names()
+    for i, g in enumerate(gps):
+        cols += list(map("gp[{0}].{{0}}".format(i).format,
+                         g.get_parameter_names()))
     p0 = np.concatenate([system.get_vector()]+[g.get_vector() for g in gps])
-    ndim, nwalkers = len(p0), 64
-    p0 = p0[None, :] + 1e-6 * np.random.randn(nwalkers, ndim)
+    ndim, nwalkers = len(p0), 42
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
-    sampler.run_mcmc(p0, 1000)
+
+    # Set up the output.
+    basedir = os.path.join(output_dir, "{0}".format(kicid))
+    os.makedirs(basedir, exist_ok=True)
+    chain_fn = os.path.join(basedir, "chain.h5")
+    with h5py.File(chain_fn, "w") as f:
+        g = f.create_dataset("chain", shape=(nsteps, nwalkers),
+                             dtype=[(k, np.float64) for k in cols])
+        f.create_dataset("lnprob", shape=(nsteps, nwalkers))
+        f.create_dataset("params", shape=(nsteps, nwalkers),
+                         dtype=[("ncadence", np.int64),
+                                ("period", np.float64),
+                                ("impact", np.float64),
+                                ("eccen", np.float64)])
+
+        n = sum(len(lc.time) for lc in fit_lcs)
+        f.create_dataset("pred", shape=(nsteps, nwalkers, 2, n))
+
+        data = np.array([
+            (i, lc.time[j], lc.flux[j])
+            for i, lc in enumerate(lcs) for j in range(len(lc.time))
+        ], dtype=[("chunk", np.int64), ("time", np.float64),
+                  ("flux", np.float64)])
+        f.create_dataset("data", data=data)
+
+    # Run the MCMC.
+    burniter = max(1, burniter)
+    for i in range(burniter):
+        print("Burn-in: {0}".format(i))
+        p0 = p0[None, :] + 1e-4 * np.random.randn(nwalkers, ndim)
+        p0, _, _, _ = sampler.run_mcmc(p0, nburn)
+        if i < burniter - 1:
+            p0 = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
+
+    print("Production")
+    sampler.reset()
+    for i, (pos, lnp, _, blob) in enumerate(sampler.sample(p0,
+                                                           iterations=nsteps,
+                                                           storechain=False)):
+        with h5py.File(chain_fn, "a") as f:
+            for n in range(nwalkers):
+                for j, k in enumerate(cols):
+                    f["chain"][i, n, k] = pos[n, j]
+
+                f["params"][i, n, "ncadence"] = blob[n][1]
+                f["params"][i, n, "period"] = blob[n][0][0]
+                f["params"][i, n, "eccen"] = blob[n][0][1]
+                f["params"][i, n, "impact"] = blob[n][0][2]
+
+                f["pred"][i, n, 0] = np.concatenate([b[0] for b in blob[n][2]])
+                f["pred"][i, n, 1] = np.concatenate([b[1] for b in blob[n][2]])
+
+            f["lnprob"][i] = lnp
 
     return sampler
 
@@ -158,6 +227,12 @@ if __name__ == "__main__":
                         help="fit even rejected candidates")
     parser.add_argument("--max-offset", type=float, default=10.0,
                         help="the maximum centroid offset S/N")
+    parser.add_argument("--nburn", type=int, default=200,
+                        help="the number of burn-in MCMC steps")
+    parser.add_argument("--burniter", type=int, default=2,
+                        help="the number of burn-in iterations")
+    parser.add_argument("--nsteps", type=int, default=1000,
+                        help="the number of production MCMC steps")
 
     args = parser.parse_args()
 
@@ -170,6 +245,9 @@ if __name__ == "__main__":
         verbose=args.verbose,
         quiet=args.quiet,
         delete=args.clean,
+        nburn=args.nburn,
+        burniter=args.burniter,
+        nsteps=args.nsteps,
     )
 
     # Check and create the output directory.
@@ -241,4 +319,4 @@ if __name__ == "__main__":
         M = map
 
     # Run.
-    samplers = list(M(_wrapper, inits))
+    samplers = list(M(function, inits))

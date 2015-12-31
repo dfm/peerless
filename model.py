@@ -227,11 +227,11 @@ if __name__ == "__main__":
                         help="fit even rejected candidates")
     parser.add_argument("--max-offset", type=float, default=10.0,
                         help="the maximum centroid offset S/N")
-    parser.add_argument("--nburn", type=int, default=200,
+    parser.add_argument("--nburn", type=int, default=300,
                         help="the number of burn-in MCMC steps")
-    parser.add_argument("--burniter", type=int, default=2,
+    parser.add_argument("--burniter", type=int, default=3,
                         help="the number of burn-in iterations")
-    parser.add_argument("--nsteps", type=int, default=1000,
+    parser.add_argument("--nsteps", type=int, default=5000,
                         help="the number of production MCMC steps")
 
     args = parser.parse_args()

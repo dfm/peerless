@@ -226,9 +226,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="model some light curves")
 
-    parser.add_argument("kicids", nargs="*", type=int, help="some KIC IDs")
-    parser.add_argument("--candidates",
-                        help="the ")
+    parser.add_argument("candidates", help="the candidate database")
+    parser.add_argument("--kicids", nargs="*", type=int,
+                        help="only fit specific KIC IDs")
     parser.add_argument("-p", "--parallel", type=int,
                         help="parallelize across targets")
     parser.add_argument("-q", "--quiet", action="store_true",

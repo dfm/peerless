@@ -26,29 +26,32 @@ builtins.__PEERLESS_SETUP__ = True
 import peerless
 
 # Execute the setup command.
-# desc = open("README.rst").read()
-desc = ""
+desc = open("README.rst").read()
 setup(
     name="peerless",
     version=peerless.__version__,
     author="Daniel Foreman-Mackey",
-    author_email="danfm@nyu.edu",
+    author_email="foreman.mackey@gmail.com",
     packages=[
         "peerless",
     ],
     ext_modules=cythonize(exts),
-    scripts=[],
+    scripts=[
+        "scripts/peerless-search",
+        "scripts/peerless-fit",
+    ],
     url="http://github.com/dfm/peerless",
     license="MIT",
     description="I can haz planetz?",
     long_description=desc,
-    package_data={"": ["README.rst", "LICENSE", ]},
+    package_data={"": ["README.rst", "LICENSE"],
+                  "peerless": ["data/*.csv"]},
     include_package_data=True,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python",
+        "Programming Language :: Python 3",
     ],
 )

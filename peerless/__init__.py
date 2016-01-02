@@ -10,5 +10,7 @@ except NameError:
 if not __PEERLESS_SETUP__:
     __all__ = [
         "data",
+        "catalogs",
+        "settings",
     ]
-    from . import data
+    from . import data, catalogs, settings

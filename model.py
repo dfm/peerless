@@ -229,7 +229,7 @@ if __name__ == "__main__":
     parser.add_argument("kicids", nargs="*", type=int, help="some KIC IDs")
     parser.add_argument("--candidates",
                         help="the ")
-    parser.add_argument("-p", "--parallel", action="store_true",
+    parser.add_argument("-p", "--parallel", type=int,
                         help="parallelize across targets")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="log errors instead of raising")
@@ -334,7 +334,7 @@ if __name__ == "__main__":
 
     # Deal with parallelization.
     if args.parallel:
-        pool = Pool()
+        pool = Pool(args.parallel)
         M = pool.imap_unordered
     else:
         M = map

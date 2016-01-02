@@ -17,5 +17,5 @@ RUNDIR=$SCRATCH/peerless/fit-${PBS_JOBID/.*}
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python model.py --candidates candidates.csv -p -q --clean -o $RUNDIR
+python model.py --candidates candidates.csv -p ${PBS_NP} -q --clean -o $RUNDIR
 

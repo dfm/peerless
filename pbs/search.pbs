@@ -13,9 +13,9 @@ export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch
 export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless
-RUNDIR=$SCRATCH/peerless/run-${PBS_JOBID/.*}
+RUNDIR=$SCRATCH/peerless/search-${PBS_JOBID/.*}
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python search.py --bright-g-dwarfs -p -q --no-plots --inject --clean -o $RUNDIR
+python scripts/peerless-search --bright-g-dwarfs -p -q --no-plots --inject --clean -o $RUNDIR
 

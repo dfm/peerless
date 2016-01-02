@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import beta
 from functools import partial
-import matplotlib.pyplot as pl
+# import matplotlib.pyplot as pl
 from multiprocessing import Pool
 
 import george
@@ -24,6 +24,80 @@ from peerless.catalogs import KICatalog
 
 # Newton's constant in $R_\odot^3 M_\odot^{-1} {days}^{-2}$.
 _G = 2945.4625385377644
+
+
+class TransitModel(object):
+
+    eb = beta(1.12, 3.09)
+
+    def __init__(self, gps, system, smass, smass_err, srad, srad_err,
+                 fit_lcs, other_lcs):
+        self.gps = gps
+        self.system = system
+        self.smass = smass
+        self.smass_err = smass_err
+        self.srad = srad
+        self.srad_err = srad_err
+        self.fit_lcs = fit_lcs
+        self.other_lcs = other_lcs
+
+    # Probabilistic model:
+    def lnprior(self):
+        star = self.system.central
+        return -0.5 * (
+            ((star.mass - self.smass) / self.smass_err) ** 2 +
+            ((star.radius - self.srad) / self.srad_err) ** 2
+        ) + self.eb.logpdf(self.system.bodies[0].e)
+
+    def lnlike(self):
+        system = self.system
+        ll = 0.0
+        preds = []
+        for gp, lc in zip(self.gps, self.fit_lcs):
+            mu = system.light_curve(lc.time, texp=lc.texp)
+            r = lc.flux - mu
+            ll += gp.lnlikelihood(r, quiet=True)
+            if not np.isfinite(ll):
+                return -np.inf, (0, None)
+            preds.append((gp.predict(lc.flux, lc.time, return_cov=False)+mu,
+                          mu))
+
+        # Compute number of cadences with transits in the other light curves.
+        ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
+                   for lc in self.other_lcs)
+
+        return ll, (ncad, preds)
+
+    def lnprob(self, theta):
+        blob = [None, 0, None]
+        try:
+            self.system.set_vector(theta[:len(self.system)])
+        except ValueError:
+            return -np.inf, blob
+        blob[0] = (
+            self.system.bodies[0].period,
+            self.system.bodies[0].e,
+            self.system.bodies[0].b,
+        )
+
+        i = len(self.system)
+        for gp in self.gps:
+            n = len(gp)
+            gp.set_vector(theta[i:i+n])
+            i += n
+
+        lp = self.lnprior()
+        if not np.isfinite(lp):
+            return -np.inf, blob
+
+        ll, (blob[1], blob[2]) = self.lnlike()
+        if not np.isfinite(ll):
+            return -np.inf, blob
+
+        return lp + ll, blob
+
+    def __call__(self, theta):
+        return self.lnprob(theta)
 
 
 def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
@@ -66,61 +140,8 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
         else:
             other_lcs.append(lc)
 
-    eb = beta(1.12, 3.09)
-
-    # Probabilistic model:
-    def lnprior():
-        star = system.central
-        return -0.5 * (
-            ((star.mass - args["smass"]) / args["smass_err"]) ** 2 +
-            ((star.radius - args["srad"]) / args["srad_err"]) ** 2
-        ) + eb.logpdf(system.bodies[0].e)
-
-    def lnlike():
-        ll = 0.0
-        preds = []
-        for gp, lc in zip(gps, fit_lcs):
-            mu = system.light_curve(lc.time, texp=lc.texp)
-            r = lc.flux - mu
-            ll += gp.lnlikelihood(r, quiet=True)
-            if not np.isfinite(ll):
-                return -np.inf, (0, None)
-            preds.append((gp.predict(lc.flux, lc.time, return_cov=False)+mu,
-                          mu))
-
-        # Compute number of cadences with transits in the other light curves.
-        ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
-                   for lc in other_lcs)
-
-        return ll, (ncad, preds)
-
-    def lnprob(theta):
-        blob = [None, 0, None]
-        try:
-            system.set_vector(theta[:len(system)])
-        except ValueError:
-            return -np.inf, blob
-        blob[0] = (
-            system.bodies[0].period,
-            system.bodies[0].e,
-            system.bodies[0].b,
-        )
-
-        i = len(system)
-        for gp in gps:
-            n = len(gp)
-            gp.set_vector(theta[i:i+n])
-            i += n
-
-        lp = lnprior()
-        if not np.isfinite(lp):
-            return -np.inf, blob
-
-        ll, (blob[1], blob[2]) = lnlike()
-        if not np.isfinite(ll):
-            return -np.inf, blob
-
-        return lp + ll, blob
+    model = TransitModel(gps, system, args["smass"], args["smass_err"],
+                         args["srad"], args["srad_err"], fit_lcs, other_lcs)
 
     cols = system.get_parameter_names()
     for i, g in enumerate(gps):
@@ -128,7 +149,7 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
                          g.get_parameter_names()))
     p0 = np.concatenate([system.get_vector()]+[g.get_vector() for g in gps])
     ndim, nwalkers = len(p0), 42
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, model)
 
     # Set up the output.
     basedir = os.path.join(output_dir, "{0}".format(kicid))

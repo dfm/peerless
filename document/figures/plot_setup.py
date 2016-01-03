@@ -19,6 +19,8 @@ rcParams["axes.prop_cycle"] = cycler("color", (
 
 COLORS = dict(
     DATA="k",
+    MODEL_1="#1f77b4",
+    MODEL_2="#ff7f0e",
 )
 
 SQUARE_FIGSIZE = (4, 4)

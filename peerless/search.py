@@ -60,6 +60,7 @@ def search(kicid_and_injection=None,
            max_fit_data=500,
            max_peaks=3,
            min_datapoints=10,
+           all_models=False,
            delete=True,
            verbose=False):
     """
@@ -413,7 +414,8 @@ def search(kicid_and_injection=None,
                 peak["centroid_offset"] = offset
                 peak["centroid_offset_err"] = offset_err
 
-            if peak["bic_{0}".format(name)] > peak["bic_transit"]:
+            if (peak["bic_{0}".format(name)] > peak["bic_transit"]
+                    and not all_models):
                 break
 
             # Deal with outliers.

@@ -237,7 +237,7 @@ if __name__ == "__main__":
                             total=len(kicids)):
             if results is None:
                 continue
-            inj = results.inj
+            inj = results.injection
             peaks = results.peaks
             if args.inject and inj is not None:
                 with open(inj_fn, "a") as f:

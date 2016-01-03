@@ -6,7 +6,7 @@ Code for interfacing with the Exoplanet Archive catalogs.
 
 from __future__ import division, print_function
 
-__all__ = ["KOICatalog", "KICatalog", "EBCatalog"]
+__all__ = ["KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog"]
 
 import os
 import logging
@@ -131,7 +131,10 @@ class CatalogDownloadError(Exception):
         self.url = url
 
 
-class EBCatalog(object):
+class LocalCatalog(object):
+
+    filename = None
+    args = dict()
 
     def __init__(self):
         self._df = None
@@ -139,9 +142,19 @@ class EBCatalog(object):
     @property
     def df(self):
         if self._df is None:
-            self._df = pd.read_csv(resource_filename(__name__, "data/ebs.csv"),
-                                   skiprows=7)
+            fn = os.path.join("data", self.filename)
+            self._df = pd.read_csv(resource_filename(__name__, fn),
+                                   **(self.args))
         return self._df
+
+
+class EBCatalog(LocalCatalog):
+    filename = "ebs.csv"
+    args = dict(skiprows=7)
+
+
+class BlacklistCatalog(LocalCatalog):
+    filename = "blacklist.csv"
 
 
 class singleton(object):
@@ -161,3 +174,4 @@ class singleton(object):
 KOICatalog = singleton(KOICatalog)
 KICatalog = singleton(KICatalog)
 EBCatalog = singleton(EBCatalog)
+BlacklistCatalog = singleton(BlacklistCatalog)

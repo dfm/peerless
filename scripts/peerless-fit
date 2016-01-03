@@ -10,8 +10,9 @@ import numpy as np
 import pandas as pd
 from scipy.stats import beta
 from functools import partial
-# import matplotlib.pyplot as pl
+import matplotlib.pyplot as pl
 from multiprocessing import Pool
+from scipy.optimize import minimize
 
 import george
 from george import kernels
@@ -32,6 +33,7 @@ class TransitModel(object):
 
     def __init__(self, gps, system, smass, smass_err, srad, srad_err,
                  fit_lcs, other_lcs):
+        self.t0rng = system.bodies[0].t0 + np.array([-1., 1.])
         self.gps = gps
         self.system = system
         self.smass = smass
@@ -43,6 +45,8 @@ class TransitModel(object):
 
     # Probabilistic model:
     def lnprior(self):
+        if not (self.t0rng[0] < self.system.bodies[0].t0 < self.t0rng[1]):
+            return -np.inf
         star = self.system.central
         return -0.5 * (
             ((star.mass - self.smass) / self.smass_err) ** 2 +
@@ -57,10 +61,9 @@ class TransitModel(object):
             mu = system.light_curve(lc.time, texp=lc.texp)
             r = lc.flux - mu
             ll += gp.lnlikelihood(r, quiet=True)
-            if not np.isfinite(ll):
+            if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
                 return -np.inf, (0, None)
-            preds.append((gp.predict(lc.flux, lc.time, return_cov=False)+mu,
-                          mu))
+            preds.append((gp.predict(r, lc.time, return_cov=False), mu))
 
         # Compute number of cadences with transits in the other light curves.
         ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
@@ -68,23 +71,26 @@ class TransitModel(object):
 
         return ll, (ncad, preds)
 
-    def lnprob(self, theta):
-        blob = [None, 0, None]
-        try:
-            self.system.set_vector(theta[:len(self.system)])
-        except ValueError:
-            return -np.inf, blob
-        blob[0] = (
-            self.system.bodies[0].period,
-            self.system.bodies[0].e,
-            self.system.bodies[0].b,
-        )
-
+    def _update_params(self, theta):
+        self.system.set_vector(theta[:len(self.system)])
         i = len(self.system)
         for gp in self.gps:
             n = len(gp)
             gp.set_vector(theta[i:i+n])
             i += n
+
+    def lnprob(self, theta):
+        blob = [None, 0, None]
+        try:
+            self._update_params(theta)
+        except ValueError:
+            return -np.inf, blob
+
+        blob[0] = (
+            self.system.bodies[0].period,
+            self.system.bodies[0].e,
+            self.system.bodies[0].b,
+        )
 
         lp = self.lnprior()
         if not np.isfinite(lp):
@@ -99,11 +105,83 @@ class TransitModel(object):
     def __call__(self, theta):
         return self.lnprob(theta)
 
+    def optimize(self, niter=3):
+        self.system.freeze_parameter("central:*")
+        self.system.freeze_parameter("bodies*t0")
+        p0 = self.system.get_vector()
+        r = minimize(self._nll, p0, jac=self._grad_nll, method="L-BFGS-B")
+        self.system.set_vector(r.x)
+        self.system.thaw_parameter("central:*")
+        self.system.thaw_parameter("bodies*t0")
+
+        for gp, lc in zip(self.gps, self.fit_lcs):
+            mu = self.system.light_curve(lc.time, texp=lc.texp)
+            r = lc.flux - mu
+            r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(r, ))
+            gp.set_vector(r.x)
+
+        if niter > 1:
+            self.optimize(niter=niter - 1)
+
+    def _nll(self, theta):
+        try:
+            self.system.set_vector(theta)
+        except ValueError:
+            return 1e10
+
+        nll = 0.0
+        system = self.system
+        for gp, lc in zip(self.gps, self.fit_lcs):
+            mu = system.light_curve(lc.time, texp=lc.texp)
+            r = lc.flux - mu
+            nll -= gp.lnlikelihood(r, quiet=True)
+            if not (np.any(mu < system.central.flux) and np.isfinite(nll)):
+                return 1e10
+
+        return nll
+
+    def _grad_nll(self, theta):
+        try:
+            self.system.set_vector(theta)
+        except ValueError:
+            return np.zeros_like(theta)
+
+        system = self.system
+        g = np.zeros_like(theta)
+        for gp, lc in zip(self.gps, self.fit_lcs):
+            mu = system.light_curve(lc.time, texp=lc.texp)
+            gmu = system.get_gradient(lc.time, texp=lc.texp)
+            r = lc.flux - mu
+            alpha = gp.apply_inverse(r)
+            g -= np.dot(gmu, alpha)
+            if not (np.any(mu < system.central.flux)
+                    and np.all(np.isfinite(g))):
+                return np.zeros_like(theta)
+
+        return g
+
+    def plot(self):
+        fig, ax = pl.subplots(1, 1)
+        t0 = self.system.bodies[0].t0
+        period = self.system.bodies[0].period
+        for gp, lc in zip(self.gps, self.fit_lcs):
+            t = (lc.time - t0 + 0.5*period) % period - 0.5*period
+            mu = self.system.light_curve(lc.time, texp=lc.texp)
+            r = lc.flux - mu
+            p = gp.predict(r, lc.time, return_cov=False)
+
+            ax.plot(t, lc.flux, "k")
+            ax.plot(t, p + self.system.central.flux, "g")
+            ax.plot(t, mu, "r")
+        return fig
+
 
 def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
                     no_plots=False, verbose=False, quiet=False, delete=False,
-                    nburn=200, burniter=2, nsteps=1000):
+                    max_points=300, nburn=200, burniter=2, nsteps=1000):
     kicid = args["kicid"]
+    basedir = os.path.join(output_dir, "{0}".format(kicid))
+    os.makedirs(basedir, exist_ok=True)
 
     # Initialize the system.
     system = transit.System(transit.Central(
@@ -114,7 +192,7 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
         period=args["period"],
         t0=args["t0"],
         b=args["impact"],
-        e=0.01,
+        e=1.123e-7,
         omega=0.0,
     ))
     system.thaw_parameter("*")
@@ -131,6 +209,12 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
     for lc in lcs:
         f = system.light_curve(lc.time, lc.texp)
         if np.any(f < 1.0):
+            i = np.argmin(f)
+            inds = np.arange(len(f))
+            m = np.sort(np.argsort(np.abs(inds - i))[:max_points])
+            lc.time = np.ascontiguousarray(lc.time[m])
+            lc.flux = np.ascontiguousarray(lc.flux[m])
+            lc.ferr = np.ascontiguousarray(lc.ferr[m])
             fit_lcs.append(lc)
             kernel = np.var(lc.flux) * kernels.Matern32Kernel(2**2)
             gp = george.GP(kernel, white_noise=2*np.log(np.mean(lc.ferr)),
@@ -142,6 +226,13 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
 
     model = TransitModel(gps, system, args["smass"], args["smass_err"],
                          args["srad"], args["srad_err"], fit_lcs, other_lcs)
+    fig = model.plot()
+    fig.savefig(os.path.join(basedir, "init1.png"))
+    pl.close(fig)
+    model.optimize()
+    fig = model.plot()
+    fig.savefig(os.path.join(basedir, "init2.png"))
+    pl.close(fig)
 
     cols = system.get_parameter_names()
     for i, g in enumerate(gps):
@@ -152,8 +243,6 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
     sampler = emcee.EnsembleSampler(nwalkers, ndim, model)
 
     # Set up the output.
-    basedir = os.path.join(output_dir, "{0}".format(kicid))
-    os.makedirs(basedir, exist_ok=True)
     chain_fn = os.path.join(basedir, "chain.h5")
     with h5py.File(chain_fn, "w") as f:
         g = f.create_dataset("chain", shape=(nsteps, nwalkers),
@@ -169,16 +258,16 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
         f.create_dataset("pred", shape=(nsteps, nwalkers, 2, n))
 
         data = np.array([
-            (i, lc.time[j], lc.flux[j])
-            for i, lc in enumerate(lcs) for j in range(len(lc.time))
+            (i, l.time[j], l.flux[j], l.ferr[j])
+            for i, l in enumerate(lcs) for j in range(len(l.time))
         ], dtype=[("chunk", np.int64), ("time", np.float64),
-                  ("flux", np.float64)])
+                  ("flux", np.float64), ("ferr", np.float64)])
         f.create_dataset("data", data=data)
 
     # Run the MCMC.
     burniter = max(1, burniter)
     for i in range(burniter):
-        print("Burn-in: {0}".format(i))
+        print("Burn-in: {0}".format(i+1))
         p0 = p0[None, :] + 1e-4 * np.random.randn(nwalkers, ndim)
         p0, _, _, _ = sampler.run_mcmc(p0, nburn)
         if i < burniter - 1:
@@ -237,7 +326,7 @@ if __name__ == "__main__":
                         help="more output to the screen")
     parser.add_argument("-c", "--clean", action="store_true",
                         help="remove temporary light curve files")
-    parser.add_argument("-o", "--output-dir", default="output",
+    parser.add_argument("-o", "--output-dir", default="fits",
                         help="the output directory")
     parser.add_argument("--no-plots", action="store_true",
                         help="don't make any plots")
@@ -248,9 +337,11 @@ if __name__ == "__main__":
                         help="fit even rejected candidates")
     parser.add_argument("--max-offset", type=float, default=10.0,
                         help="the maximum centroid offset S/N")
+    parser.add_argument("--max-fit-data", type=int, default=250,
+                        help="the maximum number of points per light curve")
     parser.add_argument("--nburn", type=int, default=300,
                         help="the number of burn-in MCMC steps")
-    parser.add_argument("--burniter", type=int, default=3,
+    parser.add_argument("--burniter", type=int, default=2,
                         help="the number of burn-in iterations")
     parser.add_argument("--nsteps", type=int, default=5000,
                         help="the number of production MCMC steps")
@@ -269,6 +360,7 @@ if __name__ == "__main__":
         nburn=args.nburn,
         burniter=args.burniter,
         nsteps=args.nsteps,
+        max_points=args.max_fit_data,
     )
 
     # Check and create the output directory.
@@ -328,7 +420,7 @@ if __name__ == "__main__":
 
         # Duration.
         dur = system["period"] * system["radius"] / (np.pi * a)
-        b = np.sqrt(np.abs(1 - dur / float(row.transit_duration)))
+        b = 0.0  # np.sqrt(np.abs(1 - dur / float(row.transit_duration)))
         system["impact"] = b
         inits.append(system)
 

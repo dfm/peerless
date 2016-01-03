@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
     # Load the candidate list.
     cands = pd.read_csv(args.candidates)
-    if len(args.kicids):
+    if args.kicids is not None and len(args.kicids):
         cands = cands[cands.kicid.isin(args.kicids)]
     if not args.fit_all:
         cands = cands[cands.accept_time & cands.accept_bic]

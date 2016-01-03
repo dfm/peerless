@@ -380,15 +380,15 @@ if __name__ == "__main__":
         cands = cands[cands.accept_time & cands.accept_bic]
     if not args.fit_all:
         cands = cands[cands.accept_time & cands.accept_bic]
+    if not args.ignore_blacklist:
+        bl = BlacklistCatalog().df
+        cands = cands[~cands.kicid.isin(set(bl.kicid))]
     cands["centroid_offset_s2n"] = \
         cands.centroid_offset / cands.centroid_offset_err
 
     # Load the stellar catalog.
     kic = KICatalog().df
     kic = kic[kic.kepid.isin(cands.kicid)]
-    if not args.ignore_blacklist:
-        bl = BlacklistCatalog().df
-        kic = kic[~kic.kepid.isin(bl.kicid)]
 
     # Initialize.
     inits = []
@@ -428,9 +428,6 @@ if __name__ == "__main__":
         b = 0.0  # np.sqrt(np.abs(1 - dur / float(row.transit_duration)))
         system["impact"] = b
         inits.append(system)
-
-    print(len(inits))
-    assert 0
 
     # Deal with parallelization.
     if args.parallel:

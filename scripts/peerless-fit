@@ -48,10 +48,25 @@ class TransitModel(object):
         if not (self.t0rng[0] < self.system.bodies[0].t0 < self.t0rng[1]):
             return -np.inf
         star = self.system.central
-        return -0.5 * (
+
+        # stellar parameters
+        lp = -0.5 * (
             ((star.mass - self.smass) / self.smass_err) ** 2 +
             ((star.radius - self.srad) / self.srad_err) ** 2
-        ) + self.eb.logpdf(self.system.bodies[0].e)
+        )
+
+        # limb darkening
+        q = star.q1
+        lp -= np.logaddexp(-np.log(q), -np.log(1.0 - q))
+        q = star.q2
+        lp -= np.logaddexp(-np.log(q), -np.log(1.0 - q))
+
+        # planet
+        body = self.system.bodies[0]
+        lp -= np.log(body.a)
+        lp += self.eb.logpdf(body.e)
+
+        return lp
 
     def lnlike(self):
         system = self.system

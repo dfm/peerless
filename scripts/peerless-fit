@@ -259,7 +259,7 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
 
         data = np.array([
             (i, l.time[j], l.flux[j], l.ferr[j])
-            for i, l in enumerate(lcs) for j in range(len(l.time))
+            for i, l in enumerate(fit_lcs) for j in range(len(l.time))
         ], dtype=[("chunk", np.int64), ("time", np.float64),
                   ("flux", np.float64), ("ferr", np.float64)])
         f.create_dataset("data", data=data)
@@ -292,6 +292,7 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
                 f["pred"][i, n, 1] = np.concatenate([b[1] for b in blob[n][2]])
 
             f["lnprob"][i] = lnp
+            f.attrs["step"] = i
 
     return sampler
 
@@ -341,11 +342,11 @@ if __name__ == "__main__":
                         help="the maximum centroid offset S/N")
     parser.add_argument("--max-fit-data", type=int, default=250,
                         help="the maximum number of points per light curve")
-    parser.add_argument("--nburn", type=int, default=300,
+    parser.add_argument("--nburn", type=int, default=500,
                         help="the number of burn-in MCMC steps")
     parser.add_argument("--burniter", type=int, default=2,
                         help="the number of burn-in iterations")
-    parser.add_argument("--nsteps", type=int, default=5000,
+    parser.add_argument("--nsteps", type=int, default=20000,
                         help="the number of production MCMC steps")
 
     args = parser.parse_args()
@@ -380,15 +381,15 @@ if __name__ == "__main__":
         cands = cands[cands.accept_time & cands.accept_bic]
     if not args.fit_all:
         cands = cands[cands.accept_time & cands.accept_bic]
+    if not args.ignore_blacklist:
+        bl = BlacklistCatalog().df
+        cands = cands[~cands.kicid.isin(set(bl.kicid))]
     cands["centroid_offset_s2n"] = \
         cands.centroid_offset / cands.centroid_offset_err
 
     # Load the stellar catalog.
     kic = KICatalog().df
     kic = kic[kic.kepid.isin(cands.kicid)]
-    if not args.ignore_blacklist:
-        bl = BlacklistCatalog().df
-        kic = kic[~kic.kepid.isin(bl.kicid)]
 
     # Initialize.
     inits = []
@@ -428,9 +429,6 @@ if __name__ == "__main__":
         b = 0.0  # np.sqrt(np.abs(1 - dur / float(row.transit_duration)))
         system["impact"] = b
         inits.append(system)
-
-    print(len(inits))
-    assert 0
 
     # Deal with parallelization.
     if args.parallel:

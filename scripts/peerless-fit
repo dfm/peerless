@@ -259,7 +259,7 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
 
         data = np.array([
             (i, l.time[j], l.flux[j], l.ferr[j])
-            for i, l in enumerate(lcs) for j in range(len(l.time))
+            for i, l in enumerate(fit_lcs) for j in range(len(l.time))
         ], dtype=[("chunk", np.int64), ("time", np.float64),
                   ("flux", np.float64), ("ferr", np.float64)])
         f.create_dataset("data", data=data)
@@ -292,6 +292,7 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
                 f["pred"][i, n, 1] = np.concatenate([b[1] for b in blob[n][2]])
 
             f["lnprob"][i] = lnp
+            f.attrs["step"] = i
 
     return sampler
 
@@ -341,11 +342,11 @@ if __name__ == "__main__":
                         help="the maximum centroid offset S/N")
     parser.add_argument("--max-fit-data", type=int, default=250,
                         help="the maximum number of points per light curve")
-    parser.add_argument("--nburn", type=int, default=300,
+    parser.add_argument("--nburn", type=int, default=500,
                         help="the number of burn-in MCMC steps")
     parser.add_argument("--burniter", type=int, default=2,
                         help="the number of burn-in iterations")
-    parser.add_argument("--nsteps", type=int, default=5000,
+    parser.add_argument("--nsteps", type=int, default=20000,
                         help="the number of production MCMC steps")
 
     args = parser.parse_args()

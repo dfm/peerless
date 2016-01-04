@@ -358,7 +358,7 @@ if __name__ == "__main__":
                         help="leave the known KOIs in the light curves")
     parser.add_argument("--fit-all", action="store_true",
                         help="fit even rejected candidates")
-    parser.add_argument("--max-offset", type=float, default=10.0,
+    parser.add_argument("--max-offset", type=float, default=65.0,
                         help="the maximum centroid offset S/N")
     parser.add_argument("--max-fit-data", type=int, default=250,
                         help="the maximum number of points per light curve")

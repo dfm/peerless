@@ -47,10 +47,19 @@ class TransitModel(object):
     def lnprior(self):
         if not (self.t0rng[0] < self.system.bodies[0].t0 < self.t0rng[1]):
             return -np.inf
-        star = self.system.central
+
+        lp = 0.0
+
+        # planet
+        body = self.system.bodies[0]
+        if body.b < 0.0:
+            return -np.inf
+        lp -= np.log(body.a)
+        lp += self.eb.logpdf(body.e)
 
         # stellar parameters
-        lp = -0.5 * (
+        star = self.system.central
+        lp -= 0.5 * (
             ((star.mass - self.smass) / self.smass_err) ** 2 +
             ((star.radius - self.srad) / self.srad_err) ** 2
         )
@@ -60,11 +69,6 @@ class TransitModel(object):
         lp -= np.logaddexp(-np.log(q), -np.log(1.0 - q))
         q = star.q2
         lp -= np.logaddexp(-np.log(q), -np.log(1.0 - q))
-
-        # planet
-        body = self.system.bodies[0]
-        lp -= np.log(body.a)
-        lp += self.eb.logpdf(body.e)
 
         return lp
 
@@ -126,6 +130,7 @@ class TransitModel(object):
         p0 = self.system.get_vector()
         r = minimize(self._nll, p0, jac=self._grad_nll, method="L-BFGS-B")
         self.system.set_vector(r.x)
+        self.system.bodies[0].b = np.abs(self.system.bodies[0].b)
         self.system.thaw_parameter("central:*")
         self.system.thaw_parameter("bodies*t0")
 

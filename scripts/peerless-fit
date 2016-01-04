@@ -53,7 +53,7 @@ class TransitModel(object):
         # planet
         body = self.system.bodies[0]
         if body.b < 0.0:
-            return -np.inf
+            lp -= 1e6  # horror
         lp -= np.log(body.a)
         lp += self.eb.logpdf(body.e)
 

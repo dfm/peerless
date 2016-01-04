@@ -346,7 +346,7 @@ if __name__ == "__main__":
                         help="the number of burn-in MCMC steps")
     parser.add_argument("--burniter", type=int, default=2,
                         help="the number of burn-in iterations")
-    parser.add_argument("--nsteps", type=int, default=20000,
+    parser.add_argument("--nsteps", type=int, default=50000,
                         help="the number of production MCMC steps")
 
     args = parser.parse_args()

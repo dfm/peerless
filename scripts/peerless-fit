@@ -77,7 +77,7 @@ class TransitModel(object):
         ll = 0.0
         preds = []
         for gp, lc in zip(self.gps, self.fit_lcs):
-            mu = system.light_curve(lc.time, texp=lc.texp)
+            mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = lc.flux - mu
             ll += gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
@@ -92,11 +92,11 @@ class TransitModel(object):
 
     def _update_params(self, theta):
         self.system.set_vector(theta[:len(self.system)])
-        i = len(self.system)
-        for gp in self.gps:
-            n = len(gp)
-            gp.set_vector(theta[i:i+n])
-            i += n
+        # i = len(self.system)
+        # for gp in self.gps:
+        #     n = len(gp)
+        #     gp.set_vector(theta[i:i+n])
+        #     i += n
 
     def lnprob(self, theta):
         blob = [None, 0, None]
@@ -129,13 +129,16 @@ class TransitModel(object):
         self.system.freeze_parameter("bodies*t0")
         p0 = self.system.get_vector()
         r = minimize(self._nll, p0, jac=self._grad_nll, method="L-BFGS-B")
-        self.system.set_vector(r.x)
+        if r.success:
+            self.system.set_vector(r.x)
+        else:
+            self.system.set_vector(p0)
         self.system.bodies[0].b = np.abs(self.system.bodies[0].b)
         self.system.thaw_parameter("central:*")
         self.system.thaw_parameter("bodies*t0")
 
         for gp, lc in zip(self.gps, self.fit_lcs):
-            mu = self.system.light_curve(lc.time, texp=lc.texp)
+            mu = self.system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = lc.flux - mu
             r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(r, ))
             gp.set_vector(r.x)
@@ -148,11 +151,13 @@ class TransitModel(object):
             self.system.set_vector(theta)
         except ValueError:
             return 1e10
+        if self.system.bodies[0].b > 1.0:
+            return 1e10
 
         nll = 0.0
         system = self.system
         for gp, lc in zip(self.gps, self.fit_lcs):
-            mu = system.light_curve(lc.time, texp=lc.texp)
+            mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = lc.flux - mu
             nll -= gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(nll)):
@@ -165,11 +170,13 @@ class TransitModel(object):
             self.system.set_vector(theta)
         except ValueError:
             return np.zeros_like(theta)
+        if self.system.bodies[0].b > 1.0:
+            return np.zeros_like(theta)
 
         system = self.system
         g = np.zeros_like(theta)
         for gp, lc in zip(self.gps, self.fit_lcs):
-            mu = system.light_curve(lc.time, texp=lc.texp)
+            mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             gmu = system.get_gradient(lc.time, texp=lc.texp)
             r = lc.flux - mu
             alpha = gp.apply_inverse(r)
@@ -186,7 +193,7 @@ class TransitModel(object):
         period = self.system.bodies[0].period
         for gp, lc in zip(self.gps, self.fit_lcs):
             t = (lc.time - t0 + 0.5*period) % period - 0.5*period
-            mu = self.system.light_curve(lc.time, texp=lc.texp)
+            mu = self.system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = lc.flux - mu
             p = gp.predict(r, lc.time, return_cov=False)
 
@@ -255,18 +262,18 @@ def fit_light_curve(args, remove_kois=False, output_dir="fits", plot_all=False,
     pl.close(fig)
 
     cols = system.get_parameter_names()
-    for i, g in enumerate(gps):
-        cols += list(map("gp[{0}].{{0}}".format(i).format,
-                         g.get_parameter_names()))
-    p0 = np.concatenate([system.get_vector()]+[g.get_vector() for g in gps])
-    ndim, nwalkers = len(p0), 42
+    # for i, g in enumerate(gps):
+    #     cols += list(map("gp[{0}].{{0}}".format(i).format,
+    #                      g.get_parameter_names()))
+    p0 = system.get_vector()  # np.concatenate([system.get_vector()]+[g.get_vector() for g in gps])
+    ndim, nwalkers = len(p0), 36
     sampler = emcee.EnsembleSampler(nwalkers, ndim, model)
 
     # Set up the output.
     chain_fn = os.path.join(basedir, "chain.h5")
     with h5py.File(chain_fn, "w") as f:
-        g = f.create_dataset("chain", shape=(nsteps, nwalkers),
-                             dtype=[(k, np.float64) for k in cols])
+        f.create_dataset("chain", shape=(nsteps, nwalkers),
+                         dtype=[(k, np.float64) for k in cols])
         f.create_dataset("lnprob", shape=(nsteps, nwalkers))
         f.create_dataset("params", shape=(nsteps, nwalkers),
                          dtype=[("ncadence", np.int64),

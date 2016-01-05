@@ -18,6 +18,10 @@ from peerless.catalogs import KICatalog
 def lnprob(theta):
     return model(theta)
 
+
+def init_gps(thetas):
+    [gp.set_vector(th) for gp, th in zip(model.gps, thetas)]
+
 parser = argparse.ArgumentParser(description="model some light curves")
 
 parser.add_argument("candidates", help="the candidate database")
@@ -28,6 +32,8 @@ parser.add_argument("--no-remove-kois", action="store_true",
                     help="leave the known KOIs in the light curves")
 parser.add_argument("--max-fit-data", type=int, default=250,
                     help="the maximum number of points per light curve")
+parser.add_argument("--nwalkers", type=int, default=40,
+                    help="the number of walkers")
 parser.add_argument("--nburn", type=int, default=500,
                     help="the number of burn-in MCMC steps")
 parser.add_argument("--burniter", type=int, default=2,
@@ -94,9 +100,16 @@ fig = model.plot()
 fig.savefig(os.path.join(basedir, "init2.png"))
 pl.close(fig)
 
+# Update the GPs.
+list(pool.map(init_gps, [[gp.get_vector() for gp in model.gps]]))
+
+# pool.close()
+# assert 0
+
+system = model.system
 cols = system.get_parameter_names()
 p0 = system.get_vector()
-ndim, nwalkers = len(p0), 36
+ndim, nwalkers = len(p0), args.nwalkers
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool)
 
 # Set up the output.

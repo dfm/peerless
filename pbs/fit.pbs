@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=20
+#PBS -l procs=12
 #PBS -l walltime=24:00:00
 #PBS -l mem=60GB
 #PBS -N pl-fit
@@ -7,15 +7,21 @@
 #PBS -j oe
 
 module purge
-
 export PATH="$HOME/miniconda3/bin:$PATH"
+module load mvapich2/intel/2.0rc1
+
+export KICID=11709124
+
 export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch
 export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless
-RUNDIR=$SCRATCH/peerless/fit-${PBS_JOBID/.*}
+RUNDIR=$SCRATCH/peerless/fit-$KICID
 mkdir -p $RUNDIR
 
+cd $RUNDIR
+echo `which mpiexec` > mpiexec.log
+
 cd $SRCDIR
-python scripts/peerless-fit candidates.csv -p ${PBS_NP} -q --clean -o $RUNDIR
+mpiexec -np $PBS_NP python scripts/peerless-fit candidates.csv $KICID --nwalkers $((PBS_NP*2)) -o $RUNDIR
 

@@ -77,14 +77,9 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
 
         # Load the meta data.
         hdr = fitsio.read_header(fn, 0)
-        meta = dict(
-            channel=hdr["CHANNEL"],
-            skygroup=hdr["SKYGROUP"],
-            module=hdr["MODULE"],
-            output=hdr["OUTPUT"],
-            quarter=hdr["QUARTER"],
-            season=hdr["SEASON"],
-        )
+        meta = dict((k.lower(), hdr[k]) for k in hdr)
+        hdr = fitsio.read_header(fn, 2)
+        header = dict((k, hdr[k]) for k in hdr)
 
         # Remove any KOI points.
         if remove_kois:
@@ -115,7 +110,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
             m0 = m & (labels == i)
             if not np.any(m0):
                 continue
-            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta,
+            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, header,
                                   data["MOM_CENTR1"][m0],
                                   data["MOM_CENTR2"][m0],
                                   data["POS_CORR1"][m0],
@@ -138,7 +133,7 @@ def running_median_trend(x, y, hw=2.0):
 
 class LightCurve(object):
 
-    def __init__(self, time, flux, ferr, meta,
+    def __init__(self, time, flux, ferr, meta, header,
                  mom_cen_1, mom_cen_2, pos_corr_1, pos_corr_2,
                  texp=TEXP, hw=2.0):
         self.trend = running_median_trend(time, flux, hw=hw)
@@ -158,6 +153,7 @@ class LightCurve(object):
         self.pos_corr_2 = np.ascontiguousarray(pos_corr_2, dtype=float)
 
         self.meta = meta
+        self.header = header
         self.footprint = self.time.max() - self.time.min()
         self.texp = texp
 

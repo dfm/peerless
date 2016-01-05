@@ -197,7 +197,7 @@ if __name__ == "__main__":
         "accept_bic", "accept_time",
         "channel", "skygroup", "module", "output", "quarter", "season",
         "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
-        "transit_ror", "transit_duration", "transit_time",
+        "transit_ror", "transit_duration", "transit_time", "transit_depth",
         "chunk_min_time", "chunk_max_time",
         "centroid_offset", "centroid_offset_err",
     ]

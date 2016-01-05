@@ -217,18 +217,22 @@ This means that the PH sample of candidates cannot be used for robust
 population inference.
 
 
-\section{Single transit search}
+\section{Data selection \& preparation}\sectlabel{data}
 
-Previous automated searches for transits in the \kepler\ light
-curves have restricted their results to candidates with at least three
-observable transits in the dataset.
-This restriction minimizes contamination by false alarms at low
-signal-to-noise.
-Noise in the light curves introduced by stellar or instrumental variability
-can easily masquerade as a small planet with a long orbital period and lead to
+For the purposes of this \paper, we select the 40,000 brightest G and K dwarfs
+from the \kepler\ catalog using the following parameters:
 
+        % m = (4200 <= stlr.teff) & (stlr.teff <= 6100)
+        % m &= stlr.radius <= 1.15
+        % m &= stlr.dataspan > 365.25*2.
+        % m &= stlr.dutycycle > 0.6
+        % m &= stlr.rrmscdpp07p5 <= 1000.
+        % m &= stlr.kepmag < 15.
 
-\section{Data preparation}\sectlabel{data}
+\begin{itemize}
+{\item $4200\unit{K} \le T_\mathfm{eff} \le 6100\unit{K}$}
+
+\end{itemize}
 
 We start with the PDC-MAP light curves downloaded from
 MAST\footnote{\url{https://archive.stsci.edu/kepler/}}.
@@ -276,7 +280,12 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 \includegraphics[width=\textwidth]{figures/model_comp.pdf}
 \end{center}
 \caption{%
-Model comparison.
+Representative examples of candidate events flagged by the initial search.
+Each example falls into a different model category and the figure shows the
+data as black points and the best fit mean model prediction.
+The examples represent the following model categories:
+\emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
+transit.
 \figlabel{model-comp}}
 \end{figure}
 

@@ -378,13 +378,14 @@ def search(kicid_and_injection=None,
                 models["box1"].mx = system.t0 + 0.5*system.duration
 
                 # Fit the centroids.
-                tm = (system.get_value(x)-1) / (system.get_value(system.t0)-1)
+                depth = 1.0 - float(system.get_value(system.t0))
+                tm = (1.0 - system.get_value(x)) / depth
                 A = np.vander(tm, 2)
                 AT = A.T
 
                 offset = 0.0
                 offset_err = 0.0
-                for c in (cen_x, cen_y):
+                for ind, c in enumerate((cen_x, cen_y)):
                     err = np.median(np.abs(np.diff(c)))
                     kernel = np.var(c) * kernels.Matern32Kernel(2**2)
                     gp = george.GP(kernel, white_noise=2*np.log(np.mean(err)),
@@ -411,6 +412,7 @@ def search(kicid_and_injection=None,
 
                 offset_err = np.sqrt(offset_err / offset)
                 offset = np.sqrt(offset)
+
                 peak["centroid_offset"] = offset
                 peak["centroid_offset_err"] = offset_err
 
@@ -464,6 +466,7 @@ def search(kicid_and_injection=None,
         peak["transit_duration"] = system.duration
         peak["transit_ror"] = system.ror
         peak["transit_time"] = system.t0
+        peak["transit_depth"] = 1.0 - float(system.get_value(system.t0))
 
         # Accept the peak?
         accept_bic = all(

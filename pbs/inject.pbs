@@ -2,7 +2,7 @@
 #PBS -l nodes=1:ppn=20
 #PBS -l walltime=18:00:00
 #PBS -l mem=60GB
-#PBS -N pl-search
+#PBS -N pl-inject
 #PBS -M danfm@nyu.edu
 #PBS -j oe
 
@@ -13,9 +13,9 @@ export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch
 export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless
-RUNDIR=$SCRATCH/peerless/search/${PBS_JOBID/.*}
+RUNDIR=$SCRATCH/peerless/inject/${PBS_JOBID/.*}
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python scripts/peerless-search --bright-g-dwarfs -p -q --no-plots --clean -o $RUNDIR
+python scripts/peerless-search --bright-g-dwarfs -p -q --no-plots --inject --clean -o $RUNDIR
 

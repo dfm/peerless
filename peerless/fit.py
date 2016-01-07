@@ -12,6 +12,7 @@ from george import kernels
 
 import transit
 
+from .catalogs import KOICatalog
 from .data import load_light_curves_for_kic
 
 
@@ -60,7 +61,7 @@ class TransitModel(object):
 
         return lp
 
-    def lnlike(self):
+    def lnlike(self, compute_blob=True):
         system = self.system
         ll = 0.0
         preds = []
@@ -70,7 +71,11 @@ class TransitModel(object):
             ll += gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
                 return -np.inf, (0, None)
-            preds.append((gp.predict(r, lc.time, return_cov=False), mu))
+            if compute_blob:
+                preds.append((gp.predict(r, lc.time, return_cov=False), mu))
+
+        if compute_blob:
+            return ll, (0, None)
 
         # Compute number of cadences with transits in the other light curves.
         ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
@@ -81,7 +86,7 @@ class TransitModel(object):
     def _update_params(self, theta):
         self.system.set_vector(theta[:len(self.system)])
 
-    def lnprob(self, theta):
+    def lnprob(self, theta, compute_blob=True):
         blob = [None, 0, None]
         try:
             self._update_params(theta)
@@ -98,7 +103,7 @@ class TransitModel(object):
         if not np.isfinite(lp):
             return -np.inf, blob
 
-        ll, (blob[1], blob[2]) = self.lnlike()
+        ll, (blob[1], blob[2]) = self.lnlike(compute_blob=compute_blob)
         if not np.isfinite(ll):
             return -np.inf, blob
 
@@ -186,7 +191,7 @@ class TransitModel(object):
         return fig
 
 
-def setup_fit(args, remove_kois=False, max_points=300):
+def setup_fit(args, fit_kois=False, max_points=300):
     kicid = args["kicid"]
 
     # Initialize the system.
@@ -201,11 +206,23 @@ def setup_fit(args, remove_kois=False, max_points=300):
         e=1.123e-7,
         omega=0.0,
     ))
+    if fit_kois:
+        kois = KOICatalog().df
+        kois = kois[kois.kepid == kicid]
+        for _, row in kois.iterrows():
+            system.add_body(transit.Body(
+                radius=float(row.koi_ror) * args["srad"],
+                period=float(row.koi_period),
+                t0=float(row.koi_time0bk) % float(row.koi_period),
+                b=float(row.koi_impact),
+                e=1.123e-7,
+                omega=0.0,
+            ))
     system.thaw_parameter("*")
     system.freeze_parameter("bodies*ln_mass")
 
     # Load the light curves.
-    lcs, _ = load_light_curves_for_kic(kicid, remove_kois=remove_kois)
+    lcs, _ = load_light_curves_for_kic(kicid, remove_kois=not fit_kois)
 
     # Which light curves should be fit?
     fit_lcs = []

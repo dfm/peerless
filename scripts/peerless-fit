@@ -5,33 +5,21 @@ import os
 import sys
 import h5py
 import emcee
+import pickle
 import argparse
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as pl
 from emcee.utils import MPIPool
-
-from peerless.fit import setup_fit
-from peerless.catalogs import KICatalog
 
 
 def lnprob(theta):
-    return model(theta)
+    if not compute_blob:
+        return model.lnprob(theta, compute_blob=False)
+    return model.lnprob(theta)
 
-
-def init_gps(thetas):
-    [gp.set_vector(th) for gp, th in zip(model.gps, thetas)]
 
 parser = argparse.ArgumentParser(description="model some light curves")
 
-parser.add_argument("candidates", help="the candidate database")
-parser.add_argument("kicid", type=int, help="fit a specific KIC")
-parser.add_argument("-o", "--output-dir", default="fits",
-                    help="the output directory")
-parser.add_argument("--no-remove-kois", action="store_true",
-                    help="leave the known KOIs in the light curves")
-parser.add_argument("--max-fit-data", type=int, default=250,
-                    help="the maximum number of points per light curve")
+parser.add_argument("filename", help="the initialized pickle model")
 parser.add_argument("--nwalkers", type=int, default=40,
                     help="the number of walkers")
 parser.add_argument("--nburn", type=int, default=500,
@@ -43,43 +31,9 @@ parser.add_argument("--nsteps", type=int, default=50000,
 
 args = parser.parse_args()
 
-kicid = args.kicid
-
-# Load the candidate list.
-cands = pd.read_csv(args.candidates)
-cands = cands[cands.kicid == args.kicid]
-
-# Load the stellar catalog.
-kic = KICatalog().df
-star = kic[kic.kepid == args.kicid]
-
-# Initialize.
-system = dict(
-    kicid=kicid,
-    srad=float(star.radius),
-    srad_err=0.5 * float(star.radius_err1 - star.radius_err2),
-    smass=float(star.mass),
-    smass_err=0.5 * float(star.mass_err1 - star.mass_err2),
-)
-
-# Multiple transits.
-if len(cands) > 1:
-    times = np.sort(cands.transit_time)
-    system["period"] = np.mean(np.diff(times))
-    system["t0"] = times[0]
-    row = cands.mean()
-else:
-    system["period"] = 2000.0
-    system["t0"] = float(cands.transit_time)
-    row = cands.iloc[0]
-
-# Initial parameters.
-system["radius"] = float(row.transit_ror * star.radius)
-system["impact"] = 0.0
-
-# Initialize the model.
-model = setup_fit(system, remove_kois=not args.no_remove_kois,
-                  max_points=args.max_fit_data)
+with open(args.filename, "rb") as f:
+    model = pickle.load(f)
+compute_blob = len(model.fit_lcs) <= 2
 
 # Initialize the MPI-based pool used for parallelization.
 pool = MPIPool()
@@ -89,22 +43,7 @@ if not pool.is_master():
     pool.wait()
     sys.exit(0)
 
-basedir = os.path.join(args.output_dir, "{0}".format(kicid))
-os.makedirs(basedir, exist_ok=True)
-fig = model.plot()
-
-fig.savefig(os.path.join(basedir, "init1.png"))
-pl.close(fig)
-model.optimize()
-fig = model.plot()
-fig.savefig(os.path.join(basedir, "init2.png"))
-pl.close(fig)
-
-# Update the GPs.
-list(pool.map(init_gps, [[gp.get_vector() for gp in model.gps]]))
-
-# pool.close()
-# assert 0
+basedir = os.path.split(args.filename)[0]
 
 system = model.system
 cols = system.get_parameter_names()
@@ -124,8 +63,9 @@ with h5py.File(chain_fn, "w") as f:
                             ("impact", np.float64),
                             ("eccen", np.float64)])
 
-    n = sum(len(lc.time) for lc in model.fit_lcs)
-    f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
+    if compute_blob:
+        n = sum(len(lc.time) for lc in model.fit_lcs)
+        f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
 
     data = np.array([
         (i, l.time[j], l.flux[j], l.ferr[j])
@@ -138,16 +78,18 @@ with h5py.File(chain_fn, "w") as f:
 burniter = max(1, args.burniter)
 for i in range(burniter):
     print("Burn-in: {0}".format(i+1))
-    p0 = p0[None, :] + 1e-4 * np.random.randn(nwalkers, ndim)
-    p0, _, _, _ = sampler.run_mcmc(p0, args.nburn)
+    p0 = p0[None, :] + 1e-6 * np.random.randn(nwalkers, ndim)
+
+    ret = sampler.run_mcmc(p0, args.nburn)
+    p0 = ret[0]
     if i < burniter - 1:
         p0 = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
 
 print("Production")
 sampler.reset()
-for i, (pos, lnp, _, blob) in enumerate(sampler.sample(p0,
-                                                       iterations=args.nsteps,
-                                                       storechain=False)):
+for i, ret in enumerate(sampler.sample(p0, iterations=args.nsteps,
+                                       storechain=False)):
+    pos, lnp, _, blob = ret
     with h5py.File(chain_fn, "a") as f:
         for n in range(nwalkers):
             for j, k in enumerate(cols):
@@ -158,8 +100,9 @@ for i, (pos, lnp, _, blob) in enumerate(sampler.sample(p0,
             f["params"][i, n, "eccen"] = blob[n][0][1]
             f["params"][i, n, "impact"] = blob[n][0][2]
 
-            f["pred"][i, n, 0] = np.concatenate([b[0] for b in blob[n][2]])
-            f["pred"][i, n, 1] = np.concatenate([b[1] for b in blob[n][2]])
+            if compute_blob:
+                f["pred"][i, n, 0] = np.concatenate([b[0] for b in blob[n][2]])
+                f["pred"][i, n, 1] = np.concatenate([b[1] for b in blob[n][2]])
 
         f["lnprob"][i] = lnp
         f.attrs["step"] = i

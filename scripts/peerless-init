@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import pickle
+import argparse
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as pl
+
+from peerless.fit import setup_fit
+from peerless.catalogs import KICatalog
+
+parser = argparse.ArgumentParser(description="model some light curves")
+
+parser.add_argument("candidates", help="the candidate database")
+parser.add_argument("kicid", type=int, help="fit a specific KIC")
+parser.add_argument("-o", "--output-dir", default="fits",
+                    help="the output directory")
+parser.add_argument("--fit-kois", action="store_true",
+                    help="fit the KOIs too")
+parser.add_argument("--max-fit-data", type=int, default=250,
+                    help="the maximum number of points per light curve")
+args = parser.parse_args()
+
+kicid = args.kicid
+
+# Load the candidate list.
+cands = pd.read_csv(args.candidates)
+cands = cands[cands.kicid == args.kicid]
+
+# Load the stellar catalog.
+kic = KICatalog().df
+star = kic[kic.kepid == args.kicid]
+
+# Initialize.
+system = dict(
+    kicid=kicid,
+    srad=float(star.radius),
+    srad_err=0.5 * float(star.radius_err1 - star.radius_err2),
+    smass=float(star.mass),
+    smass_err=0.5 * float(star.mass_err1 - star.mass_err2),
+)
+
+# Multiple transits.
+if len(cands) > 1:
+    times = np.sort(cands.transit_time)
+    system["period"] = np.mean(np.diff(times))
+    system["t0"] = times[0]
+    row = cands.mean()
+else:
+    system["period"] = 2000.0
+    system["t0"] = float(cands.transit_time)
+    row = cands.iloc[0]
+
+# Initial parameters.
+system["radius"] = float(row.transit_ror * star.radius)
+system["impact"] = 0.0
+
+# Initialize the model.
+model = setup_fit(system, fit_kois=args.fit_kois,
+                  max_points=args.max_fit_data)
+
+# Plot.
+basedir = os.path.join(args.output_dir, "{0}".format(kicid))
+if args.fit_kois:
+    basedir += "+kois"
+os.makedirs(basedir, exist_ok=True)
+fig = model.plot()
+fig.savefig(os.path.join(basedir, "init1.png"))
+pl.close(fig)
+model.optimize(niter=1)
+fig = model.plot()
+fig.savefig(os.path.join(basedir, "init2.png"))
+pl.close(fig)
+
+with open(os.path.join(basedir, "init.pkl"), "wb") as f:
+    pickle.dump(model, f, -1)

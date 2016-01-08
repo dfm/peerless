@@ -86,9 +86,7 @@
 
 % Notation for this paper.
 \newcommand{\period}{{\ensuremath{P}}}
-\newcommand{\rp}{{\ensuremath{R_\mathrm{P}}}}
-\newcommand{\rate}{{\ensuremath{\Gamma}}}
-\newcommand{\score}{{\ensuremath{S}}}
+\newcommand{\unit}[1]{{\ensuremath{\,\mathrm{#1}}}}
 
 \newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
 
@@ -219,20 +217,24 @@ population inference.
 
 \section{Data selection \& preparation}\sectlabel{data}
 
-For the purposes of this \paper, we select the 40,000 brightest G and K dwarfs
-from the \kepler\ catalog using the following parameters:
-
-        % m = (4200 <= stlr.teff) & (stlr.teff <= 6100)
-        % m &= stlr.radius <= 1.15
-        % m &= stlr.dataspan > 365.25*2.
-        % m &= stlr.dutycycle > 0.6
-        % m &= stlr.rrmscdpp07p5 <= 1000.
-        % m &= stlr.kepmag < 15.
-
+For the purposes of this \paper, we select the $\sim40,000$ brightest and
+quietest G and K dwarfs from the \kepler\ catalog using the following
+parameters:
 \begin{itemize}
-{\item $4200\unit{K} \le T_\mathfm{eff} \le 6100\unit{K}$}
-
+{\item $4200\unit{K} \le T_\mathrm{eff} \le 6100\unit{K}$,}
+{\item $R_\star \le 1.15\,R_\odot$,}
+{\item $K_p \le 15\unit{mag}$, and}
+{\item $\mathrm{CDPP}_{7.5\unit{hrs}} \le 1000\unit{ppm}$.}
 \end{itemize}
+We also restrict the sample to only include targets with a data span of more
+than two years and a duty cycle of better than $0.6$.
+Since the \kepler\ data have been searched for shorter period planets
+\dfmtodo{CITE Coughlin} and eclipsing binaries \dfmtodo{CITE EB catalog} than
+targeted by this project, we censor these previously known targets.
+For the known EBs, we simply remove these targets from the candidate list.
+For the confirmed and candidate KOIs from \dfmtodo{Coughlin}, we remove data
+within 2 transit durations of the known candidates.
+
 
 We start with the PDC-MAP light curves downloaded from
 MAST\footnote{\url{https://archive.stsci.edu/kepler/}}.
@@ -397,122 +399,7 @@ NNX13AC07G and by other grants and contracts.
 
 \appendix
 
-\section{Estimated yield}\sectlabel{est}
-
-Before the launch of the \kepler\ Mission, \citet{Yee:2008} predicted the
-yield of single transit events based on the planet occurrence rates estimated
-based on small catalog of radial velocity discoveries \citep{Butler:2006} and
-a fit to their occurrence rate \citep{Cumming:2008}.
-Using these early results and the pre-launch specifications of the \kepler\
-Mission, \citet{Yee:2008} predicted that \kepler\ would discover $\sim 6$
-single transit events in the full dataset.
-Now that the Mission is complete and we have better estimates of the
-occurrence rate and distribution of planets \citep[for example][]{Dong:2013,
-Petigura:2013, Foreman-Mackey:2014, Dressing:2015}, we can update the
-predicted yield for single transit events in the \kepler\ light curves.
-To make this estimate, we extrapolate the distribution of large planets on
-relatively short orbits out to longer periods, taking detection efficiency
-and the survey and targeting properties into account.
-
-We will base our estimate on an assumed model $Q_k(\rp,\,\period)$ for the
-absolute probability of detecting a planet with radius \rp\ and period
-\period\ orbiting the star $k$, and the occurrence rate distribution
-\begin{eqnarray}
-\rate (\rp,\,\period) &=& \frac{\dd N}{\dd\ln\rp\dd\ln\period} \quad,
-\end{eqnarray}
-the expected number of planets per star, per logarithmic radius, per
-logarithmic period.
-Given these two quantities, the expected number of single transits in the
-\kepler\ data is given by
-\begin{eqnarray}
-N &=& \sum_{k=1}^K N_k
-\end{eqnarray}
-where the sum is over the $K$ stars in the sample and $N_k$ is the expected
-number of observable transits around star $k$
-\begin{eqnarray}\eqlabel{nk}
-N_k &=& \int Q_k(\rp,\,\period) \, \rate (\rp,\,\period)
-    \dd\ln\rp \dd\ln\period \quad.
-\end{eqnarray}
-The integral in \eq{nk} is over the full range of target parameters.
-
-For the purposes of this discussion, we assume an approximate simple detection
-efficiency model with three contributions: the geometric transit probability,
-the temporal transit probability, and signal-to-noise ratio threshold of the
-search technique.
-Assuming circular orbits, the geometric transit probability is given by
-\citep{Winn:2010}
-\begin{eqnarray}\eqlabel{q-geom}
-Q_k^\mathrm{(geom)}(\rp,\,\period) &=& \frac{R_k}{a} \\
-&=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, \period^{-2/3}
-\end{eqnarray}
-where $R_k$ and $M_k$ are the radius and mass of the star $k$ respectively.
-The eccentricity distribution of these long-period planets will affect this
-transit probability \citep{Kipping:2014} but this simple prescription should
-be sufficient for a rough estimate.
-For long-period orbits, the temporal transit probability will be given by
-\begin{eqnarray}\eqlabel{q-time}
-Q_k^\mathrm{(time)}(\rp,\,\period) &=& \frac{T_k}{\period}
-\end{eqnarray}
-where $T_k$ is the total time that \kepler\ spent observing the star $k$.
-Finally, the detection threshold depends on the detailed sensitivity of the
-search procedure but we will approximate it as a simple step function in
-signal-to-noise ratio of the transit.
-This contribution will be given approximately by
-\begin{eqnarray}
-Q_k^\mathrm{(detect)}(\rp,\,\period) &=& \left\{\begin{array}{ll}
-1 & \mathrm{if}\,\left(\rp/R_k\right)^2 > f\,\sigma_k \\
-0 & \mathrm{otherwise}
-\end{array}\right.
-\end{eqnarray}
-where $\sigma_k$ is an estimate of the noise in light curve of star $k$ and
-$f$ is the detection threshold for the method.
-
-Combining the detection efficiency components, the integral from \eq{nk}
-becomes
-\begin{eqnarray}\eqlabel{nk-2}
-N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k
-    \int_{\rp_\mathrm{min}} ^{\rp_\mathrm{max}} \frac{\dd\rp}{\rp}
-    \int_{\period_\mathrm{min}} ^{\period_\mathrm{max}}
-        \period^{-8/3}\,\rate(\rp,\,\period) \dd\period
-\end{eqnarray}
-where all the integration limits are set by the target parameter space.
-Because of the detection probability threshold, $\rp_\mathrm{min}$ can be no
-smaller than $R_k\,\sqrt{f\,\sigma_k}$.
-\citet{Dong:2013} used the catalog of short period transiting planets found
-by \kepler\ to constrain a model for the occurrence rate of large planets of
-the form
-\begin{eqnarray}
-\rate(\rp,\,\period) &=& C\,\left(\frac{\period}{10\,\mathrm{d}}\right)^\beta
-\end{eqnarray}
-in a set of radius bins.
-Using this model, the integral in \eq{nk-2} becomes
-\begin{eqnarray}
-N_k &=& \left( \frac{4\,\pi^2}{G\,M_k} \right)^{1/3} \, R_k \, T_k \,
-    \sum_{j=1}^J \frac{C_j}{(10\,\mathrm{d})^{\beta_j}}\,
-    \ln \left( \frac{\rp_{\mathrm{max},j}}{\rp_{\mathrm{min},j}} \right) \,
-    \left[ \frac{{\period_\mathrm{min}}^{\beta_j - 5/3}}{5/3-\beta_j} \right]
-\end{eqnarray}
-where the sum is over the $J$ radial bins studied by \citet{Dong:2013}.
-It's important to note that the model used by \citet{Dong:2013} is given in
-base-10 logarithms so the units must be converted to natural logarithms as
-appropriate.
-
-Assuming the stellar parameters provided by the NASA Exoplanet
-Archive\footnote{We downloaded the \texttt{q1\_q16\_stellar} table from
-\url{http://exoplanetarchive.ipac.caltech.edu/} on 2015-04-03.}
-\citep{Huber:2014} and approximating the stellar noise using the 15-hour CDPP
-\citep{Christiansen:2012}, \fig{predict} shows the extrapolated number of
-transiting planets with $1500\,\mathrm{d} < \period < 5000\,\mathrm{d}$ based
-on the \citet{Dong:2013} power-law model.
-For a detection threshold $f\sim10$, the expected number of single transit
-events in the \kepler\ light curves is $\sim 60$.
-
-This results is much more optimistic than the pre-launch estimate from
-\citet{Yee:2008} for a few reasons.
-One effect is that, the \kepler\ Mission ran for more than four
-years---longer than the fiducial Mission goal---and $\sim190,000$ stars were
-targeted for nearly the full baseline instead of the original 100,000.
-\dfmtodo{Explain the other reasons.}
+\section{Supervised classification}
 
 
 \clearpage

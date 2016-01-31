@@ -230,10 +230,71 @@ in the transit search literature \dfmtodo{is this still true?}.
 This means that the PH sample of candidates cannot be used for robust
 population inference.
 
-To study the occurrence rate of long-period exoplanets, we developed a
+To study the occurrence rate of long-period exoplanets, we have developed a
 fully-automated method for searching the archival \kepler\ light curves for
 these systems with only one or two transits.
+Using this method, we detect XXX long-period transiting planet candidates and
+YYY long-period eclipsing binary candidates.
+We estimate that the population level false positive rate in this exoplanet
+candidate sample is about ZZZ\%.
+By injecting synthetic transit signals into the \kepler\ light curves, we
+measure the completeness of our search method.
+Based on this catalog of exoplanet candidates and the search completeness, we
+constrain the occurrence rate of long-period exoplanets.
+For large planets, these results are consistent with previous measurements of
+long-period, giant planet occurrence rates based on radial velocity surveys
+and we demonstrate that small---and possibly rocky---planets are more common
+than their larger counterparts even at long orbital periods.
 
+\section{The search for long-period exoplanets}
+
+Data from the \kepler\ Mission has been used to discover a diverse zoo of
+thousands of exoplanets of all sizes orbiting stars of all types.
+It has be demonstrated that these discoveries can be used to place constraints
+on the occurrence rate of exoplanets \dfmtodo{CITE}.
+These results are sensitive to the detection efficiency and reliability of the
+transit discovery methods \dfmtodo{CITE Burke}.
+
+The search for long-period planets presents several unique challenges.
+Of these, the most important is the inevitable sensitively to signals falsely
+identified as being caused by a transit exoplanet when it is actually a
+systematic false alarm (noise) or an astrophysical false positive.
+In the following paragraphs, we detail our method for addressing these
+challenges and quantifying their effects.
+In summary, we identify false alarms by developing a conservative automated
+candidate vetting algorithm using the full light curve of each target star and
+measure the incompleteness introduced by this procedure.
+To account for astrophysical false positives, we discard candidates that fail
+the standard transit centroid tests and then statistically incorporate
+uncertainties introduced by false positives missed by this procedure at a
+population level.
+
+\section{Candidate vetting}
+
+\paragraph{Light curve}
+
+
+\begin{figure}[p]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/model_comp.pdf}
+\end{center}
+\caption{%
+Representative examples of candidate events flagged by the initial search.
+Each example falls into a different model category and the figure shows the
+data as black points and the best fit mean model prediction.
+The examples represent the following model categories:
+\emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
+transit.
+\figlabel{model-comp}}
+\end{figure}
+
+\paragraph{Pixel-level}
+
+Blah.
+
+\paragraph{Auxiliary data}
+
+Blah.
 
 
 \section{Data selection \& preparation}\sectlabel{data}
@@ -290,35 +351,6 @@ all the in-transit data for the candidate using the parameters provided by the
 Archive}\footnote{\url{http://exoplanetarchive.ipac.caltech.edu/}; We
 downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 2015-03-25.}.
-
-
-
-\section{Candidate vetting}
-
-\paragraph{Light curve}
-
-
-\begin{figure}[p]
-\begin{center}
-\includegraphics[width=\textwidth]{figures/model_comp.pdf}
-\end{center}
-\caption{%
-Representative examples of candidate events flagged by the initial search.
-Each example falls into a different model category and the figure shows the
-data as black points and the best fit mean model prediction.
-The examples represent the following model categories:
-\emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
-transit.
-\figlabel{model-comp}}
-\end{figure}
-
-\paragraph{Pixel-level}
-
-Blah.
-
-\paragraph{Auxiliary data}
-
-Blah.
 
 
 \section{Results}

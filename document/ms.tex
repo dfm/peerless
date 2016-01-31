@@ -128,7 +128,22 @@ Automated detection \& characterization of long-period transits in the
 
 \begin{abstract}
 
-Hi.
+The \kepler\ Mission has discovered thousands of exoplanets and revolutionized
+our understanding of their population.
+This large, homogeneous catalog of discoveries has enabled rigorous studies of
+the occurrence rate of exoplanets and extra-Solar planetary systems as a
+function of their physical properties.
+Transit survey like \kepler\ are most sensitive to planets with shorter
+orbital periods than the gas giant planets that dominate the dynamics of our
+Solar System.
+We performed a fully-automated search for the transits of long-period
+exoplanets in the archival \kepler\ light curves and announce XXX planet
+candidates.
+Since our method involves no human intervention, we empirically characterize
+the completeness and reliability of our search.
+Based on these results, we measure the average occurrence rate of exoplanets
+smaller than Jupiter and with orbital periods longer than 700 days to be $\dd
+N = YYY \pm ZZZ\dd \ln P \dd \ln R$.
 
 \end{abstract}
 
@@ -156,15 +171,16 @@ studied.
 Specifically, the standard transit search procedures only discover signals
 with at least three observed transits \citep[for example][]{Petigura:2013,
 Burke:2014, Rowe:2015}.
-For \kepler, with a baseline of about four years, this sets an upper limit on
-the detectable periods of just over a year.
+For \kepler, with a baseline of about four years, this sets an absolute upper
+limit on the detectable periods of about two years.
 In the Solar System, Jupiter---with a period of 12 years---dominates the
 planetary dynamics and, since it would only exhibit at most one transit in the
 \kepler\ data, it would be missed by most existing transit search procedures.
 It is possible to discover long-period planets like this using targeted radial
-velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014} but the
-cost of implementing a systematic RV search is substantially higher than
-searching the existing and forthcoming photometric data for single transits.
+velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014}
+\dfmtodo{CITE Bryan \etal} but the cost of implementing a systematic RV search
+is substantially higher than searching the existing and forthcoming
+photometric data for single transits.
 
 There are two main technical barriers to a search for single transit events.
 The first is that the transit probability for long-period planets is very low;
@@ -206,13 +222,18 @@ identified visually.
 Visual inspection can be a useful search technique for large single transits
 because humans are able to robustly distinguish transit signals from the noise
 and this project has yielded some promising long-period candidates and
-confirmed planets \citep[for example][]{Wang:2013}.
+confirmed planets \citep[for example][]{Wang:2013} \dfmtodo{CITE Wang 2015}.
 One shortcoming of the PH method is that it can be difficult to fully quantify
 the performance (completeness and reliability) of the search and PH does not
 evaluate their users using synthetic transit signals as is now common practice
-in the transit search literature.
+in the transit search literature \dfmtodo{is this still true?}.
 This means that the PH sample of candidates cannot be used for robust
 population inference.
+
+To study the occurrence rate of long-period exoplanets, we developed a
+fully-automated method for searching the archival \kepler\ light curves for
+these systems with only one or two transits.
+
 
 
 \section{Data selection \& preparation}\sectlabel{data}

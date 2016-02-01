@@ -88,6 +88,9 @@
 \newcommand{\period}{{\ensuremath{P}}}
 \newcommand{\unit}[1]{{\ensuremath{\,\mathrm{#1}}}}
 
+\newcommand{\params}{{\ensuremath{\bvec{w}}}}
+\newcommand{\poppars}{{\ensuremath{\theta}}}
+
 \newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
 
 % no more bad lines!
@@ -366,6 +369,85 @@ Blah.
 
 
 \section{Completeness \& reliability}
+
+
+\section{The occurrence rate of long-period exoplanets}
+
+Geometric:
+
+\begin{eqnarray}
+Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k(\params)} \\
+&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}\,P^{-2/3}
+\end{eqnarray}
+
+Temporal:
+
+\begin{eqnarray}
+Q_{\mathrm{temp},k} (\params) &=& \frac{T_k}{P}
+\end{eqnarray}
+where $T_k$ is the total observing baseline for target $k$.
+Combined with the detection efficiency $Q_{\mathrm{det}}(\params)$ (assumed to
+be constant for each target), the total completeness as a function of the
+parameters is
+\begin{eqnarray}
+Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
+                 Q_{\mathrm{temp},k} (\params) \,
+                 Q_{\mathrm{geom},k} (\params) \\
+&=& Q_{\mathrm{det},k}(\params) \,
+    \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,
+    R_{\star,k}\,T_k\,P^{-5/3} \quad.
+\end{eqnarray}
+
+The likelihood function for the catalog of planet candidates is
+\begin{eqnarray}
+p(\{\params_n\}\,|\,\poppars) &\propto&
+    \exp \left(
+        \int f_\poppars (\params)\,\sum_{k=1}^K Q_k(\params) \dd\params
+    \right) \, \prod_{n=1}^N f_\poppars (\params_n) \quad.
+\end{eqnarray}
+
+Therefore
+\begin{eqnarray}
+\int f_\poppars (\params)\,\sum_{k=1}^K Q_k(\params) \dd\ln P\dd\ln R &=&
+    \bar{Q}\,\int Q_{\mathrm{det}}(\params)\,f_\poppars(\params)\,P^{-5/3}
+        \dd\ln P\dd\ln R
+\end{eqnarray}
+where
+\begin{eqnarray}
+\bar{Q} &=& \sum_{k=1}^K
+    \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}\,T_k
+\quad.
+\end{eqnarray}
+
+The easiest way to evaluate this integral in practice is to use Monte Carlo
+integration to find
+\begin{eqnarray}
+\int Q_{\mathrm{det}}(\params)\,f_\poppars(\params)\,P^{-5/3}\dd\ln P\dd\ln R
+&=& \frac{F}{J}\sum_{j=1}^J Q_{\mathrm{det}}(P^{(j)},\,R^{(j)})\,
+        f_\poppars(P^{(j)},\,R^{(j)})
+\end{eqnarray}
+where
+\begin{eqnarray}
+F &=& \frac{3}{5}\,[P_\mathrm{min}^{-5/3}-P_\mathrm{max}^{-5/3}]\,
+      [\ln R_\mathrm{max} - \ln R_\mathrm{min}]
+\end{eqnarray}
+and
+\begin{eqnarray}
+P^{(j)} \sim P^{-8/3} &\mathrm{and}&
+\ln R^{(j)} \sim \mathcal{U}(\ln R_\mathrm{min},\,\ln R_\mathrm{max})
+\end{eqnarray}
+
+
+\begin{eqnarray}
+f_\poppars (\params) &=& \frac{1}{f_0}\,C\,P^\alpha\,R^\beta
+\end{eqnarray}
+where
+\begin{eqnarray}
+f_0 &=&
+    \int_{P_\mathrm{min}}^{P_\mathrm{max}}
+    \int_{R_\mathrm{min}}^{R_\mathrm{max}}
+    P^\alpha\,R^\beta\dd\ln P\dd\ln R
+\end{eqnarray}
 
 
 

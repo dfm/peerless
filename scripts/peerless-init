@@ -11,7 +11,7 @@ import matplotlib.pyplot as pl
 from multiprocessing import Pool
 
 from peerless.fit import setup_fit
-from peerless.catalogs import KICatalog
+from peerless.catalogs import KICatalog, BlacklistCatalog
 
 
 def init_spec(args, max_fit_data=250, output_dir="fits"):
@@ -41,8 +41,6 @@ parser.add_argument("candidates", help="the candidate database")
 parser.add_argument("kicids", type=int, nargs="*", help="fit a specific KIC")
 parser.add_argument("-p", "--parallel", type=int, default=None,
                     help="parallelize")
-parser.add_argument("-v", "--verbose", action="store_true",
-                    help="more output to the screen")
 parser.add_argument("-o", "--output-dir", default="fits",
                     help="the output directory")
 parser.add_argument("--max-fit-data", type=int, default=250,
@@ -51,7 +49,7 @@ args = parser.parse_args()
 
 # Load the candidate list.
 candidates = pd.read_csv(args.candidates)
-candidates = candidates[candidates.num_peaks <= 2]
+candidates = candidates[(candidates.num_peaks <= 2) & candidates.accept_bic]
 
 # Load the stellar catalog.
 kic = KICatalog().df
@@ -60,6 +58,10 @@ if args.kicids:
     kicids = args.kicids
 else:
     kicids = list(set(candidates.kicid))
+
+blacklist = BlacklistCatalog().df
+blacklist = set(blacklist.kicid)
+kicids = [k for k in kicids if k not in blacklist]
 
 # Loop over the input KIC IDs.
 systems = dict()

@@ -157,7 +157,6 @@ class TransitModel(object):
             r = (lc.flux - mu) * 1e3
             p0 = gp.get_vector()
             r = minimize(gp.nll, p0, jac=gp.grad_nll, args=(r, ))
-            print(r)
             if r.success:
                 gp.set_vector(r.x)
             else:

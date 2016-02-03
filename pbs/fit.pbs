@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l procs=12
+#PBS -l nodes=2:ppn=20
 #PBS -l walltime=24:00:00
 #PBS -l mem=60GB
 #PBS -N pl-fit
@@ -16,7 +16,7 @@ export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch
 export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless
-RUNDIR=$SCRATCH/peerless/fit-$KICID
+RUNDIR=$SCRATCH/peerless/fit-$KICID-more
 mkdir -p $RUNDIR
 
 cd $RUNDIR

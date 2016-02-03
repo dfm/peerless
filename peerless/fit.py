@@ -38,7 +38,6 @@ class TransitModel(object):
             self.lnlike(compute_blob=False)[0],
             (body.b, body.radius, body.period)
         )
-        print(mx)
         prng = np.exp(np.append(np.linspace(np.log(0.1), np.log(10.0), 21), 0))
         rrng = np.append(np.linspace(0.5, 2, 11), 0)
         rstar = self.system.central.radius
@@ -262,7 +261,8 @@ def setup_fit(args, fit_kois=False, max_points=300):
         if np.any(f < 1.0):
             i = np.argmin(f)
             inds = np.arange(len(f))
-            m = np.sort(np.argsort(np.abs(inds - i))[:max_points])
+            m = np.zeros(len(lc.time), dtype=bool)
+            m[np.sort(np.argsort(np.abs(inds - i))[:max_points])] = True
             if np.any(f[~m] < system.central.flux):
                 m = np.ones(len(lc.time), dtype=bool)
             lc.time = np.ascontiguousarray(lc.time[m])

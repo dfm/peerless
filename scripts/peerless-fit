@@ -8,7 +8,7 @@ import emcee
 import pickle
 import argparse
 import numpy as np
-from emcee.utils import MPIPool
+from mpipool import MPIPool
 
 
 def lnprob(theta):

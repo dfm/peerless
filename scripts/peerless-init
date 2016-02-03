@@ -6,73 +6,116 @@ import pickle
 import argparse
 import numpy as np
 import pandas as pd
+from functools import partial
 import matplotlib.pyplot as pl
+from multiprocessing import Pool
 
 from peerless.fit import setup_fit
 from peerless.catalogs import KICatalog
 
+
+def init_spec(args, max_fit_data=250, output_dir="fits"):
+    key, spec = args
+
+    # Initialize the model.
+    model = setup_fit(spec, fit_kois=True, max_points=max_fit_data)
+
+    # Plot.
+    basedir = os.path.join(output_dir, key)
+    os.makedirs(basedir, exist_ok=True)
+    fig = model.plot()
+    fig.savefig(os.path.join(basedir, "init1.png"))
+    pl.close(fig)
+    model.optimize(niter=3)
+    fig = model.plot()
+    fig.savefig(os.path.join(basedir, "init2.png"))
+    pl.close(fig)
+
+    with open(os.path.join(basedir, "init.pkl"), "wb") as f:
+        pickle.dump(model, f, -1)
+
+
 parser = argparse.ArgumentParser(description="model some light curves")
 
 parser.add_argument("candidates", help="the candidate database")
-parser.add_argument("kicid", type=int, help="fit a specific KIC")
+parser.add_argument("kicids", type=int, nargs="*", help="fit a specific KIC")
+parser.add_argument("-p", "--parallel", type=int, default=None,
+                    help="parallelize")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="more output to the screen")
 parser.add_argument("-o", "--output-dir", default="fits",
                     help="the output directory")
-parser.add_argument("--fit-kois", action="store_true",
-                    help="fit the KOIs too")
 parser.add_argument("--max-fit-data", type=int, default=250,
                     help="the maximum number of points per light curve")
 args = parser.parse_args()
 
-kicid = args.kicid
-
 # Load the candidate list.
-cands = pd.read_csv(args.candidates)
-cands = cands[cands.kicid == args.kicid]
+candidates = pd.read_csv(args.candidates)
+candidates = candidates[candidates.num_peaks <= 2]
 
 # Load the stellar catalog.
 kic = KICatalog().df
-star = kic[kic.kepid == args.kicid]
+
+if args.kicids:
+    kicids = args.kicids
+else:
+    kicids = list(set(candidates.kicid))
+
+# Loop over the input KIC IDs.
+systems = dict()
+for kicid in kicids:
+    star = kic[kic.kepid == kicid]
+    cands = candidates[candidates.kicid == kicid]
+
+    key = "{0}".format(kicid)
+
+    # Initialize.
+    system = dict(
+        kicid=kicid,
+        srad=float(star.radius),
+        srad_err=0.5 * float(star.radius_err1 - star.radius_err2),
+        smass=float(star.mass),
+        smass_err=0.5 * float(star.mass_err1 - star.mass_err2),
+        period=2000.0,
+        impact=0.1,
+        transit_number=-1,
+    )
+
+    # Single transit?
+    if len(cands) == 1:
+        row = cands.iloc[0]
+        system["t0"] = float(row.transit_time)
+        system["radius"] = float(row.transit_ror * star.radius)
+        systems[key] = system
+        continue
+
+    # Multiple transits:
+    times = np.sort(cands.transit_time)
+
+    # Fit together.
+    s = dict(system)
+    s["t0"] = times[0]
+    s["period"] = np.mean(np.diff(times))
+    row = cands.mean()
+    s["radius"] = float(row.transit_ror * star.radius)
+    systems[key+".full"] = s
+
+    # Fit each transit independently.
+    for i, (_, row) in enumerate(cands.iterrows()):
+        s = dict(system)
+        s["t0"] = float(row.transit_time)
+        s["radius"] = float(row.transit_ror * star.radius)
+        s["transit_number"] = i
+        systems[key+".{0:02d}".format(i)] = s
+
+# Deal with parallelization.
+if args.parallel != 0:
+    pool = Pool(args.parallel)
+    M = pool.imap_unordered
+else:
+    M = map
 
 # Initialize.
-system = dict(
-    kicid=kicid,
-    srad=float(star.radius),
-    srad_err=0.5 * float(star.radius_err1 - star.radius_err2),
-    smass=float(star.mass),
-    smass_err=0.5 * float(star.mass_err1 - star.mass_err2),
-)
-
-# Multiple transits.
-if len(cands) > 1:
-    times = np.sort(cands.transit_time)
-    system["period"] = np.mean(np.diff(times))
-    system["t0"] = times[0]
-    row = cands.mean()
-else:
-    system["period"] = 2000.0
-    system["t0"] = float(cands.transit_time)
-    row = cands.iloc[0]
-
-# Initial parameters.
-system["radius"] = float(row.transit_ror * star.radius)
-system["impact"] = 0.0
-
-# Initialize the model.
-model = setup_fit(system, fit_kois=args.fit_kois,
-                  max_points=args.max_fit_data)
-
-# Plot.
-basedir = os.path.join(args.output_dir, "{0}".format(kicid))
-if args.fit_kois:
-    basedir += "+kois"
-os.makedirs(basedir, exist_ok=True)
-fig = model.plot()
-fig.savefig(os.path.join(basedir, "init1.png"))
-pl.close(fig)
-model.optimize(niter=1)
-fig = model.plot()
-fig.savefig(os.path.join(basedir, "init2.png"))
-pl.close(fig)
-
-with open(os.path.join(basedir, "init.pkl"), "wb") as f:
-    pickle.dump(model, f, -1)
+f = partial(init_spec, max_fit_data=args.max_fit_data,
+            output_dir=args.output_dir)
+list(M(f, systems.items()))

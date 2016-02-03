@@ -20,9 +20,10 @@ class TransitModel(object):
 
     eb = beta(1.12, 3.09)
 
-    def __init__(self, gps, system, smass, smass_err, srad, srad_err,
+    def __init__(self, spec, gps, system, smass, smass_err, srad, srad_err,
                  fit_lcs, other_lcs):
-        self.t0rng = system.bodies[0].t0 + np.array([-1., 1.])
+        self.spec = spec
+        self.t0rng = system.bodies[0].t0 + np.array([-0.5, 0.5])
         self.gps = gps
         self.system = system
         self.smass = smass
@@ -31,6 +32,29 @@ class TransitModel(object):
         self.srad_err = srad_err
         self.fit_lcs = fit_lcs
         self.other_lcs = other_lcs
+
+        body = self.system.bodies[0]
+        mx = (
+            self.lnlike(compute_blob=False)[0],
+            (body.b, body.radius, body.period)
+        )
+        print(mx)
+        prng = np.exp(np.append(np.linspace(np.log(0.1), np.log(10.0), 21), 0))
+        rrng = np.append(np.linspace(0.5, 2, 11), 0)
+        rstar = self.system.central.radius
+        for per in body.period*prng:
+            body.period = per
+            for rad in body.radius*rrng:
+                body.radius = rad
+                for b in np.linspace(0, (1.0+0.99*rad/rstar)**4, 10)**(1/4.):
+                    body.b = b
+                    ll = self.lnlike(compute_blob=False)[0]
+                    if ll > mx[0]:
+                        mx = (ll, (b, rad, per))
+        print(mx)
+        body.b = mx[1][0]
+        body.radius = mx[1][1]
+        body.period = mx[1][2]
 
     # Probabilistic model:
     def lnprior(self):
@@ -67,7 +91,7 @@ class TransitModel(object):
         preds = []
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
-            r = lc.flux - mu
+            r = (lc.flux - mu) * 1e3
             ll += gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
                 return -np.inf, (0, None)
@@ -125,14 +149,20 @@ class TransitModel(object):
         self.system.thaw_parameter("central:*")
         self.system.thaw_parameter("bodies*t0")
 
+        if not niter > 1:
+            return
+
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = self.system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
-            r = lc.flux - mu
-            r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(r, ))
-            gp.set_vector(r.x)
-
-        if niter > 1:
-            self.optimize(niter=niter - 1)
+            r = (lc.flux - mu) * 1e3
+            p0 = gp.get_vector()
+            r = minimize(gp.nll, p0, jac=gp.grad_nll, args=(r, ))
+            print(r)
+            if r.success:
+                gp.set_vector(r.x)
+            else:
+                gp.set_vector(p0)
+        self.optimize(niter=niter - 1)
 
     def _nll(self, theta):
         try:
@@ -146,7 +176,7 @@ class TransitModel(object):
         system = self.system
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
-            r = lc.flux - mu
+            r = (lc.flux - mu) * 1e3
             nll -= gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(nll)):
                 return 1e10
@@ -165,8 +195,8 @@ class TransitModel(object):
         g = np.zeros_like(theta)
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
-            gmu = system.get_gradient(lc.time, texp=lc.texp)
-            r = lc.flux - mu
+            gmu = 1e3 * system.get_gradient(lc.time, texp=lc.texp)
+            r = (lc.flux - mu) * 1e3
             alpha = gp.apply_inverse(r)
             g -= np.dot(gmu, alpha)
             if not (np.any(mu < system.central.flux)
@@ -182,8 +212,8 @@ class TransitModel(object):
         for gp, lc in zip(self.gps, self.fit_lcs):
             t = (lc.time - t0 + 0.5*period) % period - 0.5*period
             mu = self.system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
-            r = lc.flux - mu
-            p = gp.predict(r, lc.time, return_cov=False)
+            r = (lc.flux - mu) * 1e3
+            p = gp.predict(r, lc.time, return_cov=False) * 1e-3
 
             ax.plot(t, lc.flux, "k")
             ax.plot(t, p + self.system.central.flux, "g")
@@ -234,18 +264,21 @@ def setup_fit(args, fit_kois=False, max_points=300):
             i = np.argmin(f)
             inds = np.arange(len(f))
             m = np.sort(np.argsort(np.abs(inds - i))[:max_points])
+            if np.any(f[~m] < system.central.flux):
+                m = np.ones(len(lc.time), dtype=bool)
             lc.time = np.ascontiguousarray(lc.time[m])
             lc.flux = np.ascontiguousarray(lc.flux[m])
             lc.ferr = np.ascontiguousarray(lc.ferr[m])
             fit_lcs.append(lc)
-            kernel = np.var(lc.flux) * kernels.Matern32Kernel(2**2)
-            gp = george.GP(kernel, white_noise=2*np.log(np.mean(lc.ferr)),
+            var = np.median((lc.flux - np.median(lc.flux))**2)
+            kernel = 1e6*var * kernels.Matern32Kernel(2**2)
+            gp = george.GP(kernel, white_noise=2*np.log(np.mean(lc.ferr)*1e3),
                            fit_white_noise=True)
-            gp.compute(lc.time, lc.ferr)
+            gp.compute(lc.time, lc.ferr * 1e3)
             gps.append(gp)
         else:
             other_lcs.append(lc)
 
-    model = TransitModel(gps, system, args["smass"], args["smass_err"],
+    model = TransitModel(args, gps, system, args["smass"], args["smass_err"],
                          args["srad"], args["srad_err"], fit_lcs, other_lcs)
     return model

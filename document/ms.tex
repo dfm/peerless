@@ -7,9 +7,6 @@
 %  * line breaks at the ends of sentences
 %  * eqnarrys ONLY
 %  * ``light curve'' not ``light-curve'' or ``lightcurve''
-%  * Do not put in any comments that might get tweeted by @OverheardOnAph
-%    (or maybe do put in a few....)
-%  * ``percent'' (not \%) is a unit, as is ppm, so 5~percent.
 %  * that is all.
 %
 
@@ -88,6 +85,9 @@
 \newcommand{\period}{{\ensuremath{P}}}
 \newcommand{\unit}[1]{{\ensuremath{\,\mathrm{#1}}}}
 
+\newcommand{\params}{{\ensuremath{\bvec{w}}}}
+\newcommand{\poppars}{{\ensuremath{\theta}}}
+
 \newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
 
 % no more bad lines!
@@ -109,6 +109,7 @@ Automated detection \& characterization of long-period transits in the
     Daniel~Foreman-Mackey\altaffilmark{1,2,\uw},
     David~W.~Hogg\altaffilmark{\nyu,\mpia,\cds},
     Bernhard~Sch\"olkopf\altaffilmark{\mpis},
+    Eric~Agol\altaffilmark{\uw},
     and others
 }
 \altaffiltext{1}         {To whom correspondence should be addressed:
@@ -128,7 +129,22 @@ Automated detection \& characterization of long-period transits in the
 
 \begin{abstract}
 
-Hi.
+The \kepler\ Mission has discovered thousands of exoplanets and revolutionized
+our understanding of their population.
+This large, homogeneous catalog of discoveries has enabled rigorous studies of
+the occurrence rate of exoplanets and extra-Solar planetary systems as a
+function of their physical properties.
+Transit survey like \kepler\ are most sensitive to planets with shorter
+orbital periods than the gas giant planets that dominate the dynamics of our
+Solar System.
+We performed a fully-automated search for the transits of long-period
+exoplanets in the archival \kepler\ light curves and announce XXX planet
+candidates.
+Since our method involves no human intervention, we empirically characterize
+the completeness and reliability of our search.
+Based on these results, we measure the average occurrence rate of exoplanets
+smaller than Jupiter and with orbital periods longer than 700 days to be $\dd
+N = YYY \pm ZZZ\dd \ln P \dd \ln R$.
 
 \end{abstract}
 
@@ -156,15 +172,16 @@ studied.
 Specifically, the standard transit search procedures only discover signals
 with at least three observed transits \citep[for example][]{Petigura:2013,
 Burke:2014, Rowe:2015}.
-For \kepler, with a baseline of about four years, this sets an upper limit on
-the detectable periods of just over a year.
+For \kepler, with a baseline of about four years, this sets an absolute upper
+limit on the detectable periods of about two years.
 In the Solar System, Jupiter---with a period of 12 years---dominates the
 planetary dynamics and, since it would only exhibit at most one transit in the
 \kepler\ data, it would be missed by most existing transit search procedures.
 It is possible to discover long-period planets like this using targeted radial
-velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014} but the
-cost of implementing a systematic RV search is substantially higher than
-searching the existing and forthcoming photometric data for single transits.
+velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014}
+\dfmtodo{CITE Bryan \etal} but the cost of implementing a systematic RV search
+is substantially higher than searching the existing and forthcoming
+photometric data for single transits.
 
 There are two main technical barriers to a search for single transit events.
 The first is that the transit probability for long-period planets is very low;
@@ -206,13 +223,79 @@ identified visually.
 Visual inspection can be a useful search technique for large single transits
 because humans are able to robustly distinguish transit signals from the noise
 and this project has yielded some promising long-period candidates and
-confirmed planets \citep[for example][]{Wang:2013}.
+confirmed planets \citep[for example][]{Wang:2013} \dfmtodo{CITE Wang 2015}.
 One shortcoming of the PH method is that it can be difficult to fully quantify
 the performance (completeness and reliability) of the search and PH does not
 evaluate their users using synthetic transit signals as is now common practice
-in the transit search literature.
+in the transit search literature \dfmtodo{is this still true?}.
 This means that the PH sample of candidates cannot be used for robust
 population inference.
+
+To study the occurrence rate of long-period exoplanets, we have developed a
+fully-automated method for searching the archival \kepler\ light curves for
+these systems with only one or two transits.
+Using this method, we detect XXX long-period transiting planet candidates and
+YYY long-period eclipsing binary candidates.
+We estimate that the population level false positive rate in this exoplanet
+candidate sample is about ZZZ\%.
+By injecting synthetic transit signals into the \kepler\ light curves, we
+measure the completeness of our search method.
+Based on this catalog of exoplanet candidates and the search completeness, we
+constrain the occurrence rate of long-period exoplanets.
+For large planets, these results are consistent with previous measurements of
+long-period, giant planet occurrence rates based on radial velocity surveys
+and we demonstrate that small---and possibly rocky---planets are more common
+than their larger counterparts even at long orbital periods.
+
+\section{The search for long-period exoplanets}
+
+Data from the \kepler\ Mission has been used to discover a diverse zoo of
+thousands of exoplanets of all sizes orbiting stars of all types.
+It has be demonstrated that these discoveries can be used to place constraints
+on the occurrence rate of exoplanets \dfmtodo{CITE}.
+These results are sensitive to the detection efficiency and reliability of the
+transit discovery methods \dfmtodo{CITE Burke}.
+
+The search for long-period planets presents several unique challenges.
+Of these, the most important is the inevitable sensitively to signals falsely
+identified as being caused by a transit exoplanet when it is actually a
+systematic false alarm (noise) or an astrophysical false positive.
+In the following paragraphs, we detail our method for addressing these
+challenges and quantifying their effects.
+In summary, we identify false alarms by developing a conservative automated
+candidate vetting algorithm using the full light curve of each target star and
+measure the incompleteness introduced by this procedure.
+To account for astrophysical false positives, we discard candidates that fail
+the standard transit centroid tests and then statistically incorporate
+uncertainties introduced by false positives missed by this procedure at a
+population level.
+
+\section{Candidate vetting}
+
+\paragraph{Light curve}
+
+
+\begin{figure}[p]
+\begin{center}
+\includegraphics[width=\textwidth]{figures/model_comp.pdf}
+\end{center}
+\caption{%
+Representative examples of candidate events flagged by the initial search.
+Each example falls into a different model category and the figure shows the
+data as black points and the best fit mean model prediction.
+The examples represent the following model categories:
+\emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
+transit.
+\figlabel{model-comp}}
+\end{figure}
+
+\paragraph{Pixel-level}
+
+Blah.
+
+\paragraph{Auxiliary data}
+
+Blah.
 
 
 \section{Data selection \& preparation}\sectlabel{data}
@@ -271,35 +354,6 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 2015-03-25.}.
 
 
-
-\section{Candidate vetting}
-
-\paragraph{Light curve}
-
-
-\begin{figure}[p]
-\begin{center}
-\includegraphics[width=\textwidth]{figures/model_comp.pdf}
-\end{center}
-\caption{%
-Representative examples of candidate events flagged by the initial search.
-Each example falls into a different model category and the figure shows the
-data as black points and the best fit mean model prediction.
-The examples represent the following model categories:
-\emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
-transit.
-\figlabel{model-comp}}
-\end{figure}
-
-\paragraph{Pixel-level}
-
-Blah.
-
-\paragraph{Auxiliary data}
-
-Blah.
-
-
 \section{Results}
 
 \begin{figure}[p]
@@ -313,6 +367,85 @@ Blah.
 
 
 \section{Completeness \& reliability}
+
+
+\section{The occurrence rate of long-period exoplanets}
+
+Geometric:
+
+\begin{eqnarray}
+Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k(\params)} \\
+&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}\,P^{-2/3}
+\end{eqnarray}
+
+Temporal:
+
+\begin{eqnarray}
+Q_{\mathrm{temp},k} (\params) &=& \frac{T_k}{P}
+\end{eqnarray}
+where $T_k$ is the total observing baseline for target $k$.
+Combined with the detection efficiency $Q_{\mathrm{det}}(\params)$ (assumed to
+be constant for each target), the total completeness as a function of the
+parameters is
+\begin{eqnarray}
+Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
+                 Q_{\mathrm{temp},k} (\params) \,
+                 Q_{\mathrm{geom},k} (\params) \\
+&=& Q_{\mathrm{det},k}(\params) \,
+    \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,
+    R_{\star,k}\,T_k\,P^{-5/3} \quad.
+\end{eqnarray}
+
+The likelihood function for the catalog of planet candidates is
+\begin{eqnarray}
+p(\{\params_n\}\,|\,\poppars) &\propto&
+    \exp \left(
+        \int f_\poppars (\params)\,\sum_{k=1}^K Q_k(\params) \dd\params
+    \right) \, \prod_{n=1}^N f_\poppars (\params_n) \quad.
+\end{eqnarray}
+
+Therefore
+\begin{eqnarray}
+\int f_\poppars (\params)\,\sum_{k=1}^K Q_k(\params) \dd\ln P\dd\ln R &=&
+    \bar{Q}\,\int Q_{\mathrm{det}}(\params)\,f_\poppars(\params)\,P^{-5/3}
+        \dd\ln P\dd\ln R
+\end{eqnarray}
+where
+\begin{eqnarray}
+\bar{Q} &=& \sum_{k=1}^K
+    \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}\,T_k
+\quad.
+\end{eqnarray}
+
+The easiest way to evaluate this integral in practice is to use Monte Carlo
+integration to find
+\begin{eqnarray}
+\int Q_{\mathrm{det}}(\params)\,f_\poppars(\params)\,P^{-5/3}\dd\ln P\dd\ln R
+&=& \frac{F}{J}\sum_{j=1}^J Q_{\mathrm{det}}(P^{(j)},\,R^{(j)})\,
+        f_\poppars(P^{(j)},\,R^{(j)})
+\end{eqnarray}
+where
+\begin{eqnarray}
+F &=& \frac{3}{5}\,[P_\mathrm{min}^{-5/3}-P_\mathrm{max}^{-5/3}]\,
+      [\ln R_\mathrm{max} - \ln R_\mathrm{min}]
+\end{eqnarray}
+and
+\begin{eqnarray}
+P^{(j)} \sim P^{-8/3} &\mathrm{and}&
+\ln R^{(j)} \sim \mathcal{U}(\ln R_\mathrm{min},\,\ln R_\mathrm{max})
+\end{eqnarray}
+
+
+\begin{eqnarray}
+f_\poppars (\params) &=& \frac{1}{f_0}\,C\,P^\alpha\,R^\beta
+\end{eqnarray}
+where
+\begin{eqnarray}
+f_0 &=&
+    \int_{P_\mathrm{min}}^{P_\mathrm{max}}
+    \int_{R_\mathrm{min}}^{R_\mathrm{max}}
+    P^\alpha\,R^\beta\dd\ln P\dd\ln R
+\end{eqnarray}
 
 
 

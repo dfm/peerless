@@ -103,7 +103,7 @@ for i, ret in enumerate(sampler.sample(p0, iterations=args.nsteps,
             f["params"][i, n, "eccen"] = blob[n][0][1]
             f["params"][i, n, "impact"] = blob[n][0][2]
 
-            f["lnprior"][i, n] = blob[n][0][3]
+            f["lnprior"][i, n] = blob[n][3]
 
             if compute_blob:
                 f["pred"][i, n, 0] = np.concatenate([b[0] for b in blob[n][2]])

@@ -15,12 +15,7 @@ export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless
 RUNDIR=$PBS_O_WORKDIR
-# mkdir -p $RUNDIR
-
-echo $RUNDIR
 
 cd $RUNDIR
-echo `which mpiexec` > mpiexec.log
-
 mpiexec -np $PBS_NP python $SRCDIR/scripts/peerless-fit $RUNDIR/init.pkl --nwalkers $((PBS_NP*2))
 

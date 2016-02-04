@@ -97,7 +97,7 @@ class TransitModel(object):
             if compute_blob:
                 preds.append((gp.predict(r, lc.time, return_cov=False), mu))
 
-        if compute_blob:
+        if not compute_blob:
             return ll, (0, None)
 
         # Compute number of cadences with transits in the other light curves.

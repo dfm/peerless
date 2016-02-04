@@ -78,9 +78,9 @@ class TransitModel(object):
 
         # limb darkening
         q = star.q1
-        lp -= np.logaddexp(-np.log(q), -np.log(1.0 - q))
+        lp += np.log(q) + np.log(1.0 - q)
         q = star.q2
-        lp -= np.logaddexp(-np.log(q), -np.log(1.0 - q))
+        lp += np.log(q) + np.log(1.0 - q)
 
         return lp
 
@@ -110,7 +110,7 @@ class TransitModel(object):
         self.system.set_vector(theta[:len(self.system)])
 
     def lnprob(self, theta, compute_blob=True):
-        blob = [None, 0, None]
+        blob = [None, 0, None, 0.0]
         try:
             self._update_params(theta)
         except ValueError:
@@ -122,7 +122,7 @@ class TransitModel(object):
             self.system.bodies[0].b,
         )
 
-        lp = self.lnprior()
+        blob[3] = lp = self.lnprior()
         if not np.isfinite(lp):
             return -np.inf, blob
 

@@ -47,8 +47,9 @@ class TransitModel(object):
                 body.radius = rad
                 for b in np.linspace(0, (1.0+0.99*rad/rstar)**4, 10)**(1/4.):
                     body.b = b
-                    ll = self.lnlike(compute_blob=False)[0]
-                    if ll > mx[0]:
+                    ll, blob = self.lnlike(compute_blob=False)
+
+                    if blob[1] == 0 and ll > mx[0]:
                         mx = (ll, (b, rad, per))
         print(mx)
         body.b = mx[1][0]

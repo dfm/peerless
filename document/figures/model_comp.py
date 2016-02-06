@@ -15,7 +15,7 @@ models = [
     ("variability", "gp", 7220674, 0),
     ("step", "step", 8631697, 0),
     ("box", "box2", 5521451, 0),
-    ("transit", "transit", 8426957, 0),
+    ("transit", "transit", 8505215, 0),
 ]
 
 fig, axes = pl.subplots(2, 2, figsize=(8, 8))

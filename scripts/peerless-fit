@@ -22,11 +22,13 @@ parser = argparse.ArgumentParser(description="model some light curves")
 parser.add_argument("filename", help="the initialized pickle model")
 parser.add_argument("--nwalkers", type=int, default=40,
                     help="the number of walkers")
+parser.add_argument("--clobber", action="store_true",
+                    help="clobber existing output")
 parser.add_argument("--nburn", type=int, default=500,
                     help="the number of burn-in MCMC steps")
 parser.add_argument("--burniter", type=int, default=2,
                     help="the number of burn-in iterations")
-parser.add_argument("--nsteps", type=int, default=50000,
+parser.add_argument("--nsteps", type=int, default=100000,
                     help="the number of production MCMC steps")
 
 args = parser.parse_args()
@@ -43,74 +45,117 @@ if not pool.is_master():
     pool.wait()
     sys.exit(0)
 
-basedir = os.path.split(args.filename)[0]
+try:
+    basedir = os.path.split(args.filename)[0]
 
-system = model.system
-cols = system.get_parameter_names()
-p0 = system.get_vector()
-ndim, nwalkers = len(p0), args.nwalkers
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool)
+    system = model.system
+    cols = system.get_parameter_names()
 
-# Set up the output.
-chain_fn = os.path.join(basedir, "chain.h5")
-with h5py.File(chain_fn, "w") as f:
-    for k, v in model.spec.items():
-        f.attrs[k] = v
-    f.create_dataset("chain", shape=(args.nsteps, nwalkers),
-                     dtype=[(k, np.float64) for k in cols])
-    f.create_dataset("lnprob", shape=(args.nsteps, nwalkers))
-    f.create_dataset("lnprior", shape=(args.nsteps, nwalkers))
-    f.create_dataset("params", shape=(args.nsteps, nwalkers),
-                     dtype=[("ncadence", np.int64),
-                            ("period", np.float64),
-                            ("impact", np.float64),
-                            ("eccen", np.float64)])
+    # Set up the output.
+    chain_fn = os.path.join(basedir, "chain.h5")
+    if args.clobber or not os.path.exists(chain_fn):
+        p0 = system.get_vector()
+        ndim, nwalkers = len(p0), args.nwalkers
+        while nwalkers <= ndim * 2:
+            nwalkers += args.nwalkers
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool)
 
-    if compute_blob:
-        n = sum(len(lc.time) for lc in model.fit_lcs)
-        f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
-
-    data = np.array([
-        (i, l.time[j], l.flux[j], l.ferr[j])
-        for i, l in enumerate(model.fit_lcs) for j in range(len(l.time))
-    ], dtype=[("chunk", np.int64), ("time", np.float64),
-              ("flux", np.float64), ("ferr", np.float64)])
-    f.create_dataset("data", data=data)
-
-# Run the MCMC.
-burniter = max(1, args.burniter)
-for i in range(burniter):
-    print("Burn-in: {0}".format(i+1))
-    p0 = p0[None, :] + 1e-6 * np.random.randn(nwalkers, ndim)
-
-    ret = sampler.run_mcmc(p0, args.nburn)
-    p0 = ret[0]
-    if i < burniter - 1:
-        p0 = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
-
-print("Production")
-sampler.reset()
-for i, ret in enumerate(sampler.sample(p0, iterations=args.nsteps,
-                                       storechain=False)):
-    pos, lnp, _, blob = ret
-    with h5py.File(chain_fn, "a") as f:
-        for n in range(nwalkers):
-            for j, k in enumerate(cols):
-                f["chain"][i, n, k] = pos[n, j]
-
-            f["params"][i, n, "ncadence"] = blob[n][1]
-            f["params"][i, n, "period"] = blob[n][0][0]
-            f["params"][i, n, "eccen"] = blob[n][0][1]
-            f["params"][i, n, "impact"] = blob[n][0][2]
-
-            f["lnprior"][i, n] = blob[n][3]
+        with h5py.File(chain_fn, "w") as f:
+            for k, v in model.spec.items():
+                f.attrs[k] = v
+            f.create_dataset("chain", shape=(args.nsteps, nwalkers),
+                             dtype=[(k, np.float64) for k in cols])
+            f.create_dataset("lnprob", shape=(args.nsteps, nwalkers))
+            f.create_dataset("lnprior", shape=(args.nsteps, nwalkers))
+            f.create_dataset("params", shape=(args.nsteps, nwalkers),
+                             dtype=[("ncadence", np.int64),
+                                    ("period", np.float64),
+                                    ("impact", np.float64),
+                                    ("eccen", np.float64)])
 
             if compute_blob:
-                f["pred"][i, n, 0] = np.concatenate([b[0] for b in blob[n][2]])
-                f["pred"][i, n, 1] = np.concatenate([b[1] for b in blob[n][2]])
+                n = sum(len(lc.time) for lc in model.fit_lcs)
+                f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
 
-        f["lnprob"][i] = lnp
-        f.attrs["step"] = i
+            data = np.array([
+                (i, l.time[j], l.flux[j], l.ferr[j])
+                for i, l in enumerate(model.fit_lcs)
+                for j in range(len(l.time))
+            ], dtype=[("chunk", np.int64), ("time", np.float64),
+                      ("flux", np.float64), ("ferr", np.float64)])
+            f.create_dataset("data", data=data)
 
-# Close the processes.
-pool.close()
+        # Run the MCMC.
+        burniter = max(1, args.burniter)
+        for i in range(burniter):
+            print("Burn-in: {0}".format(i+1))
+            p0 = p0[None, :] + 1e-6 * np.random.randn(nwalkers, ndim)
+
+            ret = sampler.run_mcmc(p0, args.nburn)
+            p0 = ret[0]
+            if i < burniter - 1:
+                p0 = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
+
+        i0 = 0
+
+    else:
+        print("restarting...")
+        with h5py.File(chain_fn, "a") as f:
+            # del f["chain"]
+            # f["chain"] = f["chain_2"]
+            # del f["chain_2"]
+
+            n = f.attrs["step"]
+            p0 = np.array([f["chain"][n][k] for k in cols]).T
+            nwalkers, ndim = p0.shape
+            ntot = n + 1 + args.nsteps
+
+            # Resize.
+            ds = ["chain", "lnprob", "lnprior", "params"]
+            if compute_blob:
+                ds += ["pred"]
+            for k in ds:
+                k2 = k + "_2"
+                f[k2] = f[k]
+                del f[k]
+                s = list(f[k2].shape)
+                s[0] = ntot
+                f.create_dataset(k, shape=s, dtype=f[k2].dtype)
+                f[k][:n+1] = f[k2][:n+1]
+                del f[k2]
+
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool)
+        i0 = n + 1
+
+    print("Production")
+    sampler.reset()
+    for i1, ret in enumerate(sampler.sample(p0, iterations=args.nsteps,
+                                            storechain=False)):
+        i = i0 + i1
+        pos, lnp, _, blob = ret
+        with h5py.File(chain_fn, "a") as f:
+            for n in range(nwalkers):
+                for j, k in enumerate(cols):
+                    f["chain"][i, n, k] = pos[n, j]
+
+                f["params"][i, n, "ncadence"] = blob[n][1]
+                f["params"][i, n, "period"] = blob[n][0][0]
+                f["params"][i, n, "eccen"] = blob[n][0][1]
+                f["params"][i, n, "impact"] = blob[n][0][2]
+
+                f["lnprior"][i, n] = blob[n][3]
+
+                if compute_blob:
+                    f["pred"][i, n, 0] = np.concatenate([
+                        b[0] for b in blob[n][2]
+                    ])
+                    f["pred"][i, n, 1] = np.concatenate([
+                        b[1] for b in blob[n][2]
+                    ])
+
+            f["lnprob"][i] = lnp
+            f.attrs["step"] = i
+
+finally:
+    # Close the processes.
+    pool.close()

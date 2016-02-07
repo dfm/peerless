@@ -17,7 +17,6 @@ m &= stlr.dataspan > 365.25*2.
 m &= stlr.dutycycle > 0.6
 m &= stlr.rrmscdpp07p5 <= 1000.
 m &= stlr.kepmag < 15.
-kicids = np.array(list(np.array(stlr[m].kepid)), dtype=int)
 
 # Remove known EBs.
 ebs = set(np.array(EBCatalog().df["#KIC"]))
@@ -50,4 +49,4 @@ fig.savefig("targets.pdf", dpi=400)
 
 print("Found {0} targets".format(m.sum()))
 
-np.savetxt("targets.txt", kicids, fmt="%d")
+np.savetxt("targets.txt", np.array(stlr[m].kepid), fmt="%d")

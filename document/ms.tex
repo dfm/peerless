@@ -10,7 +10,7 @@
 %  * that is all.
 %
 
-\documentclass[12pt,preprint]{aastex}
+\documentclass[onecolumn]{aastex6}
 
 \pdfoutput=1
 
@@ -24,7 +24,7 @@
 \usepackage{booktabs}
 
 \usepackage{natbib}
-\bibliographystyle{apj}
+\bibliographystyle{aasjournal}
 
 \newcommand{\project}[1]{\textsl{#1}}
 \newcommand{\kepler}{\project{Kepler}}
@@ -44,19 +44,19 @@
 \newcommand{\True}{\foreign{True}}
 \newcommand{\Truth}{\foreign{Truth}}
 
-\newcommand{\figref}[1]{\ref{fig:#1}}
-\newcommand{\Fig}[1]{\figurename~\figref{#1}}
-\newcommand{\fig}[1]{\Fig{#1}}
+% \newcommand{\figref}[1]{\ref{fig:#1}}
+% \newcommand{\Fig}[1]{\figurename~\figref{#1}}
+% \newcommand{\fig}[1]{\Fig{#1}}
 \newcommand{\figlabel}[1]{\label{fig:#1}}
 
-\newcommand{\Tab}[1]{Table~\ref{tab:#1}}
-\newcommand{\tab}[1]{\Tab{#1}}
+% \newcommand{\Tab}[1]{Table~\ref{tab:#1}}
+% \newcommand{\tab}[1]{\Tab{#1}}
 \newcommand{\tablabel}[1]{\label{tab:#1}}
 
-\renewcommand{\eqref}[1]{\ref{eq:#1}}
-\newcommand{\Eq}[1]{Equation~(\eqref{#1})}
-\newcommand{\eq}[1]{\Eq{#1}}
-\newcommand{\eqalt}[1]{Equation~\eqref{#1}}
+% \renewcommand{\eqref}[1]{\ref{eq:#1}}
+% \newcommand{\Eq}[1]{Equation~(\eqref{#1})}
+% \newcommand{\eq}[1]{\Eq{#1}}
+% \newcommand{\eqalt}[1]{Equation~\eqref{#1}}
 \newcommand{\eqlabel}[1]{\label{eq:#1}}
 
 \newcommand{\sectionname}{Section}
@@ -93,39 +93,44 @@
 % no more bad lines!
 \sloppy\sloppypar
 
+% \slugcomment{Not to appear in Nonlearned J., 45.}
+
 \begin{document}
 
 \title{%
-Automated detection \& characterization of long-period transits in the
-\kepler\ archive
+The occurrence rate of long-period exoplanets
 }
 
-\newcommand{\uw}{3}
-\newcommand{\nyu}{4}
-\newcommand{\cds}{5}
-\newcommand{\mpia}{6}
-\newcommand{\mpis}{7}
-\author{%
-    Daniel~Foreman-Mackey\altaffilmark{1,2,\uw},
-    David~W.~Hogg\altaffilmark{\nyu,\mpia,\cds},
-    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
-    Eric~Agol\altaffilmark{\uw},
-    and others
-}
-\altaffiltext{1}         {To whom correspondence should be addressed:
-                          \url{danfm@uw.edu}}
-\altaffiltext{2}         {Sagan Fellow}
-\altaffiltext{\uw}       {Astronomy Department, University of Washington,
-                          Seattle, WA, 98195, USA}
-\altaffiltext{\nyu}      {Center for Cosmology and Particle Physics,
-                          Department of Physics, New York University,
-                          4 Washington Place, New York, NY, 10003, USA}
-\altaffiltext{\cds}      {Center for Data Science, New York University,
-                          726 Broadway, 7th Floor, New York, NY, 10003, USA}
-\altaffiltext{\mpia}     {Max-Planck-Institut f\"ur Astronomie,
-                          K\"onigstuhl 17, D-69117 Heidelberg, Germany}
-\altaffiltext{\mpis}     {Max Planck Institute for Intelligent Systems
-                          Spemannstrasse 38, 72076 T\"ubingen, Germany}
+\newcommand{\uw}  {Astronomy Department, University of Washington,
+                   Seattle, WA, 98195, USA}
+\newcommand{\nyu} {Center for Cosmology and Particle Physics,
+                   New York University,
+                   4 Washington Place, New York, NY, 10003, USA}
+\newcommand{\cds} {Center for Data Science, New York University,
+                   726 Broadway, 7th Floor, New York, NY, 10003, USA}
+\newcommand{\mpia}{Max-Planck-Institut f\"ur Astronomie,
+                   K\"onigstuhl 17, D-69117 Heidelberg, Germany}
+\newcommand{\mpis}{Max Planck Institute for Intelligent Systems
+                   Spemannstrasse 38, 72076 T\"ubingen, Germany}
+
+\author{Daniel~Foreman-Mackey\altaffilmark{1,2}}
+\affil{\uw}
+
+\author{David~W.~Hogg}
+\affil{\nyu \\ \mpia \\ \cds}
+
+\author{Bernhard~Sch\"olkopf}
+\affil{\mpis}
+
+\author{Eric~Agol}
+\affil{\uw}
+
+\and
+
+\author{and others}
+
+\altaffiltext{1}{\url{danfm@uw.edu}}
+\altaffiltext{2}{Sagan Fellow}
 
 \begin{abstract}
 
@@ -535,8 +540,10 @@ STScI is operated by the Association of Universities for Research in
 Astronomy, Inc., under NASA contract NAS5-26555.
 Support for MAST is provided by the NASA Office of Space Science via grant
 NNX13AC07G and by other grants and contracts.
+Computing resources were provided by High Performance Computing (HPC) at New
+York University (NYU).
 
-{\it Facilities:} \facility{Kepler}
+\facility{Kepler}
 
 \appendix
 

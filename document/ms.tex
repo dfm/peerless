@@ -10,7 +10,7 @@
 %  * that is all.
 %
 
-\documentclass[onecolumn]{aastex6}
+\documentclass[preprint]{aastex}
 
 \pdfoutput=1
 
@@ -101,36 +101,49 @@
 The occurrence rate of long-period exoplanets
 }
 
-\newcommand{\uw}  {Astronomy Department, University of Washington,
-                   Seattle, WA, 98195, USA}
-\newcommand{\nyu} {Center for Cosmology and Particle Physics,
-                   New York University,
-                   4 Washington Place, New York, NY, 10003, USA}
-\newcommand{\cds} {Center for Data Science, New York University,
-                   726 Broadway, 7th Floor, New York, NY, 10003, USA}
-\newcommand{\mpia}{Max-Planck-Institut f\"ur Astronomie,
-                   K\"onigstuhl 17, D-69117 Heidelberg, Germany}
-\newcommand{\mpis}{Max Planck Institute for Intelligent Systems
-                   Spemannstrasse 38, 72076 T\"ubingen, Germany}
+\newcounter{affilcounter}
+\setcounter{affilcounter}{2}
+\altaffiltext{1}{\url{danfm@uw.edu}; Sagan Fellow}
 
-\author{Daniel~Foreman-Mackey\altaffilmark{1,2}}
-\affil{\uw}
+\edef \uw {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\uw}       {Astronomy Department, University of Washington,
+                          Seattle, WA, 98195, USA}
 
-\author{David~W.~Hogg}
-\affil{\nyu \\ \mpia \\ \cds}
+\edef \scda {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\scda}     {Simons Center for Data Analysis, 160 Fifth Avenue,
+                          7th floor, New York, NY 10010, USA}
 
-\author{Bernhard~Sch\"olkopf}
-\affil{\mpis}
+\edef \nyu       {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\nyu}      {Center for Cosmology and Particle Physics,
+                          New York University,
+                          4 Washington Place, New York, NY, 10003, USA}
 
-\author{Eric~Agol}
-\affil{\uw}
+\edef \cds       {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\cds}      {Center for Data Science, New York University,
+                          726 Broadway, 7th Floor, New York, NY, 10003, USA}
 
-\and
+\edef \mpia      {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\mpia}     {Max-Planck-Institut f\"ur Astronomie,
+                          K\"onigstuhl 17, D-69117 Heidelberg, Germany}
 
-\author{and others}
+\edef \princeton {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\princeton}{Department of Astrophysics, Princeton University,
+                          Princeton, NJ, 08544, USA}
 
-\altaffiltext{1}{\url{danfm@uw.edu}}
-\altaffiltext{2}{Sagan Fellow}
+\edef \mpis      {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\mpis}     {Max Planck Institute for Intelligent Systems
+                          Spemannstrasse 38, 72076 T\"ubingen, Germany}
+
+\author{%
+    Daniel~Foreman-Mackey\altaffilmark{1,\uw},
+    David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
+    Timothy~D.~Morton\altaffilmark{\princeton},
+    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
+    Eric~Agol\altaffilmark{\uw},
+    and others
+}
+
+
 
 \begin{abstract}
 

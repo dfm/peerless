@@ -10,7 +10,9 @@
 %  * that is all.
 %
 
-\documentclass[preprint]{aastex}
+\documentclass[twocolumn]{aastex6}
+% \documentclass[onecolumn]{aastex6}
+% \documentclass[preprint]{aastex}
 
 \pdfoutput=1
 
@@ -293,7 +295,7 @@ population level.
 \paragraph{Light curve}
 
 
-\begin{figure}[p]
+\begin{figure*}
 \begin{center}
 \includegraphics[width=\textwidth]{figures/model_comp.pdf}
 \end{center}
@@ -305,7 +307,7 @@ The examples represent the following model categories:
 \emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
 transit.
 \figlabel{model-comp}}
-\end{figure}
+\end{figure*}
 
 \paragraph{Pixel-level}
 
@@ -335,6 +337,15 @@ targeted by this project, we censor these previously known targets.
 For the known EBs, we simply remove these targets from the candidate list.
 For the confirmed and candidate KOIs from \dfmtodo{Coughlin}, we remove data
 within 2 transit durations of the known candidates.
+
+\begin{figure*}
+\begin{center}
+\includegraphics{figures/targets.pdf}
+\end{center}
+\caption{%
+Blah.
+\figlabel{targets}}
+\end{figure*}
 
 
 We start with the PDC-MAP light curves downloaded from
@@ -374,14 +385,14 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 
 \section{Results}
 
-\begin{figure}[p]
+\begin{figure*}
 \begin{center}
 \includegraphics{figures/full_sample.pdf}
 \end{center}
 \caption{%
 Blah.
 \figlabel{full-sample}}
-\end{figure}
+\end{figure*}
 
 
 \section{Completeness \& reliability}

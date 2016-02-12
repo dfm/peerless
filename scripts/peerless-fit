@@ -35,7 +35,9 @@ args = parser.parse_args()
 
 with open(args.filename, "rb") as f:
     model = pickle.load(f)
-compute_blob = len(model.fit_lcs) <= 2
+model.system.central.dilution = 0.0
+model.system.freeze_parameter("central:dilution")
+compute_blob = True  # len(model.fit_lcs) <= 2
 
 # Initialize the MPI-based pool used for parallelization.
 pool = MPIPool()
@@ -55,6 +57,12 @@ try:
     chain_fn = os.path.join(basedir, "chain.h5")
     if args.clobber or not os.path.exists(chain_fn):
         p0 = system.get_vector()
+        m = np.isfinite(p0)
+        while not np.all(m):
+            p0[np.isnan(p0)] = 0.0
+            p0[(p0 < 0.0) & (~m)] = -10.0
+            p0[(p0 > 0.0) & (~m)] = 10.0
+            m = np.isfinite(p0)
         ndim, nwalkers = len(p0), args.nwalkers
         while nwalkers <= ndim * 2:
             nwalkers += args.nwalkers
@@ -73,9 +81,9 @@ try:
                                     ("impact", np.float64),
                                     ("eccen", np.float64)])
 
-            if compute_blob:
-                n = sum(len(lc.time) for lc in model.fit_lcs)
-                f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
+            # if compute_blob:
+            #     n = sum(len(lc.time) for lc in model.fit_lcs)
+            #     f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
 
             data = np.array([
                 (i, l.time[j], l.flux[j], l.ferr[j])
@@ -112,8 +120,8 @@ try:
 
             # Resize.
             ds = ["chain", "lnprob", "lnprior", "params"]
-            if compute_blob:
-                ds += ["pred"]
+            # if compute_blob:
+            #     ds += ["pred"]
             for k in ds:
                 k2 = k + "_2"
                 f[k2] = f[k]
@@ -145,13 +153,13 @@ try:
 
                 f["lnprior"][i, n] = blob[n][3]
 
-                if compute_blob:
-                    f["pred"][i, n, 0] = np.concatenate([
-                        b[0] for b in blob[n][2]
-                    ])
-                    f["pred"][i, n, 1] = np.concatenate([
-                        b[1] for b in blob[n][2]
-                    ])
+                # if compute_blob:
+                #     f["pred"][i, n, 0] = np.concatenate([
+                #         b[0] for b in blob[n][2]
+                #     ])
+                #     f["pred"][i, n, 1] = np.concatenate([
+                #         b[1] for b in blob[n][2]
+                #     ])
 
             f["lnprob"][i] = lnp
             f.attrs["step"] = i

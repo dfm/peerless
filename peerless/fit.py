@@ -85,26 +85,24 @@ class TransitModel(object):
             ((star.radius - self.srad) / self.srad_err) ** 2
         )
 
-        # limb darkening
-        q = star.q1
-        lp += np.log(q) + np.log(1.0 - q)
-        q = star.q2
-        lp += np.log(q) + np.log(1.0 - q)
+        # limb darkening etc.
+        lp += self.system.jacobian()
 
         return lp
 
     def lnlike(self, compute_blob=True):
         system = self.system
         ll = 0.0
-        preds = []
+        # preds = []
+        preds = None
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = (lc.flux - mu) * 1e3
             ll += gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
                 return -np.inf, (0, None)
-            if compute_blob:
-                preds.append((gp.predict(r, lc.time, return_cov=False), mu))
+            # if compute_blob:
+            #     preds.append((gp.predict(r, lc.time, return_cov=False), mu))
 
         if not compute_blob:
             return ll, (0, None)

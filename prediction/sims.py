@@ -242,11 +242,13 @@ class BinaryPopulation(object):
 
 
 class BG_BinaryPopulation(BinaryPopulation):
-    prop_columns = {}
+    prop_columns = {} # mass_A and radius_A assumed to be defined in provided targets.
     
     def _generate_orbits(self, p=None):
+        # First, proceed as before...
         super(BG_BinaryPopulation, self)._generate_orbits(p=p)
         
+        # ...then, dilute the depths appropriately.
         F_target = 10**(-0.4*self.stars.kepmag_target)
         F_A = 10**(-0.4*self.stars.kepmag_A)
         F_B = self.stars.flux_ratio*F_A

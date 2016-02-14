@@ -111,11 +111,14 @@ class BinaryPopulation(object):
         #  ascontiguousarray makes ic calls faster.
         ic = self.ic
         feh = np.ascontiguousarray(np.clip(self.feh, ic.minfeh, ic.maxfeh))
-        minage, maxage = ic.agerange(self.mass_A, feh)
-        maxage = np.clip(maxage, 0, ic.maxage)
-        minage += 0.3 # stars are selected to not be active
-        maxage -= 0.1
-        age = np.random.random(size=N) * (maxage - minage) + minage
+        if 'age' not in self.stars:
+            minage, maxage = ic.agerange(self.mass_A, feh)
+            maxage = np.clip(maxage, 0, ic.maxage)
+            minage += 0.3 # stars are selected to not be active
+            maxage -= 0.1
+            age = np.random.random(size=N) * (maxage - minage) + minage
+        else:
+            age = self.stars.age.values
 
         # Secondary properties (don't let secondary be bigger than primary)
         M2 = np.ascontiguousarray(M2)
@@ -236,3 +239,18 @@ class BinaryPopulation(object):
         df.loc[:, 'n_sec'] = n_sec
 
         return df.query('(n_pri > 0) or (n_sec > 0)')
+
+
+class BG_BinaryPopulation(BinaryPopulation):
+    prop_columns = {}
+    
+    def _generate_orbits(self, p=None):
+        super(BG_BinaryPopulation, self)._generate_orbits(p=p)
+        
+        F_target = 10**(-0.4*self.stars.kepmag_target)
+        F_A = 10**(-0.4*self.stars.kepmag_A)
+        F_B = self.stars.flux_ratio*F_A
+        frac = (F_A + F_B)/(F_A + F_B + F_target)
+        self.d_pri *= frac
+        self.d_sec *= frac
+        

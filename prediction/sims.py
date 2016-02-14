@@ -111,14 +111,14 @@ class BinaryPopulation(object):
         #  ascontiguousarray makes ic calls faster.
         ic = self.ic
         feh = np.ascontiguousarray(np.clip(self.feh, ic.minfeh, ic.maxfeh))
+        minage, maxage = ic.agerange(self.mass_A, feh)
+        maxage = np.clip(maxage, 0, ic.maxage)
         if 'age' not in self.stars:
-            minage, maxage = ic.agerange(self.mass_A, feh)
-            maxage = np.clip(maxage, 0, ic.maxage)
             minage += 0.3 # stars are selected to not be active
             maxage -= 0.1
             age = np.random.random(size=N) * (maxage - minage) + minage
         else:
-            age = self.stars.age.values
+            age = np.clip(self.stars.age.values, minage, maxage)
 
         # Secondary properties (don't let secondary be bigger than primary)
         M2 = np.ascontiguousarray(M2)

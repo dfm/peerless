@@ -158,7 +158,7 @@ class BinaryPopulation(object):
         b_pri = a*np.cos(inc)/(self.radius_A*RSUN) * (1-ecc**2)/(1 + ecc*np.sin(w))
         b_sec = a*np.cos(inc)/(self.radius_A*RSUN) * (1-ecc**2)/(1 - ecc*np.sin(w))
 
-        R_tot = self.radius_A + self.radius_B
+        R_tot = (self.radius_A + self.radius_B)/self.radius_A
         tra = (b_pri < R_tot)
         occ = (b_sec < R_tot)
 

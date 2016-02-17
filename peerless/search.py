@@ -373,7 +373,7 @@ def search(kicid_and_injection=None,
                 print()
 
             # Initialize one of the boxes using the transit shape.
-            if name == "transit":
+            if name == "transit" and np.any(system.get_value(x) < 1.0):
                 models["box1"].mn = system.t0 - 0.5*system.duration
                 models["box1"].mx = system.t0 + 0.5*system.duration
 
@@ -402,10 +402,21 @@ def search(kicid_and_injection=None,
                     C[np.diag_indices_from(C)] += err**2
                     alpha = np.linalg.solve(C, A)
                     ATA = np.dot(AT, alpha)
-                    ATA[np.diag_indices_from(ATA)] *= 1 + 1e-8
                     mu = np.mean(c)
                     a = np.linalg.solve(C, c - mu)
-                    w = np.linalg.solve(ATA, np.dot(AT, a))
+                    w = None
+                    for _ in range(10):
+                        print(_)
+                        print(ATA)
+                        try:
+                            w = np.linalg.solve(ATA, np.dot(AT, a))
+                        except np.linalg.LinAlgError:
+                            ATA[np.diag_indices_from(ATA)] *= 1 + 1e-5
+                            w = None
+                        else:
+                            break
+                    if w is None:
+                        raise np.linalg.LinAlgError("Couldn't fix ATA")
 
                     offset += w[0]**2
                     offset_err = np.linalg.inv(ATA)[0, 0] * w[0]**2
@@ -416,6 +427,10 @@ def search(kicid_and_injection=None,
 
                 peak["centroid_offset"] = offset
                 peak["centroid_offset_err"] = offset_err
+
+            else:
+                peak["centroid_offset"] = 0.0
+                peak["centroid_offset_err"] = np.inf
 
             if (peak["bic_{0}".format(name)] > peak["bic_transit"]
                     and not all_models):

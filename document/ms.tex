@@ -267,32 +267,63 @@ long-period, giant planet occurrence rates based on radial velocity surveys
 and we demonstrate that small---and possibly rocky---planets are more common
 than their larger counterparts even at long orbital periods.
 
-\section{The search for long-period exoplanets}
-
 Data from the \kepler\ Mission has been used to discover a diverse zoo of
 thousands of exoplanets of all sizes orbiting stars of all types.
-It has be demonstrated that these discoveries can be used to place constraints
-on the occurrence rate of exoplanets \dfmtodo{CITE}.
+It has be demonstrated that these catalogs of exoplanet discoveries can be
+used to place constraints on the occurrence rate of exoplanets \dfmtodo{CITE}.
 These results are sensitive to the detection efficiency and reliability of the
-transit discovery methods \dfmtodo{CITE Burke}.
+discovery methodology \dfmtodo{CITE Burke}.
 
-The search for long-period planets presents several unique challenges.
-Of these, the most important is the inevitable sensitively to signals falsely
-identified as being caused by a transit exoplanet when it is actually a
-systematic false alarm (noise) or an astrophysical false positive.
-In the following paragraphs, we detail our method for addressing these
-challenges and quantifying their effects.
-In summary, we identify false alarms by developing a conservative automated
-candidate vetting algorithm using the full light curve of each target star and
-measure the incompleteness introduced by this procedure.
-To account for astrophysical false positives, we discard candidates that fail
-the standard transit centroid tests and then statistically incorporate
-uncertainties introduced by false positives missed by this procedure at a
-population level.
+\section{The fully-automated search for long-period exoplanets}
 
-\section{Candidate vetting}
+To find long-period exoplanets in the \kepler\ light curves, we search for
+individual, high signal-to-noise transit signals using a fully-automated
+procedure that can be broken into three main steps:
+\begin{enumerate}
+{\item an initial candidate search using a box-shaped matched filter,}
+{\item light curve-level vetting (using automated model comparison) to remove
+signals that don't match a transit shape, and}
+{\item pixel-level vetting to remove some astrophysical false positives.}
+\end{enumerate}
+The following sections describe each of these steps in more detail.
 
-\paragraph{Light curve}
+% The search for long-period planets presents several unique challenges.
+% Of these, the most important is the inevitable sensitively to signals falsely
+% identified as being caused by a transit exoplanet when it is actually a
+% systematic false alarm (noise) or an astrophysical false positive.
+% In the following paragraphs, we detail our method for addressing these
+% challenges and quantifying their effects.
+% In summary, we identify false alarms by developing a conservative automated
+% candidate vetting algorithm using the full light curve of each target star and
+% measure the incompleteness introduced by this procedure.
+% To account for astrophysical false positives, we discard candidates that fail
+% the standard transit centroid tests and then statistically incorporate
+% uncertainties introduced by false positives missed by this procedure at a
+% population level.
+
+\subsection{Finding box-shaped candidate events}
+
+It is not feasible to compute a full model comparison at every time in the
+light curve so we must first find potentially interesting events.
+To generate this list, we apply a standard ``box least squares'' (BLS;
+\dfmtodo{CITE}) method with a single (non-periodic) box.
+First, we filter the PDC (\dfmtodo{CITE}) light curves using a running
+windowed median with a half-width of \dfmtodo{how many} to remove stellar
+variability.
+We then compute the signal-to-noise of the depth of a 0.6~day long transit on
+a grid of times spanning the full \kepler\ baseline.
+To avoid edge effects, we apodize this detection scalar near any large gaps in
+the time series using a logistic function with width equal to one transit
+duration.
+Finally, we estimate the noise in the time series using a robust running
+windowed variance estimate of the detection scalar and accepting peaks more
+than 25-times this noise as candidates.
+
+\subsection{Light curve-level vetting}
+
+
+
+\subsection{Pixel-level vetting}
 
 
 \begin{figure*}

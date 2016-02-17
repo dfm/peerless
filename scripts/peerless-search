@@ -7,10 +7,10 @@ import logging
 import argparse
 import traceback
 import numpy as np
-from mpipool import MPIPool
+# from mpipool import MPIPool
 from scipy.stats import beta
 from functools import partial
-# from multiprocessing import Pool
+from multiprocessing import Pool
 
 from tqdm import tqdm
 
@@ -20,7 +20,7 @@ from peerless.catalogs import (
     KICatalog, EBCatalog, KOICatalog, BlacklistCatalog
 )
 
-pool = MPIPool()
+# pool = MPIPool()
 
 
 def _wrapper(*args, **kwargs):
@@ -54,7 +54,7 @@ parser.add_argument("--max-targets", type=int,
                     help="the maximum number of targets")
 parser.add_argument("-f", "--filenames", nargs="+",
                     help="some light curve filenames")
-parser.add_argument("-p", "--parallel", action="store_true",
+parser.add_argument("-p", "--parallel", default=0, type=int,
                     help="parallelize across targets")
 parser.add_argument("-q", "--quiet", action="store_true",
                     help="log errors instead of raising")
@@ -117,14 +117,13 @@ function = partial(
 )
 
 
-if not pool.is_master():
-    # Wait for instructions from the master process.
-    pool.wait()
-    sys.exit(0)
+# if not pool.is_master():
+#     # Wait for instructions from the master process.
+#     pool.wait()
+#     sys.exit(0)
 
 
 try:
-
     # Build the list of KIC IDs.
     kicids = args.kicids
 
@@ -238,9 +237,9 @@ try:
     if len(kicids):
         # Deal with parallelization.
         if args.parallel:
-            # pool = Pool()
-            # M = pool.imap_unordered
-            M = pool.map
+            pool = Pool(args.parallel)
+            M = pool.imap_unordered
+            # M = pool.map
         else:
             M = map
 
@@ -280,4 +279,5 @@ try:
                     for p in results.peaks) + "\n")
 
 finally:
-    pool.close()
+    pass
+    # pool.close()

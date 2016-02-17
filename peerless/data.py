@@ -118,7 +118,7 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
                                   texp=texp,
                                   hw=detrend_hw))
 
-        if delete:
+        if delete and os.path.exists(fn):
             os.remove(fn)
     return lcs, n_inj_cad
 

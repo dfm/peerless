@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 import logging
 import argparse
 import traceback
@@ -177,6 +178,9 @@ try:
 
     # Build injections.
     if args.inject:
+        np.random.seed(os.getpid() + time.time())
+        np.random.shuffle(kicids)
+
         injections = []
         for k in kicids:
             r = np.exp(np.random.uniform(np.log(0.02), np.log(0.3)))

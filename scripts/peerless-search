@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import logging
 import traceback
 import numpy as np
+from mpipool import MPIPool
 from scipy.stats import beta
 from functools import partial
-from multiprocessing import Pool
+# from multiprocessing import Pool
 
 from tqdm import tqdm
 
@@ -16,6 +18,8 @@ from peerless.data import load_light_curves
 from peerless.catalogs import (
     KICatalog, EBCatalog, KOICatalog, BlacklistCatalog
 )
+
+pool = MPIPool()
 
 
 def _wrapper(*args, **kwargs):
@@ -38,7 +42,13 @@ def _wrapper(*args, **kwargs):
     return None
 
 
-if __name__ == "__main__":
+if not pool.is_master():
+    # Wait for instructions from the master process.
+    pool.wait()
+    sys.exit(0)
+
+
+try:
     import argparse
 
     parser = argparse.ArgumentParser(description="search for single transits")
@@ -227,8 +237,9 @@ if __name__ == "__main__":
     if len(kicids):
         # Deal with parallelization.
         if args.parallel:
-            pool = Pool()
-            M = pool.imap_unordered
+            # pool = Pool()
+            # M = pool.imap_unordered
+            M = pool.map
         else:
             M = map
 
@@ -266,3 +277,6 @@ if __name__ == "__main__":
                 f.write("\n".join(
                     ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
                     for p in results.peaks) + "\n")
+
+finally:
+    pool.close()

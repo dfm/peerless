@@ -4,6 +4,7 @@
 import os
 import sys
 import logging
+import argparse
 import traceback
 import numpy as np
 from mpipool import MPIPool
@@ -42,6 +43,80 @@ def _wrapper(*args, **kwargs):
     return None
 
 
+parser = argparse.ArgumentParser(description="search for single transits")
+
+parser.add_argument("kicids", nargs="*", help="some KIC IDs")
+parser.add_argument("--inject", action="store_true",
+                    help="inject transits into the light curves")
+parser.add_argument("--include-ebs", action="store_true",
+                    help="by default known EBs are excluded")
+parser.add_argument("--max-targets", type=int,
+                    help="the maximum number of targets")
+parser.add_argument("-f", "--filenames", nargs="+",
+                    help="some light curve filenames")
+parser.add_argument("-p", "--parallel", action="store_true",
+                    help="parallelize across targets")
+parser.add_argument("-q", "--quiet", action="store_true",
+                    help="log errors instead of raising")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="more output to the screen")
+parser.add_argument("-c", "--clean", action="store_true",
+                    help="remove temporary light curve files")
+parser.add_argument("-o", "--output-dir", default="output",
+                    help="the output directory")
+parser.add_argument("--plot-all", action="store_true",
+                    help="make all the plots")
+parser.add_argument("--no-plots", action="store_true",
+                    help="don't make any plots")
+
+# Preset target lists:
+parser.add_argument("--planet-hunters", action="store_true",
+                    help="search the planet hunter targets")
+parser.add_argument("--bright-g-dwarfs", action="store_true",
+                    help="search bright G and K dwarfs")
+parser.add_argument("--candidates", action="store_true",
+                    help="only search my candidates")
+
+# Search parameters:
+parser.add_argument("--duration", type=float,  default=0.6,
+                    help="the transit duration in days")
+parser.add_argument("--detrend-hw", type=float,  default=2.0,
+                    help="the half width of the de-trending window")
+parser.add_argument("--no-remove-kois", action="store_true",
+                    help="leave the known KOIs in the light curves")
+parser.add_argument("--grid-frac", type=float,  default=0.25,
+                    help="search grid spacing in units of the duration")
+parser.add_argument("--noise-hw", type=float,  default=15.0,
+                    help="the half width of the noise estimation window")
+parser.add_argument("--detect-thresh", type=float,  default=25.0,
+                    help="the relative detection threshold")
+parser.add_argument("--max-fit-data", type=int,  default=500,
+                    help="maximum number of points to fit")
+parser.add_argument("--max-peaks", type=int,  default=3,
+                    help="the maximum number of peaks to consider")
+
+args = parser.parse_args()
+
+# Build the dictionary of search keywords.
+function = partial(
+    _wrapper,
+    tau=args.duration,
+    detrend_hw=args.detrend_hw,
+    remove_kois=not args.no_remove_kois,
+    grid_frac=args.grid_frac,
+    noise_hw=args.noise_hw,
+    detect_thresh=args.detect_thresh,
+    output_dir=args.output_dir,
+    plot_all=args.plot_all,
+    no_plots=args.no_plots,
+    max_fit_data=args.max_fit_data,
+    max_peaks=args.max_peaks,
+    verbose=args.verbose,
+    quiet=args.quiet,
+    delete=args.clean,
+)
+
+
 if not pool.is_master():
     # Wait for instructions from the master process.
     pool.wait()
@@ -49,80 +124,6 @@ if not pool.is_master():
 
 
 try:
-    import argparse
-
-    parser = argparse.ArgumentParser(description="search for single transits")
-
-    parser.add_argument("kicids", nargs="*", help="some KIC IDs")
-    parser.add_argument("--inject", action="store_true",
-                        help="inject transits into the light curves")
-    parser.add_argument("--include-ebs", action="store_true",
-                        help="by default known EBs are excluded")
-    parser.add_argument("--max-targets", type=int,
-                        help="the maximum number of targets")
-    parser.add_argument("-f", "--filenames", nargs="+",
-                        help="some light curve filenames")
-    parser.add_argument("-p", "--parallel", action="store_true",
-                        help="parallelize across targets")
-    parser.add_argument("-q", "--quiet", action="store_true",
-                        help="log errors instead of raising")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="more output to the screen")
-    parser.add_argument("-c", "--clean", action="store_true",
-                        help="remove temporary light curve files")
-    parser.add_argument("-o", "--output-dir", default="output",
-                        help="the output directory")
-    parser.add_argument("--plot-all", action="store_true",
-                        help="make all the plots")
-    parser.add_argument("--no-plots", action="store_true",
-                        help="don't make any plots")
-
-    # Preset target lists:
-    parser.add_argument("--planet-hunters", action="store_true",
-                        help="search the planet hunter targets")
-    parser.add_argument("--bright-g-dwarfs", action="store_true",
-                        help="search bright G and K dwarfs")
-    parser.add_argument("--candidates", action="store_true",
-                        help="only search my candidates")
-
-    # Search parameters:
-    parser.add_argument("--duration", type=float,  default=0.6,
-                        help="the transit duration in days")
-    parser.add_argument("--detrend-hw", type=float,  default=2.0,
-                        help="the half width of the de-trending window")
-    parser.add_argument("--no-remove-kois", action="store_true",
-                        help="leave the known KOIs in the light curves")
-    parser.add_argument("--grid-frac", type=float,  default=0.25,
-                        help="search grid spacing in units of the duration")
-    parser.add_argument("--noise-hw", type=float,  default=15.0,
-                        help="the half width of the noise estimation window")
-    parser.add_argument("--detect-thresh", type=float,  default=25.0,
-                        help="the relative detection threshold")
-    parser.add_argument("--max-fit-data", type=int,  default=500,
-                        help="maximum number of points to fit")
-    parser.add_argument("--max-peaks", type=int,  default=3,
-                        help="the maximum number of peaks to consider")
-
-    args = parser.parse_args()
-
-    # Build the dictionary of search keywords.
-    function = partial(
-        _wrapper,
-        tau=args.duration,
-        detrend_hw=args.detrend_hw,
-        remove_kois=not args.no_remove_kois,
-        grid_frac=args.grid_frac,
-        noise_hw=args.noise_hw,
-        detect_thresh=args.detect_thresh,
-        output_dir=args.output_dir,
-        plot_all=args.plot_all,
-        no_plots=args.no_plots,
-        max_fit_data=args.max_fit_data,
-        max_peaks=args.max_peaks,
-        verbose=args.verbose,
-        quiet=args.quiet,
-        delete=args.clean,
-    )
 
     # Build the list of KIC IDs.
     kicids = args.kicids
@@ -248,7 +249,7 @@ try:
         else:
             prog = tqdm
 
-        for results in prog(M(function, zip(kicids, injections)),
+        for results in prog(M(function, list(zip(kicids, injections))),
                             total=len(kicids)):
             if results is None:
                 continue

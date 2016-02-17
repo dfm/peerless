@@ -402,6 +402,7 @@ def search(kicid_and_injection=None,
                     C[np.diag_indices_from(C)] += err**2
                     alpha = np.linalg.solve(C, A)
                     ATA = np.dot(AT, alpha)
+                    ATA[np.diag_indices_from(ATA)] *= 1 + 1e-8
                     mu = np.mean(c)
                     a = np.linalg.solve(C, c - mu)
                     w = np.linalg.solve(ATA, np.dot(AT, a))

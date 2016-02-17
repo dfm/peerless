@@ -13,7 +13,9 @@ from tqdm import tqdm
 
 from peerless.search import search, plot
 from peerless.data import load_light_curves
-from peerless.catalogs import KICatalog, EBCatalog, KOICatalog
+from peerless.catalogs import (
+    KICatalog, EBCatalog, KOICatalog, BlacklistCatalog
+)
 
 
 def _wrapper(*args, **kwargs):
@@ -130,6 +132,23 @@ if __name__ == "__main__":
         m &= stlr.dutycycle > 0.6
         m &= stlr.rrmscdpp07p5 <= 1000.
         m &= stlr.kepmag < 15.
+
+        if not args.include_ebs:
+            # Remove known EBs.
+            ebs = set(np.array(EBCatalog().df["#KIC"]))
+
+            # Then the KOI false positives:
+            kois = KOICatalog().df
+            kois = kois[kois.koi_disposition == "FALSE POSITIVE"]
+            fps = set(np.array(kois.kepid))
+
+            # And then finally the blacklist.
+            bl = set(np.array(BlacklistCatalog().df.kicid))
+
+            # The full list of ignores.
+            ignore = ebs | fps | bl
+            m &= ~stlr.kepid.isin(ignore)
+
         kicids += list(np.array(stlr[m].kepid))
     if args.candidates:
         kicids += [3218908, 3230491, 3239945, 4450472, 4586468, 4754460,
@@ -147,21 +166,6 @@ if __name__ == "__main__":
             ))
         kicids = kicids[:args.max_targets]
 
-    # Remove EBs from the target list.
-    if not args.include_ebs:
-        # Start with EB catalog:
-        ebs = set(np.array(EBCatalog().df["#KIC"]))
-        l0 = len(kicids)
-        kicids = np.array([i for i in kicids if i not in ebs])
-
-        # Then the KOI false positives:
-        kois = KOICatalog().df
-        kois = kois[kois.koi_disposition == "FALSE POSITIVE"]
-        kois = set(np.array(kois.kepid))
-        kicids = np.array([i for i in kicids if i not in kois])
-
-        print("Removed {0} known EBs from target list".format(l0-len(kicids)))
-
     # Build injections.
     if args.inject:
         injections = []
@@ -172,8 +176,8 @@ if __name__ == "__main__":
                 q1=np.random.rand(),
                 q2=np.random.rand(),
                 ror=r,
-                period=np.exp(np.random.uniform(np.log(3*365),
-                                                np.log(15*365))),
+                period=np.exp(np.random.uniform(np.log(2*365),
+                                                np.log(25*365))),
                 b=np.random.uniform(0, 1+r),
                 e=beta.rvs(0.867, 3.03),
                 omega=np.random.uniform(0, 2*np.pi),

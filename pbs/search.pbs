@@ -5,11 +5,13 @@
 #PBS -N pl-search
 #PBS -M danfm@nyu.edu
 #PBS -j oe
+#PBS -o logs
+#PBS -e logs
 
 module purge
 
 export PATH="$HOME/miniconda3/bin:$PATH"
-export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch
+export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch/search/${PBS_JOBID/.*}
 export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless

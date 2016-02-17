@@ -4,6 +4,7 @@
 #PBS -l mem=60GB
 #PBS -N pl-inject
 #PBS -M danfm@nyu.edu
+#PBS -j oe
 #PBS -o logs
 #PBS -e logs
 

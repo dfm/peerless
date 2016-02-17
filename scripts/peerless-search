@@ -36,8 +36,7 @@ def _wrapper(*args, **kwargs):
     except:
         if not quiet:
             raise
-        with open(os.path.join(kwargs.get("output_dir", "output"),
-                               "errors.txt"), "a") as f:
+        with open(os.path.join(output_dir, "errors.txt"), "a") as f:
             f.write("{0} failed with exception:\n{1}"
                     .format(args, traceback.format_exc()))
     return None

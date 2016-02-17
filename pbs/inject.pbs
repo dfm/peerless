@@ -4,11 +4,12 @@
 #PBS -l mem=60GB
 #PBS -N pl-inject
 #PBS -M danfm@nyu.edu
-#PBS -j oe
+#PBS -o logs
+#PBS -e logs
 
 module purge
 export PATH="$HOME/miniconda3/bin:$PATH"
-export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch
+export PEERLESS_DATA_DIR=$SCRATCH/peerless/scratch/inject/${PBS_JOBID/.*}
 export OMP_NUM_THREADS=1
 
 SRCDIR=$HOME/projects/peerless
@@ -17,4 +18,6 @@ mkdir -p $RUNDIR
 
 cd $SRCDIR
 python scripts/peerless-search --bright-g-dwarfs -p $PBS_NP -q --no-plots --inject --clean -o $RUNDIR
+
+rm -rf $PEERLESS_DATA_DIR
 

@@ -178,7 +178,7 @@ try:
 
     # Build injections.
     if args.inject:
-        np.random.seed(os.getpid() + time.time())
+        np.random.seed(int(os.getpid() + 1000*time.time()) % 4294967295)
         np.random.shuffle(kicids)
 
         injections = []

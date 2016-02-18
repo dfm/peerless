@@ -3,7 +3,8 @@ from __future__ import print_function, division
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.pipeline import Pipeline
 
 from isochrones.dartmouth import Dartmouth_Isochrone
@@ -24,13 +25,14 @@ def draw_powerlaw(alpha, rng, N=1):
         alpha = -1.0000001
     # Normalization factor
     x0, x1 = rng
-    C = (alpha + 1) / (x1**(alpha + 1) - x0**(alpha + 1))
+    x0_alpha_p_1 = x0**(alpha + 1)
+    C = (alpha + 1) / (x1**(alpha + 1) - x0_alpha_p_1)
     
     if N==1:
         u = np.random.random()
     else:
         u = np.random.random(N)
-    x = ((u * (alpha + 1)) / C + x0**(alpha + 1))**(1./(alpha + 1))
+    x = ((u * (alpha + 1)) / C + x0_alpha_p_1)**(1./(alpha + 1))
 
     return x
 
@@ -46,7 +48,7 @@ class BinaryPopulation(object):
 
     """
     #parameters for binary population (for period in years)
-    param_names = ['fB', 'gamma', 'qmin', 'mu_logp', 'sig_logp']
+    param_names = ['fB', 'gamma', 'qRmin', 'mu_logp', 'sig_logp']
     default_params = [0.4, 0.3, 0.1, np.log10(250), 2.3]
 
     # Physical and orbital parameters that can be accessed.
@@ -63,6 +65,9 @@ class BinaryPopulation(object):
     #  Don't use KIC radius here; recalc for consistency.
     prop_columns = {'mass_A': 'mass'}
 
+    # Minimum radius allowed, in Rsun.
+    min_radius = 0.11
+
     def __init__(self, stars, params=None, band='Kepler', 
                  ic=DAR, **kwargs):
 
@@ -76,7 +81,8 @@ class BinaryPopulation(object):
 
         self.set_params(**kwargs)
 
-        self._dmag_pipeline = None
+        self._fluxrat_pipeline = None
+        self._q_pipeline = None
 
     @property
     def params(self):
@@ -117,25 +123,12 @@ class BinaryPopulation(object):
                 self._generate_orbits()
         return self.stars[name].values
 
-    def _generate_binaries(self):
-        N = self.N
-        fB, gamma, qmin, _, _ = self.params
-
-        # Start fresh.
-        for c in self.physical_props:
-            if c in self.stars and c not in self.prop_columns:
-                del self.stars[c]
-
-        b = np.random.random(N) < fB
-
-        # Simulate secondary masses
-        minmass = self.ic.minmass
-        qmin = np.maximum(qmin, minmass/self.mass_A)
-        q = draw_powerlaw(gamma, (qmin, 1), N=N)
-        M2 = (q * self.mass_A)[b]
-
+    def _assign_ages(self):
         # Stellar catalog doesn't have ages, so let's make them up.
         #  ascontiguousarray makes ic calls faster.
+        if 'age' in self.stars:
+            return
+
         ic = self.ic
         feh = np.ascontiguousarray(np.clip(self.feh, ic.minfeh, ic.maxfeh))
         minage, maxage = ic.agerange(self.mass_A, feh)
@@ -143,44 +136,72 @@ class BinaryPopulation(object):
         if 'age' not in self.stars:
             minage += 0.3 # stars are selected to not be active
             maxage -= 0.1
-            age = np.random.random(size=N) * (maxage - minage) + minage
+            age = np.random.random(size=len(feh)) * (maxage - minage) + minage
         else:
             age = np.clip(self.stars.age.values, minage, maxage)
 
-        # Secondary properties (don't let secondary be bigger than primary)
-        M2 = np.ascontiguousarray(M2)
-        age_cont = np.ascontiguousarray(age[b])
-        feh_cont = np.ascontiguousarray(feh[b])
-        R2 = ic.radius(M2, age_cont, feh_cont)
-        #R1 = self.radius_A[b]
-        #toobig = R2 > R1
-        #R2[toobig] = R1[toobig]
+        self.stars.loc[:,'age'] = age
+        self.stars.loc[:,'feh'] = feh #reassigning feh
 
-        # Calculate secondary/primary flux ratio
-        M1 = np.ascontiguousarray(self.mass_A[b])
-        R1 = ic.radius(M1, age_cont, feh_cont)
-        dmag = (ic.mag[self.band](M2, age_cont, feh_cont) - 
-                ic.mag[self.band](M1, age_cont, feh_cont))
-        flux_ratio = 10**(-0.4 * dmag)
+    def _generate_binaries(self):
+        N = self.N
+        fB, gamma, qRmin, _, _ = self.params
 
-        # Assign columns appropriately.  
-        stars = self.stars.copy()
+        ## Start fresh.
+        #for c in self.physical_props:
+        #    if c in self.stars and c not in self.prop_columns:
+        #        if c=='radius_A':
+        #            continue
+        #        del self.stars[c]
 
-        stars.loc[b, 'mass_B'] = M2
-        stars.loc[b, 'radius_B'] = R2
-        stars.loc[b, 'radius_A'] = R1
-        stars.loc[b, 'flux_ratio'] = flux_ratio
-        stars.loc[:, 'age'] = age
-        
-        self.stars = stars
+        b = np.random.random(N) < fB
+
+        self._assign_ages()
+
+        # Simulate primary radius (unless radius_A provided)
+        if 'radius_A' not in self.stars:
+            self.stars.loc[:, 'radius_A'] = self.ic.radius(self.mass_A, 
+                                                           self.age, 
+                                                           self.feh)
+        R1 = self.radius_A[b]
+
+        # Simulate secondary radii (not masses!)
+        minrad = self.min_radius
+        qRmin = np.maximum(qRmin, minrad/self.radius_A)
+        qR = draw_powerlaw(gamma, (qRmin, 1), N=N)
+        R2 = (qR * self.radius_A)[b]
+
+        # Calculate dmag->flux_ratio from trained regression
+        if self._fluxrat_pipeline is None:
+            self._train_pipelines()
+
+        M1 = self.mass_A[b]
+        age = self.age[b]
+        feh = self.feh[b]
+        X = np.array([M1, R1, qR[b], age, feh]).T
+        flux_ratio = self._fluxrat_pipeline.predict(X)
+        #dmag = self._dmag_pipeline.predict(X)
+        #flux_ratio = 10**(-0.4 * dmag)
+
+        # Calculate q->mass_B from trained regression
+        X = np.array([M1, R1, qR[b], age, feh, flux_ratio]).T
+        q = self._q_pipeline.predict(X)
+        M2 = q*M1
+
+        self.stars.loc[b, 'mass_B'] = M2
+        self.stars.loc[~b, 'mass_B'] = np.nan
+        self.stars.loc[b, 'radius_B'] = R2
+        self.stars.loc[~b, 'radius_B'] = np.nan
+        self.stars.loc[b, 'flux_ratio'] = flux_ratio
+        self.stars.loc[~b, 'flux_ratio'] = 0.
 
     def _generate_orbits(self, p=None, geom_only=False):
         _, _, _, mu_logp, sig_logp = self.params
 
-        # Start fresh.
-        for c in self.orbital_props:
-            if c in self.stars:
-                del self.stars[c]
+        ## Start fresh.
+        #for c in self.orbital_props:
+        #    if c in self.stars:
+        #        del self.stars[c]
 
         N = self.N
 
@@ -373,40 +394,96 @@ class BinaryPopulation(object):
 
         return catalog
 
-    def _train_dmag(self, **kwargs):
+    def _train_pipelines(self, plot=False, **kwargs):
+        self._assign_ages()
         M1 = np.ascontiguousarray(self.mass_A)
-        M2 = np.ascontiguousarray(self.mass_B)
+        
+        # treat q now as mass-ratio powerlaw for training purposes
+        # to generate toy secondary masses.
+        fB, gamma, qmin, _, _ = self.params
+        minmass = self.ic.minmass
+        qmin = np.maximum(qmin, minmass/M1)
+        q = draw_powerlaw(gamma, (qmin, 1), N=len(M1))
+        M2 = q*M1
+
+        ic = self.ic
         feh = np.ascontiguousarray(self.feh)
         age = np.ascontiguousarray(self.age)
-        R1 = dar.radius(M1, age, feh)
-        R2 = dar.radius(M2, age, feh)
+        R1 = ic.radius(M1, age, feh)
+        R2 = ic.radius(M2, age, feh)
         qR = R2/R1        
 
+        # Train flux_ratio pipeline
         X = np.array([M1,R1,qR,age,feh]).T
-        y = dar.mag['Kepler'](M2, age, feh) - dar.mag['Kepler'](M1, age, feh)
+        dmag = ic.mag['Kepler'](M2, age, feh) - ic.mag['Kepler'](M1, age, feh)
+        fluxrat = 10**(-0.4*dmag)
+        y = dmag
+        y = fluxrat
         ok = ~np.isnan(y)
         X = X[ok, :]
         y = y[ok]
 
+        # Separate train/test data
         u = np.random.random(X.shape[0])
         itest = u < 0.2
         itrain = u >= 0.2
         Xtest = X[itest, :]
         Xtrain = X[itrain, :]
-
         ytest = y[itest]
         ytrain = y[itrain]
 
-        regr = RandomForestRegressor(n_estimators=30)
-        #regr = LinearRegression()
-        pipeline = Pipeline([('scale', StandardScaler()), ('regress', regr)])
+        regr = RandomForestRegressor
+        #regr = LinearRegression
+        poly_kwargs = {'degree':3, 'interaction_only':False}
+        fluxrat_pipeline = Pipeline([#('poly', PolynomialFeatures(**poly_kwargs)),
+                                  ('scale', StandardScaler()), 
+                                  ('regress', regr(**kwargs))])
 
-        pipeline.fit(Xtrain,ytrain);
-        yp = pipeline.predict(Xtest)
-        plt.plot(ytest, yp, '.')
-        plt.plot(ytest, ytest, 'k-')
-        print('dmag regressor trained, R2={0}'.format(pipeline.score(Xtest, ytest))
-        self._dmag_pipeline = pipeline
+        fluxrat_pipeline.fit(Xtrain,ytrain);
+        if plot:
+            fig, axes = plt.subplots(1,2, figsize=(10,4))
+            yp = fluxrat_pipeline.predict(Xtest)
+            axes[0].loglog(ytest, yp, '.', alpha=0.3)
+            axes[0].plot(ytest, ytest, 'k-')
+            
+        score = fluxrat_pipeline.score(Xtest, ytest)
+        print('flux_ratio regressor trained, R2={0}'.format(score))
+        self._fluxrat_pipeline = fluxrat_pipeline
+        self._fluxrat_pipeline_score = score
+
+        # Now train q pipeline
+        X = np.array([M1, R1, qR, age, feh, fluxrat]).T
+        y = q
+        X = X[ok, :]
+        y = y[ok]
+
+        # Separate train/test data
+        u = np.random.random(X.shape[0])
+        itest = u < 0.2
+        itrain = u >= 0.2
+        Xtest = X[itest, :]
+        Xtrain = X[itrain, :]
+        ytest = y[itest]
+        ytrain = y[itrain]
+
+        q_pipeline = Pipeline([#('poly', PolynomialFeatures(**poly_kwargs)),
+                               ('scale', StandardScaler()), 
+                               ('regress', regr(**kwargs))])
+
+        q_pipeline.fit(Xtrain, ytrain)
+        if plot:
+            yp = q_pipeline.predict(Xtest)
+            axes[1].plot(ytest, yp, '.', alpha=0.3)
+            axes[1].plot(ytest, ytest, 'k-')
+        score = q_pipeline.score(Xtest, ytest)
+        print('q regressor trained, R2={0}'.format(score))
+        self._q_pipeline = q_pipeline
+        self._q_pipeline_score = score
+        
+
+    @property
+    def dmag_score(self):
+        return self._dmag_pipeline_score
 
 class BG_BinaryPopulation(BinaryPopulation):
     prop_columns = {} # mass_A and radius_A assumed to be defined in provided targets.

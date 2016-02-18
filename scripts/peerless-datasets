@@ -107,8 +107,5 @@ if __name__ == "__main__":
         else:
             result = pd.concat([result, df])
 
-        if i > 10:
-            break
-
     print("Saving {0} targets to {1}".format(len(result), outfile))
     result.to_hdf(outfile, "datasets", index=False)

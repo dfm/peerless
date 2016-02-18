@@ -166,7 +166,7 @@ class TargetCatalog(LocalCatalog):
     @property
     def df(self):
         if self._df is None:
-            fn = os.path.join("data", self.filename)
+            fn = os.path.join(PEERLESS_DATA_DIR, "catalogs", self.filename)
             try:
                 self._df = pd.read_csv(resource_filename(__name__, fn),
                                        **(self.args))
@@ -183,10 +183,9 @@ class DatasetsCatalog(LocalCatalog):
     @property
     def df(self):
         if self._df is None:
-            fn = os.path.join("data", self.filename)
+            fn = os.path.join(PEERLESS_DATA_DIR, "catalogs", self.filename)
             try:
-                self._df = pd.read_hdf(resource_filename(__name__, fn),
-                                       "datasets", **(self.args))
+                self._df = pd.read_hdf(fn, "datasets", **(self.args))
             except OSError:
                 print("The datasets catalog doesn't exist. "
                       "You need to run 'peerless-datasets'")

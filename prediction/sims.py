@@ -1,13 +1,18 @@
 from __future__ import print_function, division
 
 import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 from isochrones.dartmouth import Dartmouth_Isochrone
+DAR = Dartmouth_Isochrone()
+DAR.radius(1,9.5,0) #prime the isochrone object
 from vespa.stars.utils import draw_eccs # this is a function that returns
                                         # empirically reasonably eccentricities
                                         # for given binary periods.
-from scipy.stats import norm, binom
-from vespa.transit_basic import _quadratic_ld
+from vespa.transit_basic import _quadratic_ld, eclipse_tt, NoEclipseError
 
 from vespa.stars.utils import G, MSUN, RSUN, AU, DAY
 
@@ -48,16 +53,18 @@ class BinaryPopulation(object):
     physical_props = ['mass_A', 'radius_A',
                       'mass_B', 'radius_B', 'flux_ratio']
 
-    orbital_props = ['period', 'ecc', 'w', 'inc', 'a',
+    orbital_props = ['period', 'ecc', 'w', 'inc', 'a', 'aR',
                       'b_pri', 'b_sec', 'k', 'tra', 'occ',
-                      'd_pri', 'd_sec', 'T14_pri', 'T14_sec']
+                      'd_pri', 'd_sec', 'T14_pri', 'T14_sec',
+                      'T23_pri', 'T23_sec']
                      
     # property dictionary mapping to DataFrame column
     # Default here is for KICatalog names
-    prop_columns = {'mass_A': 'mass', 'radius_A': 'radius'}
+    #  Don't use KIC radius here; recalc for consistency.
+    prop_columns = {'mass_A': 'mass'}
 
     def __init__(self, stars, params=None, band='Kepler', 
-                 ic=Dartmouth_Isochrone):
+                 ic=DAR, **kwargs):
 
         self.stars = stars
         self.band = band
@@ -67,12 +74,27 @@ class BinaryPopulation(object):
         for k,v in self.prop_columns.items():
             self.stars.loc[:, k] = self.stars.loc[:, v]
 
+        self.set_params(**kwargs)
+
+        self._dmag_pipeline = None
+
     @property
     def params(self):
         if self._params is not None:
             return self._params
         else:
             return self.default_params
+
+    @params.setter
+    def params(self, p):
+        assert len(p)==len(self.param_names)
+        self._params = p
+
+    def set_params(self, **kwargs):
+        if self._params is None:
+            self._params = self.default_params
+        for k,v in kwargs.items():
+            self._params[self.param_names.index(k)] = v
 
     @property
     def ic(self):
@@ -99,8 +121,13 @@ class BinaryPopulation(object):
         N = self.N
         fB, gamma, qmin, _, _ = self.params
 
+        # Start fresh.
+        for c in self.physical_props:
+            if c in self.stars and c not in self.prop_columns:
+                del self.stars[c]
+
         b = np.random.random(N) < fB
-        
+
         # Simulate secondary masses
         minmass = self.ic.minmass
         qmin = np.maximum(qmin, minmass/self.mass_A)
@@ -122,15 +149,18 @@ class BinaryPopulation(object):
 
         # Secondary properties (don't let secondary be bigger than primary)
         M2 = np.ascontiguousarray(M2)
-        R2 = ic.radius(M2, age[b], feh[b])
-        R1 = self.radius_A[b]
-        toobig = R2 > R1
-        R2[toobig] = R1[toobig]
+        age_cont = np.ascontiguousarray(age[b])
+        feh_cont = np.ascontiguousarray(feh[b])
+        R2 = ic.radius(M2, age_cont, feh_cont)
+        #R1 = self.radius_A[b]
+        #toobig = R2 > R1
+        #R2[toobig] = R1[toobig]
 
         # Calculate secondary/primary flux ratio
         M1 = np.ascontiguousarray(self.mass_A[b])
-        dmag = (ic.mag[self.band](M2, age[b], feh[b]) - 
-                ic.mag[self.band](M1, age[b], feh[b]))
+        R1 = ic.radius(M1, age_cont, feh_cont)
+        dmag = (ic.mag[self.band](M2, age_cont, feh_cont) - 
+                ic.mag[self.band](M1, age_cont, feh_cont))
         flux_ratio = 10**(-0.4 * dmag)
 
         # Assign columns appropriately.  
@@ -138,21 +168,37 @@ class BinaryPopulation(object):
 
         stars.loc[b, 'mass_B'] = M2
         stars.loc[b, 'radius_B'] = R2
+        stars.loc[b, 'radius_A'] = R1
         stars.loc[b, 'flux_ratio'] = flux_ratio
         stars.loc[:, 'age'] = age
         
         self.stars = stars
 
-    def _generate_orbits(self, p=None):
+    def _generate_orbits(self, p=None, geom_only=False):
         _, _, _, mu_logp, sig_logp = self.params
+
+        # Start fresh.
+        for c in self.orbital_props:
+            if c in self.stars:
+                del self.stars[c]
 
         N = self.N
 
-        period = 10**(norm(np.log10(mu_logp), sig_logp).rvs(N)) * 365.25
+        period = 10**(np.random.normal(np.log10(mu_logp), sig_logp, size=N)) * 365.25
         ecc = draw_eccs(N, period)
         w = np.random.random(N) * 2 * np.pi
         inc = np.arccos(np.random.random(N))        
         a = semimajor(period, self.mass_A + self.mass_B) * AU
+        aR = a / (self.radius_A * RSUN)
+        if geom_only:
+            self.stars.loc[:, 'period'] = period
+            self.stars.loc[:, 'ecc'] = ecc
+            self.stars.loc[:, 'w'] = w
+            self.stars.loc[:, 'inc'] = inc
+            self.stars.loc[:, 'a'] = a
+            self.stars.loc[:, 'aR'] = aR
+            return
+
 
         # Determine closest approach
         b_pri = a*np.cos(inc)/(self.radius_A*RSUN) * (1-ecc**2)/(1 + ecc*np.sin(w))
@@ -170,9 +216,15 @@ class BinaryPopulation(object):
             np.sqrt(1-ecc**2)/(1+ecc*np.sin(w))
         T14_sec = period/np.pi*np.arcsin(self.radius_A*RSUN/a * np.sqrt((1+k)**2 - b_sec**2)/np.sin(inc)) *\
             np.sqrt(1-ecc**2)/(1-ecc*np.sin(w))
+        T23_pri = period/np.pi*np.arcsin(self.radius_A*RSUN/a * np.sqrt((1-k)**2 - b_pri**2)/np.sin(inc)) *\
+            np.sqrt(1-ecc**2)/(1+ecc*np.sin(w))
+        T23_sec = period/np.pi*np.arcsin(self.radius_A*RSUN/a * np.sqrt((1-k)**2 - b_sec**2)/np.sin(inc)) *\
+            np.sqrt(1-ecc**2)/(1-ecc*np.sin(w))
     
         T14_pri[np.isnan(T14_pri)] = 0.
         T14_sec[np.isnan(T14_sec)] = 0.
+        T23_pri[np.isnan(T23_pri)] = 0.
+        T23_sec[np.isnan(T23_sec)] = 0.
 
         for i in xrange(N):
             if tra[i]:
@@ -190,7 +242,49 @@ class BinaryPopulation(object):
 
         self.stars = stars
 
-    def observe(self, query=None):
+    def _prepare_geom(self, new=False):
+        if 'radius_B' not in self.stars or new:
+            self._generate_binaries()
+        if 'period' not in self.stars or new:
+            self._generate_orbits(geom_only=True)
+
+    def get_pgeom(self, query=None, new=False, sec=False):
+        self._prepare_geom(new=new)
+        if query is not None:
+            df = self.stars.query(query)
+        else:
+            df = self.stars
+
+        if sec:
+            return ((df.radius_A + df.radius_B)*RSUN/(df.a) *
+                    (1 - df.ecc*np.sin(df.w))/(1 - df.ecc**2))
+        else:
+            return ((df.radius_A + df.radius_B)*RSUN/(df.a) *
+                    (1 + df.ecc*np.sin(df.w))/(1 - df.ecc**2))
+
+    def get_necl(self, query=None, new=False):
+        """
+        Returns expected number of geometrically eclipsing systems.
+        """
+        self._prepare_geom(new=new)
+        if query is not None:
+            df = self.stars.query(query)
+        else:
+            df = self.stars
+
+        pri = ((df.radius_A + df.radius_B)*RSUN/(df.a) *
+               (1 + df.ecc*np.sin(df.w))/(1 - df.ecc**2))
+        sec = ((df.radius_A + df.radius_B)*RSUN/(df.a) *
+               (1 - df.ecc*np.sin(df.w))/(1 - df.ecc**2))
+
+        bad = np.isnan(df.radius_B)
+        pri[bad] = 0
+        sec[bad] = 0
+
+        return np.maximum(pri, sec).sum()
+        
+
+    def observe(self, query=None, fit_trap=False, new=False):
         """
         Returns catalog of the following observable quantities:
           
@@ -200,15 +294,22 @@ class BinaryPopulation(object):
           * d_sec
           * T14_pri
           * T14_sec
+          * T23_pri
+          * T23_sec
        
         assumes stars dataframe has 'dataspan' and 'dutycycle' columns
         """
-        
+        if new:
+            self._generate_binaries()
+            self._generate_orbits()
+
         # Select only systems with eclipsing (or occulting) geometry
-        m = self.tra | self.occ
-        if query is None:
-            query = 'dataspan > 0'
-        df = self.stars.loc[m].query(query).copy()
+        m = (self.tra | self.occ) & (self.stars.dataspan > 0)
+        cols = self.orbital_props + ['dataspan', 'dutycycle', 'flux_ratio']
+        if query is not None:
+            df = self.stars.loc[m, cols].query(query)
+        else:
+            df = self.stars.loc[m, cols]
 
         # Phase of secondary (Hilditch (2001) , Kopal (1959))
         #  Primary is at phase=0
@@ -232,14 +333,80 @@ class BinaryPopulation(object):
         for i, (n1,n2,d) in enumerate(zip(n_pri_ideal,
                                           n_sec_ideal,
                                           df.dutycycle)):
-            n_pri[i] = binom(n1,d).rvs()
-            n_sec[i] = binom(n2,d).rvs()
+            if n1 > 0:
+                #n_pri[i] = binom(n1,d).rvs()
+                n_pri[i] = np.random.binomial(n1, d)
+            if n2 > 0:
+                #n_sec[i] = binom(n2,d).rvs()
+                n_sec[i] = np.random.binomial(n2, d)
         
         df.loc[:, 'n_pri'] = n_pri
         df.loc[:, 'n_sec'] = n_sec
 
-        return df.query('(n_pri > 0) or (n_sec > 0)')
+        m = (df.n_pri > 0) | (df.n_sec > 0)
+        catalog = df[m]
+        
+        if fit_trap:
+            for i,s in catalog.iterrows():
+                # Primary
+                if s.tra:
+                    dur_pri, depth_pri, slope_pri = eclipse_tt(P=s.period, p0=s.k, b=s.b_pri,
+                                                           aR=s.aR, frac=1/(1 + s.flux_ratio),
+                                                           u1=0.394, u2=0.296, ecc=s.ecc, w=s.w*180/np.pi)
+                else:
+                    dur_pri, depth_pri, slope_pri = [np.nan]*3
+                # Secondary
+                if s.occ:
+                    dur_sec, depth_sec, slope_sec = eclipse_tt(P=s.period, p0=s.k, b=s.b_sec,
+                                                           aR=s.aR, frac=s.flux_ratio/(1 + s.flux_ratio),
+                                                           u1=0.394, u2=0.296, ecc=s.ecc, w=s.w*180/np.pi,
+                                                               sec=True)
+                else:
+                    dur_sec, depth_sec, slope_sec = [np.nan]*3
 
+                catalog.loc[i, 'trap_dur_pri'] = dur_pri
+                catalog.loc[i, 'trap_depth_pri'] = depth_pri
+                catalog.loc[i, 'trap_slope_pri'] = slope_pri
+                catalog.loc[i, 'trap_dur_sec'] = dur_sec
+                catalog.loc[i, 'trap_depth_sec'] = depth_sec
+                catalog.loc[i, 'trap_slope_sec'] = slope_sec
+
+        return catalog
+
+    def _train_dmag(self, **kwargs):
+        M1 = np.ascontiguousarray(self.mass_A)
+        M2 = np.ascontiguousarray(self.mass_B)
+        feh = np.ascontiguousarray(self.feh)
+        age = np.ascontiguousarray(self.age)
+        R1 = dar.radius(M1, age, feh)
+        R2 = dar.radius(M2, age, feh)
+        qR = R2/R1        
+
+        X = np.array([M1,R1,qR,age,feh]).T
+        y = dar.mag['Kepler'](M2, age, feh) - dar.mag['Kepler'](M1, age, feh)
+        ok = ~np.isnan(y)
+        X = X[ok, :]
+        y = y[ok]
+
+        u = np.random.random(X.shape[0])
+        itest = u < 0.2
+        itrain = u >= 0.2
+        Xtest = X[itest, :]
+        Xtrain = X[itrain, :]
+
+        ytest = y[itest]
+        ytrain = y[itrain]
+
+        regr = RandomForestRegressor(n_estimators=30)
+        #regr = LinearRegression()
+        pipeline = Pipeline([('scale', StandardScaler()), ('regress', regr)])
+
+        pipeline.fit(Xtrain,ytrain);
+        yp = pipeline.predict(Xtest)
+        plt.plot(ytest, yp, '.')
+        plt.plot(ytest, ytest, 'k-')
+        print('dmag regressor trained, R2={0}'.format(pipeline.score(Xtest, ytest))
+        self._dmag_pipeline = pipeline
 
 class BG_BinaryPopulation(BinaryPopulation):
     prop_columns = {} # mass_A and radius_A assumed to be defined in provided targets.

@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -305,7 +306,8 @@ class BinaryPopulation(object):
         return np.maximum(pri, sec).sum()
         
 
-    def observe(self, query=None, fit_trap=False, new=False):
+    def observe(self, query=None, fit_trap=False, new=False,
+                texp=1626./86400):
         """
         Returns catalog of the following observable quantities:
           
@@ -320,6 +322,8 @@ class BinaryPopulation(object):
        
         assumes stars dataframe has 'dataspan' and 'dutycycle' columns
         """
+        if fit_trap:
+            new = True
         if new:
             self._generate_binaries()
             self._generate_orbits()
@@ -365,23 +369,50 @@ class BinaryPopulation(object):
         df.loc[:, 'n_sec'] = n_sec
 
         m = (df.n_pri > 0) | (df.n_sec > 0)
-        catalog = df[m]
+        catalog = df[m].copy()
         
+        N = len(catalog)
+        catalog.loc[:, 'trap_dur_pri'] = np.zeros(N)
+        catalog.loc[:, 'trap_depth_pri'] = np.zeros(N)
+        catalog.loc[:, 'trap_slope_pri'] = np.zeros(N)
+        catalog.loc[:, 'trap_dur_sec'] = np.zeros(N)
+        catalog.loc[:, 'trap_depth_sec'] = np.zeros(N)
+        catalog.loc[:, 'trap_slope_sec'] = np.zeros(N)
+
+        period = catalog.period.values
+        k = catalog.k.values
+        b_pri = catalog.b_pri.values
+        b_sec = catalog.b_sec.values
+        aR = catalog.aR.values
+        flux_ratio = catalog.flux_ratio.values
+        ecc = catalog.ecc.values
+        w = catalog.w.values
+        tra = catalog.tra.values
+        occ = catalog.occ.values
+
+        trapfit_kwargs = dict(npts=50, width=2, cadence=texp)
         if fit_trap:
-            for i,s in catalog.iterrows():
+            for i in xrange(N):
                 # Primary
-                if s.tra:
-                    dur_pri, depth_pri, slope_pri = eclipse_tt(P=s.period, p0=s.k, b=s.b_pri,
-                                                           aR=s.aR, frac=1/(1 + s.flux_ratio),
-                                                           u1=0.394, u2=0.296, ecc=s.ecc, w=s.w*180/np.pi)
+                if tra[i]:
+                    trapfit = eclipse_tt(P=period[i], p0=k[i], b=b_pri[i],
+                                         aR=aR[i], frac=1/(1 + flux_ratio[i]),
+                                         u1=0.394, u2=0.296, 
+                                         ecc=ecc[i], w=w[i]*180/np.pi,
+                                         **trapfit_kwargs)
+                    dur_pri, depth_pri, slope_pri = trapfit
                 else:
                     dur_pri, depth_pri, slope_pri = [np.nan]*3
                 # Secondary
-                if s.occ:
-                    dur_sec, depth_sec, slope_sec = eclipse_tt(P=s.period, p0=s.k, b=s.b_sec,
-                                                           aR=s.aR, frac=s.flux_ratio/(1 + s.flux_ratio),
-                                                           u1=0.394, u2=0.296, ecc=s.ecc, w=s.w*180/np.pi,
-                                                               sec=True)
+                if occ[i]:
+                    trapfit = eclipse_tt(P=period[i], p0=k[i], b=b_sec[i],
+                                         aR=aR[i], 
+                                         frac=flux_ratio[i]/(1 + flux_ratio[i]),
+                                         u1=0.394, u2=0.296, 
+                                         ecc=ecc[i], w=w[i]*180/np.pi,
+                                         sec=True,
+                                         **trapfit_kwargs)
+                    dur_sec, depth_sec, slope_sec = trapfit
                 else:
                     dur_sec, depth_sec, slope_sec = [np.nan]*3
 
@@ -480,10 +511,18 @@ class BinaryPopulation(object):
         self._q_pipeline = q_pipeline
         self._q_pipeline_score = score
         
+    def get_N_observed(self, query=None, N=10000, fit_trap=False):
+        """
+        N is minimum number of simulated transits to train with.
+        """
+        df = pd.DataFrame()
+        while len(df) < N:
+            df = pd.concat([df, self.observe(query=query, fit_trap=fit_trap)])
+            print(len(df))
+        return df
 
-    @property
-    def dmag_score(self):
-        return self._dmag_pipeline_score
+    def _train_trap(self, N=10000):
+        pass
 
 class BG_BinaryPopulation(BinaryPopulation):
     prop_columns = {} # mass_A and radius_A assumed to be defined in provided targets.

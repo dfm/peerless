@@ -6,8 +6,6 @@ Code for interfacing with the Exoplanet Archive catalogs.
 
 from __future__ import division, print_function
 
-__all__ = ["KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog"]
-
 import os
 import logging
 from pkg_resources import resource_filename
@@ -17,6 +15,8 @@ import pandas as pd
 from six.moves import urllib
 
 from .settings import PEERLESS_DATA_DIR
+
+__all__ = ["KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog"]
 
 
 def download():
@@ -157,6 +157,23 @@ class BlacklistCatalog(LocalCatalog):
     filename = "blacklist.csv"
 
 
+class TargetCatalog(LocalCatalog):
+    filename = "targets.csv"
+
+    @property
+    def df(self):
+        if self._df is None:
+            fn = os.path.join("data", self.filename)
+            try:
+                self._df = pd.read_csv(resource_filename(__name__, fn),
+                                       **(self.args))
+            except OSError:
+                print("The target catalog doesn't exist. "
+                      "You need to run 'peerless-targets'")
+                raise
+        return self._df
+
+
 class singleton(object):
 
     def __init__(self, cls):
@@ -175,3 +192,4 @@ KOICatalog = singleton(KOICatalog)
 KICatalog = singleton(KICatalog)
 EBCatalog = singleton(EBCatalog)
 BlacklistCatalog = singleton(BlacklistCatalog)
+TargetCatalog = singleton(TargetCatalog)

@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import argparse
+import numpy as np
+import pandas as pd
+from pkg_resources import resource_filename
+
+from peerless.catalogs import (
+    KICatalog, EBCatalog, KOICatalog, BlacklistCatalog
+)
+
+
+parser = argparse.ArgumentParser(description="search for single transits")
+parser.add_argument("--include-ebs", action="store_true",
+                    help="by default known EBs are excluded")
+parser.add_argument("-o", "--output", default=None,
+                    help="the output directory")
+args = parser.parse_args()
+
+if args.output is None:
+    outfile = resource_filename(
+        "peerless", os.path.join("data", "targets.csv")
+    )
+else:
+    outfile = args.output
+
+
+stlr = KICatalog().df
+m = (4200 <= stlr.teff) & (stlr.teff <= 6100)
+m &= stlr.radius <= 1.15
+m &= stlr.dataspan > 365.25*2.
+m &= stlr.dutycycle > 0.6
+m &= stlr.rrmscdpp07p5 <= 1000.
+m &= stlr.kepmag < 15.
+
+if not args.include_ebs:
+    # Remove known EBs.
+    ebs = set(np.array(EBCatalog().df["#KIC"]))
+
+    # Then the KOI false positives:
+    kois = KOICatalog().df
+    kois = kois[kois.koi_disposition == "FALSE POSITIVE"]
+    fps = set(np.array(kois.kepid))
+
+    # And then finally the blacklist.
+    bl = set(np.array(BlacklistCatalog().df.kicid))
+
+    # The full list of ignores.
+    ignore = ebs | fps | bl
+    m &= ~stlr.kepid.isin(ignore)
+
+print("Saving {0} targets to {1}".format(m.sum(), outfile))
+pd.DataFrame(stlr[m]).to_csv(outfile, index=False)

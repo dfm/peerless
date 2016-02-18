@@ -7,11 +7,11 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from multiprocessing import Pool
 from pkg_resources import resource_filename
 from collections import defaultdict, OrderedDict
 
 from peerless.catalogs import TargetCatalog
-from peerless.settings import PEERLESS_DATA_DIR
 
 
 adaptor = OrderedDict(
@@ -23,10 +23,6 @@ adaptor = OrderedDict(
 
 
 def _get_mast_light_curve_urls(args, short_cadence=False, **params):
-    # Make sure that that data directory exists.
-    bp = os.path.join(PEERLESS_DATA_DIR, "data")
-    os.makedirs(bp, exist_ok=True)
-
     # Build the URL and request parameters.
     url = "http://archive.stsci.edu/kepler/data_search/search.php"
     params["action"] = params.get("action", "Search")
@@ -61,7 +57,7 @@ def _get_mast_light_curve_urls(args, short_cadence=False, **params):
             ds = row["sci_data_set_name"].lower()
             tt = row["ktc_target_type"].lower()
             url = base_url + "{0}_{1}lc.fits".format(ds, tt[0])
-            fn = os.path.join(bp, url.split("/")[-1])
+            fn = url.split("/")[-1]
             row["remote"] = url
             row["local"] = fn
             ret.append(row)
@@ -77,6 +73,8 @@ if __name__ == "__main__":
                         help="the output directory")
     parser.add_argument("-b", "--batch", default=50, type=int,
                         help="the output directory")
+    parser.add_argument("-p", "--parallel", default=0, type=int,
+                        help="run in parallel")
     args = parser.parse_args()
 
     if args.output is None:
@@ -89,11 +87,18 @@ if __name__ == "__main__":
     df = TargetCatalog().df
     kicids = np.array(df.kepid)
 
+    if args.parallel > 0:
+        pool = Pool(args.parallel)
+        M = pool.imap_unordered
+    else:
+        M = map
+
+    indlists = [",".join(map("{0}".format, kicids[i:i+args.batch]))
+                for i in range(0, len(kicids) + args.batch, args.batch)]
+
     result = None
-    for i in tqdm(range(0, len(kicids) + args.batch, args.batch),
-                  total=(len(kicids) + args.batch) // args.batch):
-        arg = ",".join(map("{0}".format, kicids[i:i+args.batch]))
-        datasets = _get_mast_light_curve_urls(arg)
+    for i, datasets in tqdm(enumerate(M(_get_mast_light_curve_urls, indlists)),
+                            total=len(indlists)):
         cols = list(adaptor.keys()) + ["local", "remote"]
         df = pd.DataFrame([[row[k] for k in cols] for row in datasets],
                           columns=cols)
@@ -101,6 +106,9 @@ if __name__ == "__main__":
             result = df
         else:
             result = pd.concat([result, df])
+
+        if i > 10:
+            break
 
     print("Saving {0} targets to {1}".format(len(result), outfile))
     result.to_hdf(outfile, "datasets", index=False)

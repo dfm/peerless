@@ -16,7 +16,10 @@ from six.moves import urllib
 
 from .settings import PEERLESS_DATA_DIR
 
-__all__ = ["KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog"]
+__all__ = [
+    "KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog",
+    "TargetCatalog", "DatasetsCatalog",
+]
 
 
 def download():
@@ -174,6 +177,23 @@ class TargetCatalog(LocalCatalog):
         return self._df
 
 
+class DatasetsCatalog(LocalCatalog):
+    filename = "datasets.h5"
+
+    @property
+    def df(self):
+        if self._df is None:
+            fn = os.path.join("data", self.filename)
+            try:
+                self._df = pd.read_hdf(resource_filename(__name__, fn),
+                                       "datasets", **(self.args))
+            except OSError:
+                print("The datasets catalog doesn't exist. "
+                      "You need to run 'peerless-datasets'")
+                raise
+        return self._df
+
+
 class singleton(object):
 
     def __init__(self, cls):
@@ -193,3 +213,4 @@ KICatalog = singleton(KICatalog)
 EBCatalog = singleton(EBCatalog)
 BlacklistCatalog = singleton(BlacklistCatalog)
 TargetCatalog = singleton(TargetCatalog)
+DatasetsCatalog = singleton(DatasetsCatalog)

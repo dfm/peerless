@@ -70,10 +70,11 @@ class BinaryPopulation(object):
     min_radius = 0.11
 
     def __init__(self, stars, params=None, band='Kepler', 
-                 ic=DAR, **kwargs):
+                 ic=DAR, texp=1626./86400, **kwargs):
 
         self.stars = stars
         self.band = band
+        self.texp = texp
         self._ic = ic
         self._params = params
 
@@ -82,8 +83,12 @@ class BinaryPopulation(object):
 
         self.set_params(**kwargs)
 
+        # Regressions to be trained
         self._fluxrat_pipeline = None
         self._q_pipeline = None
+        self._logd_pipeline = None
+        self._dur_pipeline = None
+        self._slope_pipeline = None
 
     @property
     def params(self):
@@ -306,8 +311,7 @@ class BinaryPopulation(object):
         return np.maximum(pri, sec).sum()
         
 
-    def observe(self, query=None, fit_trap=False, new=False,
-                texp=1626./86400):
+    def observe(self, query=None, fit_trap=False, new=False):
         """
         Returns catalog of the following observable quantities:
           
@@ -369,50 +373,56 @@ class BinaryPopulation(object):
         df.loc[:, 'n_sec'] = n_sec
 
         m = (df.n_pri > 0) | (df.n_sec > 0)
-        catalog = df[m].copy()
+        catalog = df[m].reset_index()
         
-        N = len(catalog)
-        catalog.loc[:, 'trap_dur_pri'] = np.zeros(N)
-        catalog.loc[:, 'trap_depth_pri'] = np.zeros(N)
-        catalog.loc[:, 'trap_slope_pri'] = np.zeros(N)
-        catalog.loc[:, 'trap_dur_sec'] = np.zeros(N)
-        catalog.loc[:, 'trap_depth_sec'] = np.zeros(N)
-        catalog.loc[:, 'trap_slope_sec'] = np.zeros(N)
-
-        period = catalog.period.values
-        k = catalog.k.values
-        b_pri = catalog.b_pri.values
-        b_sec = catalog.b_sec.values
-        aR = catalog.aR.values
-        flux_ratio = catalog.flux_ratio.values
-        ecc = catalog.ecc.values
-        w = catalog.w.values
-        tra = catalog.tra.values
-        occ = catalog.occ.values
-
-        trapfit_kwargs = dict(npts=50, width=2, cadence=texp)
         if fit_trap:
+            N = len(catalog)
+            catalog.loc[:, 'trap_dur_pri'] = np.zeros(N)
+            catalog.loc[:, 'trap_depth_pri'] = np.zeros(N)
+            catalog.loc[:, 'trap_slope_pri'] = np.zeros(N)
+            catalog.loc[:, 'trap_dur_sec'] = np.zeros(N)
+            catalog.loc[:, 'trap_depth_sec'] = np.zeros(N)
+            catalog.loc[:, 'trap_slope_sec'] = np.zeros(N)
+
+            period = catalog.period.values
+            k = catalog.k.values
+            b_pri = catalog.b_pri.values
+            b_sec = catalog.b_sec.values
+            aR = catalog.aR.values
+            flux_ratio = catalog.flux_ratio.values
+            ecc = catalog.ecc.values
+            w = catalog.w.values
+            tra = catalog.tra.values
+            occ = catalog.occ.values
+
+            trapfit_kwargs = dict(npts=50, width=3, cadence=self.texp)
             for i in xrange(N):
                 # Primary
                 if tra[i]:
-                    trapfit = eclipse_tt(P=period[i], p0=k[i], b=b_pri[i],
+                    try:
+                        trapfit = eclipse_tt(P=period[i], p0=k[i], b=b_pri[i],
                                          aR=aR[i], frac=1/(1 + flux_ratio[i]),
                                          u1=0.394, u2=0.296, 
                                          ecc=ecc[i], w=w[i]*180/np.pi,
                                          **trapfit_kwargs)
-                    dur_pri, depth_pri, slope_pri = trapfit
+                        dur_pri, depth_pri, slope_pri = trapfit
+                    except NoEclipseError:
+                        dur_pri, depth_pri, slope_pri = [np.nan]*3
                 else:
                     dur_pri, depth_pri, slope_pri = [np.nan]*3
                 # Secondary
                 if occ[i]:
-                    trapfit = eclipse_tt(P=period[i], p0=k[i], b=b_sec[i],
+                    try:
+                        trapfit = eclipse_tt(P=period[i], p0=k[i], b=b_sec[i],
                                          aR=aR[i], 
                                          frac=flux_ratio[i]/(1 + flux_ratio[i]),
                                          u1=0.394, u2=0.296, 
                                          ecc=ecc[i], w=w[i]*180/np.pi,
                                          sec=True,
                                          **trapfit_kwargs)
-                    dur_sec, depth_sec, slope_sec = trapfit
+                        dur_sec, depth_sec, slope_sec = trapfit
+                    except NoEclipseError:
+                        dur_sec, depth_sec, slope_sec = [np.nan]*3
                 else:
                     dur_sec, depth_sec, slope_sec = [np.nan]*3
 
@@ -422,6 +432,27 @@ class BinaryPopulation(object):
                 catalog.loc[i, 'trap_dur_sec'] = dur_sec
                 catalog.loc[i, 'trap_depth_sec'] = depth_sec
                 catalog.loc[i, 'trap_slope_sec'] = slope_sec
+
+        if self._dur_pipeline is not None:
+            Xpri = self._get_trap_features(catalog, pri_only=True)
+            Xsec = self._get_trap_features(catalog, sec_only=True)
+            pri = (catalog.T14_pri.values > 0) & (catalog.d_pri.values > 0)
+            sec = (catalog.T14_sec.values > 0) & (catalog.d_sec.values > 0)
+
+
+            catalog.loc[pri, 'trap_dur_pri_regr'] = \
+                self._dur_pipeline.predict(Xpri)
+            catalog.loc[pri, 'trap_depth_pri_regr'] = \
+                10**self._logd_pipeline.predict(Xpri)
+            catalog.loc[pri, 'trap_slope_pri_regr'] = \
+                self._slope_pipeline.predict(Xpri)
+            catalog.loc[sec, 'trap_dur_sec_regr'] = \
+                self._dur_pipeline.predict(Xsec)
+            catalog.loc[sec, 'trap_depth_sec_regr'] = \
+                10**self._logd_pipeline.predict(Xsec)
+            catalog.loc[sec, 'trap_slope_sec_regr'] = \
+                self._slope_pipeline.predict(Xsec)
+
 
         return catalog
 
@@ -511,18 +542,116 @@ class BinaryPopulation(object):
         self._q_pipeline = q_pipeline
         self._q_pipeline_score = score
         
-    def get_N_observed(self, query=None, N=10000, fit_trap=False):
+    def get_N_observed(self, query=None, N=10000, fit_trap=False,
+                       verbose=False):
+        df = pd.DataFrame()
+        while len(df) < N:
+            df = pd.concat([df, self.observe(query=query, 
+                                             fit_trap=fit_trap)])
+            if verbose:
+                print(len(df))
+        return df
+
+    def _get_trap_features(self, df, sec_only=False, pri_only=False):
+        #pri = ~np.isnan(df.trap_depth_pri.values) 
+        #sec = ~np.isnan(df.trap_depth_sec.values)
+        pri = (df.T14_pri.values > 0) & (df.d_pri.values > 0)
+        sec = (df.T14_sec.values > 0) & (df.d_sec.values > 0)
+        if sec_only:
+            pri[:] = False
+        if pri_only:
+            sec[:] = False
+
+        T14 = np.concatenate((df.T14_pri.values[pri], df.T14_sec.values[sec]))
+        T23 = np.concatenate((df.T23_pri.values[pri], df.T23_sec.values[sec]))
+        T14 += self.texp
+        T23 = np.clip(T23 - self.texp, 0, T14)
+        tau = (T14 - T23)/2.
+        k = np.concatenate((df.k.values[pri], 1./df.k.values[sec]))
+        b = np.concatenate((df.b_pri.values[pri], df.b_sec.values[sec]))
+        logd = np.log10(np.concatenate((df.d_pri[pri], df.d_sec[sec])))
+        secondary = np.concatenate((np.zeros(pri.sum()), np.ones(sec.sum())))
+
+        X = np.array([T14, tau, k, b, logd, secondary]).T
+        return X
+
+    def _train_trap(self, query=None, N=10000,
+                    plot=False, **kwargs):
         """
         N is minimum number of simulated transits to train with.
         """
-        df = pd.DataFrame()
-        while len(df) < N:
-            df = pd.concat([df, self.observe(query=query, fit_trap=fit_trap)])
-            print(len(df))
-        return df
+        df = self.get_N_observed(query=query, N=N, fit_trap=True)
 
-    def _train_trap(self, N=10000):
-        pass
+        
+        X = self._get_trap_features(df)
+        u = np.random.random(X.shape[0])
+        # Check for and remove infs/nans
+        #ok = np.isfinite(X.sum(axis=1))
+        itest = (u < 0.2) #& ok
+        itrain = (u >= 0.2)# & ok
+        Xtest = X[itest, :]
+        Xtrain = X[itrain, :]
+
+        regr = RandomForestRegressor
+        pri = ~np.isnan(df.trap_depth_pri.values)
+        sec = ~np.isnan(df.trap_depth_sec.values)
+
+        # Train depth
+        y = np.log10(np.concatenate((df.trap_depth_pri.values[pri],
+                                  df.trap_depth_sec.values[sec])))
+        ytrain = y[itrain]
+        ytest = y[itest]
+        pipeline = Pipeline([('scale', StandardScaler()),
+                                   ('regression', regr(**kwargs))])
+        pipeline.fit(Xtrain, ytrain)
+        score = pipeline.score(Xtrain, ytrain)
+        if plot:
+            fig, axes = plt.subplots(1,3, figsize=(12,4))
+            yp = pipeline.predict(Xtest)
+            axes[0].plot(ytest, yp, '.', alpha=0.3)
+            axes[0].plot(ytest, ytest, 'k-')
+        print(('Depth trained: R2={}'.format(score)))
+        self._logd_pipeline = pipeline
+        self._logd_score = score
+
+        # Train duration
+        y = np.concatenate((df.trap_dur_pri.values[pri],
+                            df.trap_dur_sec.values[sec]))
+        ytrain = y[itrain]
+        ytest = y[itest]
+        pipeline = Pipeline([('scale', StandardScaler()),
+                                   ('regression', regr(**kwargs))])
+        pipeline.fit(Xtrain, ytrain)
+        score = pipeline.score(Xtrain, ytrain)
+        if plot:
+            yp = pipeline.predict(Xtest)
+            axes[1].plot(ytest, yp, '.', alpha=0.3)
+            axes[1].plot(ytest, ytest, 'k-')
+        print(('Duration trained: R2={}'.format(score)))
+        self._dur_pipeline = pipeline
+        self._dur_score = score
+
+
+        # Train slope
+        y = np.concatenate((df.trap_slope_pri.values[pri],
+                            df.trap_slope_sec.values[sec]))
+        ytrain = y[itrain]
+        ytest = y[itest]
+        pipeline = Pipeline([('scale', StandardScaler()),
+                                   ('regression', regr(**kwargs))])
+        pipeline.fit(Xtrain, ytrain)
+        score = pipeline.score(Xtrain, ytrain)
+        if plot:
+            yp = pipeline.predict(Xtest)
+            axes[2].plot(ytest, yp, '.', alpha=0.3)
+            axes[2].plot(ytest, ytest, 'k-')
+        print(('Slope trained: R2={}'.format(score)))
+        self._slope_pipeline = pipeline
+        self._slope_score = score
+
+        
+
+
 
 class BG_BinaryPopulation(BinaryPopulation):
     prop_columns = {} # mass_A and radius_A assumed to be defined in provided targets.

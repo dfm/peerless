@@ -5,8 +5,8 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
-from pkg_resources import resource_filename
 
+from peerless.settings import PEERLESS_DATA_DIR
 from peerless.catalogs import (
     KICatalog, EBCatalog, KOICatalog, BlacklistCatalog
 )
@@ -20,9 +20,7 @@ parser.add_argument("-o", "--output", default=None,
 args = parser.parse_args()
 
 if args.output is None:
-    outfile = resource_filename(
-        "peerless", os.path.join("data", "targets.csv")
-    )
+    outfile = os.path.join(PEERLESS_DATA_DIR, "catalogs", "targets.csv")
 else:
     outfile = args.output
 

@@ -24,7 +24,7 @@ def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     return load_light_curves(fn, **kwargs)
 
 
-def load_light_curves(fn, pdc=True, delete=False, remove_kois=False,
+def load_light_curves(fn, pdc=True, remove_kois=False,
                       detrend_hw=2.0, inject_system=None):
     if not os.path.exists(fn):
         raise ValueError("'{0}' doesn't exist".format(fn))
@@ -102,8 +102,6 @@ def load_light_curves(fn, pdc=True, delete=False, remove_kois=False,
                                       texp=texp,
                                       hw=detrend_hw))
 
-            if delete and os.path.exists(fn):
-                os.remove(fn)
         return lcs, n_inj_cad
 
 

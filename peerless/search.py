@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["search"]
-
 import os
 import logging
 import numpy as np
@@ -17,6 +15,8 @@ import transit
 
 from peerless._search import search as cython_search
 from peerless.data import load_light_curves_for_kic, running_median_trend
+
+__all__ = ["search"]
 
 
 class SearchResults(object):
@@ -61,7 +61,6 @@ def search(kicid_and_injection=None,
            max_peaks=3,
            min_datapoints=10,
            all_models=False,
-           delete=True,
            verbose=False):
     """
     :param tau:
@@ -91,9 +90,6 @@ def search(kicid_and_injection=None,
     :param min_datapoints:
         The minimum number of in-transit data points. (default: 10)
 
-    :param delete:
-        Delete the light curve files after loading them. (default: True)
-
     :param verbose:
         Moar printing. (default: False)
 
@@ -122,7 +118,7 @@ def search(kicid_and_injection=None,
     if lcs is None and kicid is None:
         raise ValueError("you must specify 'lcs' or 'kicid'")
     if lcs is None:
-        lcs, ncad = load_light_curves_for_kic(kicid, delete=delete,
+        lcs, ncad = load_light_curves_for_kic(kicid,
                                               detrend_hw=detrend_hw,
                                               remove_kois=remove_kois,
                                               inject_system=system)

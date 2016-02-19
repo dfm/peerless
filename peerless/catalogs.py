@@ -168,8 +168,7 @@ class TargetCatalog(LocalCatalog):
         if self._df is None:
             fn = os.path.join(PEERLESS_DATA_DIR, "catalogs", self.filename)
             try:
-                self._df = pd.read_csv(resource_filename(__name__, fn),
-                                       **(self.args))
+                self._df = pd.read_csv(fn, **(self.args))
             except OSError:
                 print("The target catalog doesn't exist. "
                       "You need to run 'peerless-targets'")

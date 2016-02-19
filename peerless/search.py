@@ -402,8 +402,6 @@ def search(kicid_and_injection=None,
                     a = np.linalg.solve(C, c - mu)
                     w = None
                     for _ in range(10):
-                        print(_)
-                        print(ATA)
                         try:
                             w = np.linalg.solve(ATA, np.dot(AT, a))
                         except np.linalg.LinAlgError:

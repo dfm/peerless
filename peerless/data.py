@@ -2,12 +2,8 @@
 
 from __future__ import division, print_function
 
-__all__ = ["load_light_curves_for_kic", "load_light_curves", "LightCurve",
-           "running_median_trend"]
-
 import os
 import logging
-import requests
 import numpy as np
 from io import BytesIO
 from astropy.io import fits
@@ -16,6 +12,9 @@ from scipy.ndimage.measurements import label
 
 from .catalogs import KOICatalog
 from .settings import TEXP, PEERLESS_DATA_DIR
+
+__all__ = ["load_light_curves_for_kic", "load_light_curves", "LightCurve",
+           "running_median_trend"]
 
 
 def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
@@ -72,7 +71,7 @@ def load_light_curves(fn, pdc=True, delete=False, remove_kois=False,
                     period = float(koi.koi_period)
                     t0 = float(koi.koi_time0bk) % period
                     tau = float(koi.koi_duration) / 24.
-                    m = np.abs((x-t0+0.5*period) % period-0.5*period) < 0.8 * tau
+                    m = np.abs((x-t0+0.5*period) % period-0.5*period) < 0.8*tau
                     y[m] = np.nan
 
             # Remove bad quality points.
@@ -96,12 +95,12 @@ def load_light_curves(fn, pdc=True, delete=False, remove_kois=False,
                 if not np.any(m0):
                     continue
                 lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, header,
-                                    data["MOM_CENTR1"][m0],
-                                    data["MOM_CENTR2"][m0],
-                                    data["POS_CORR1"][m0],
-                                    data["POS_CORR2"][m0],
-                                    texp=texp,
-                                    hw=detrend_hw))
+                                      data["MOM_CENTR1"][m0],
+                                      data["MOM_CENTR2"][m0],
+                                      data["POS_CORR1"][m0],
+                                      data["POS_CORR2"][m0],
+                                      texp=texp,
+                                      hw=detrend_hw))
 
             if delete and os.path.exists(fn):
                 os.remove(fn)

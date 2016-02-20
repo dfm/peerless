@@ -7,6 +7,7 @@ import logging
 import argparse
 import traceback
 import numpy as np
+import pandas as pd
 from scipy.stats import beta
 from functools import partial
 from multiprocessing import Pool
@@ -40,6 +41,8 @@ parser = argparse.ArgumentParser(description="search for single transits")
 
 parser.add_argument("kicids", nargs="*", help="some KIC IDs",
                     type=int)
+parser.add_argument("-c", "--candidates", default=None,
+                    help="only search candidate light curves")
 parser.add_argument("--inject", action="store_true",
                     help="inject transits into the light curves")
 parser.add_argument("-p", "--parallel", default=0, type=int,
@@ -98,6 +101,9 @@ function = partial(
 kicids = np.array(TargetCatalog().df.kepid, dtype=int)
 if args.kicids:
     kicids = np.array(list(set(kicids) & set(args.kicids)), dtype=int)
+if args.candidates is not None:
+    candidates = pd.read_csv(args.candidates)
+    kicids = np.array(list(set(candidates.kicid)))
 assert len(kicids)
 
 # Build injections.

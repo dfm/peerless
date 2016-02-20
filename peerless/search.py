@@ -422,7 +422,7 @@ def search(kicid_and_injection=None,
                 peak["centroid_offset"] = offset
                 peak["centroid_offset_err"] = offset_err
 
-            else:
+            elif name == "transit":
                 peak["centroid_offset"] = 0.0
                 peak["centroid_offset_err"] = np.inf
 

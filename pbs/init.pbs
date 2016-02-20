@@ -5,6 +5,8 @@
 #PBS -N pl-init
 #PBS -M danfm@nyu.edu
 #PBS -j oe
+#PBS -o logs
+#PBS -e logs
 
 module purge
 
@@ -17,5 +19,5 @@ RUNDIR=$SCRATCH/peerless/fits
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python scripts/peerless-init candidates.csv -p ${PBS_NP} -o ${RUNDIR}
+python scripts/peerless-init results/candidates.csv -p ${PBS_NP} -o ${RUNDIR}
 

@@ -12,11 +12,11 @@ from peerless.catalogs import (
 )
 
 
-parser = argparse.ArgumentParser(description="search for single transits")
+parser = argparse.ArgumentParser(description="target selection")
 parser.add_argument("--include-ebs", action="store_true",
                     help="by default known EBs are excluded")
 parser.add_argument("-o", "--output", default=None,
-                    help="the output directory")
+                    help="the output file")
 args = parser.parse_args()
 
 if args.output is None:

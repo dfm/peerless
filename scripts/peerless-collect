@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import glob
+import argparse
+import numpy as np
+import pandas as pd
+
+from peerless.catalogs import TargetCatalog
+from peerless.settings import PEERLESS_DATA_DIR
+
+
+parser = argparse.ArgumentParser(
+    description="collect some search and injection/recovery results"
+)
+parser.add_argument("search_dir",
+                    help="the directory where the search was run")
+parser.add_argument("inj_root",
+                    help="the root directory where the injections were run")
+parser.add_argument("-o", "--output", default=None,
+                    help="the root directory for the output")
+parser.add_argument("--offset-thresh", default=0.5, type=float,
+                    help="maximum allowed scaled centroid offset")
+args = parser.parse_args()
+
+if args.output is None:
+    outdir = os.path.join(PEERLESS_DATA_DIR, "results")
+else:
+    outdir = args.output
+
+# Load the target file.
+stlr = TargetCatalog().df[["kepid", "radius"]]
+stlr = stlr.rename(columns={"radius": "stlr_radius"})
+
+# Load the search results.
+cands = pd.read_csv(os.path.join(args.search_dir, "candidates.csv"))
+cands["offset"] = cands.centroid_offset * (1./cands.transit_depth - 1)
+cands["accept_offset"] = cands.offset < args.offset_thresh
+cands["accept"] = cands.accept_offset & cands.accept_time & cands.accept_bic
+print("Found {0} candidates".format(cands["accept"].sum()))
+
+cands.to_csv(os.path.join(outdir, "candidates.csv"), index=False)
+
+# Load the injection results.
+dfs = []
+for inj_fn in glob.glob(os.path.join(args.inj_root, "*", "injections.csv")):
+    root = os.path.split(inj_fn)[0]
+
+    # Load the candidate list.
+    can = pd.read_csv(os.path.join(root, "candidates.csv"))
+    if not np.any(can.centroid_offset > 0):
+        print("Skipping '{0}' with missing centroids".format(root))
+        continue
+    can = can.groupby(["kicid", "is_injection"], as_index=False).first()
+
+    # Load the injections.
+    inj = pd.read_csv(inj_fn)
+    inj = pd.merge(inj, stlr, left_on="kicid", right_on="kepid", how="inner")
+    inj["radius"] = inj.stlr_radius * inj.ror
+
+    # Do some crazy merging to match up "candidates" with injections.
+    inj = pd.merge(inj, can,
+                   left_on=["kicid", "recovered"],
+                   right_on=["kicid", "is_injection"],
+                   suffixes=["", "_candidate"], how="left")
+
+    # Apply the same centroid offset threshold to the injections.
+    inj["offset"] = inj.centroid_offset * (1./inj.transit_depth - 1)
+    inj["accept_offset"] = inj.offset < args.offset_thresh
+    inj["accept"] = (
+        (inj.offset > 0) & inj.accept_offset &
+        inj.accept_time & inj.accept_bic
+    )
+    inj["run_id"] = int(os.path.split(root)[1])
+
+    # Fix the dtypes for missing data in bool columns.
+    for k in ["is_injection", "accept_time", "accept_bic"]:
+        inj[k] = inj[k].astype(bool) & inj[k].notnull()
+
+    print(len(inj), len(stlr))
+
+    dfs.append(inj)
+
+# Join all the injection runs and save.
+injections = pd.concat(dfs)
+ntot = len(injections)
+nrec = injections.accept.sum()
+print("{0} / {1} = {2:.4f} recovered".format(nrec, ntot, nrec / ntot))
+injections.to_hdf(os.path.join(outdir, "injections.h5"), "injections",
+                  index=False)

@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import h5py
+import pickle
+import argparse
+import numpy as np
+import pandas as pd
+from functools import partial
+
+from transit import SimpleSystem
+
+from peerless.autocorr import integrated_time
+from peerless.settings import PEERLESS_DATA_DIR
+
+
+def collect_one(kicid, root=None):
+    n = int((cands.kicid == kicid).sum())
+    assert n in [1, 2]
+
+    if n == 2:
+        d, sig = np.empty(2), np.empty(2)
+        for i in range(2):
+            if i == 2:
+                s = "full"
+            else:
+                s = "{0:02d}".format(i)
+            fn = "{0}.{1}".format(kicid, s)
+            with open(os.path.join(root, fn, "init.pkl"), "rb") as f:
+                model = pickle.load(f)
+            model.system.central.dilution = 0.0
+            model.system.freeze_parameter("central:dilution")
+
+            with h5py.File(os.path.join(root, fn, "chain.h5"), "r") as f:
+                num = f.attrs["step"] - 200
+                m = f["params"]["ncadence"][num//2:num] == 0
+                chain = f["chain"][num//2:num][m]
+
+            depths = np.empty(1000)
+            durations = np.empty(len(depths))
+            for ind, j in enumerate(np.random.randint(len(chain),
+                                                      size=len(depths))):
+                model.system.set_vector(np.array(list(chain[j])))
+                t0 = model.system.bodies[0].t0
+                depths[ind] = model.system.light_curve(t0)
+                durations[ind] = model.system.bodies[0].duration
+
+            d[i] = np.mean(depths)
+            sig[i] = np.std(depths)
+
+        diff = np.abs(np.diff(d))
+        print(kicid, 1e3 * np.max(diff) / np.mean(d))  # / np.min(sig))
+        # diff = np.abs(stats[1][0] - stats[0][0])
+        # print(stats)
+        # print(diff / stats[0][1], diff / stats[1][1])
+
+
+parser = argparse.ArgumentParser(
+    description="collect postprocess MCMC results"
+)
+parser.add_argument("candidates",
+                    help="the csv of candidate files")
+parser.add_argument("fits_root",
+                    help="the root directory of the MCMC fit results")
+parser.add_argument("-o", "--output", default=None,
+                    help="the root directory for the output")
+args = parser.parse_args()
+
+if args.output is None:
+    outdir = os.path.join(PEERLESS_DATA_DIR, "results", "fits")
+else:
+    outdir = args.output
+
+function = partial(collect_one, root=args.fits_root)
+
+cands = pd.read_csv(args.candidates)
+kicids = list(set(np.array(cands[cands.accept].kicid)))
+# print(kicids)
+
+print(function(3239945))
+print(function(10613792))
+print(function(8410697))
+print(function(8463272))
+print(function(8800954))

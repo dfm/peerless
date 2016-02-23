@@ -4,6 +4,7 @@
 import os
 import sys
 import h5py
+import time
 import emcee
 import pickle
 import argparse
@@ -12,9 +13,45 @@ from mpipool import MPIPool
 
 
 def lnprob(theta):
-    if not compute_blob:
-        return model.lnprob(theta, compute_blob=False)
     return model.lnprob(theta)
+
+
+def run_burnin(args):
+    theta, diag, rng, nburn = args
+    ndim = len(theta)
+    if diag is None:
+        diag = np.ones(len(theta))
+    if rng is None:
+        rng = (-8, 1.5)
+
+    theta0 = np.array(theta)
+    chain = np.empty((nburn, len(theta)))
+    lnprobs = np.empty(nburn)
+    lp0 = lnprob(theta0)[0]
+    acc = np.zeros(len(theta), dtype=int)
+    tot = np.zeros(len(theta), dtype=int)
+
+    for j in range(nburn):
+        for _ in range(ndim):
+            k = np.random.randint(len(theta))
+            tot[k] += 1
+            theta[k] += \
+                diag[k]*np.exp(np.random.uniform(*rng))*np.random.randn()
+            lp = lnprob(theta)[0]
+            lnpdiff = lp - lp0
+            if lnpdiff > 0.0 or np.random.rand() < np.exp(lnpdiff):
+                acc[k] += 1
+                lp0 = lp
+                theta0[:] = theta
+            else:
+                theta[:] = theta0
+
+        chain[j] = theta0
+        lnprobs[j] = lp0
+
+    print(np.sum(acc) / (nburn*ndim), np.min(acc/tot), np.argmin(acc/tot))
+    # print(acc / tot, np.sum(acc) / nburn)
+    return chain, lnprobs
 
 
 parser = argparse.ArgumentParser(description="model some light curves")
@@ -22,6 +59,8 @@ parser = argparse.ArgumentParser(description="model some light curves")
 parser.add_argument("filename", help="the initialized pickle model")
 parser.add_argument("--nwalkers", type=int, default=40,
                     help="the number of walkers")
+parser.add_argument("--ncpu", type=int, default=None,
+                    help="the total number of available CPUs")
 parser.add_argument("--clobber", action="store_true",
                     help="clobber existing output")
 parser.add_argument("--nburn", type=int, default=500,
@@ -33,11 +72,15 @@ parser.add_argument("--nsteps", type=int, default=50000,
 
 args = parser.parse_args()
 
+if args.ncpu is None:
+    ncpu = args.nwalkers
+else:
+    ncpu = args.ncpu
+
 with open(args.filename, "rb") as f:
     model = pickle.load(f)
 model.system.central.dilution = 0.0
 model.system.freeze_parameter("central:dilution")
-compute_blob = True  # len(model.fit_lcs) <= 2
 
 # Initialize the MPI-based pool used for parallelization.
 pool = MPIPool()
@@ -52,6 +95,24 @@ try:
 
     system = model.system
     cols = system.get_parameter_names()
+
+    p0 = system.get_vector()
+    ndim = len(p0)
+    p0 = p0[None, :] + 1e-6 * np.random.randn(ncpu, ndim)
+    diag, rng = None, None
+    for _ in range(args.burniter):
+        strt = time.time()
+        chains, lps = zip(*(pool.map(
+            run_burnin, [(_, diag, rng, args.nburn) for _ in p0]
+        )))
+        print("time", time.time() - strt)
+        p0 = [chains[i][np.argmax(lps[i])] for i in range(len(chains))]
+        chain = np.concatenate(chains, axis=0)
+        diag = np.std(chain, axis=0)
+        m = diag < 1e-5
+        diag[m] = 1e-5
+        rng = (-1, 2)
+    assert 0
 
     # Set up the output.
     chain_fn = os.path.join(basedir, "chain.h5")
@@ -78,13 +139,10 @@ try:
             f.create_dataset("lnprior", shape=(args.nsteps, nwalkers))
             f.create_dataset("params", shape=(args.nsteps, nwalkers),
                              dtype=[("ncadence", np.int64),
+                                    ("depth", np.float64),
                                     ("period", np.float64),
                                     ("impact", np.float64),
                                     ("eccen", np.float64)])
-
-            # if compute_blob:
-            #     n = sum(len(lc.time) for lc in model.fit_lcs)
-            #     f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
 
             data = np.array([
                 (i, l.time[j], l.flux[j], l.ferr[j])
@@ -119,10 +177,6 @@ try:
     else:
         print("restarting...")
         with h5py.File(chain_fn, "a") as f:
-            # del f["chain"]
-            # f["chain"] = f["chain_2"]
-            # del f["chain_2"]
-
             n = f.attrs["step"]
             p0 = np.array([f["chain"][n][k] for k in cols]).T
             nwalkers, ndim = p0.shape
@@ -130,8 +184,6 @@ try:
 
             # Resize.
             ds = ["chain", "lnprob", "lnprior", "params"]
-            # if compute_blob:
-            #     ds += ["pred"]
             for k in ds:
                 k2 = k + "_2"
                 f[k2] = f[k]
@@ -157,19 +209,12 @@ try:
                     f["chain"][i, n, k] = pos[n, j]
 
                 f["params"][i, n, "ncadence"] = blob[n][1]
+                f["params"][i, n, "depth"] = blob[n][2]
                 f["params"][i, n, "period"] = blob[n][0][0]
                 f["params"][i, n, "eccen"] = blob[n][0][1]
                 f["params"][i, n, "impact"] = blob[n][0][2]
 
                 f["lnprior"][i, n] = blob[n][3]
-
-                # if compute_blob:
-                #     f["pred"][i, n, 0] = np.concatenate([
-                #         b[0] for b in blob[n][2]
-                #     ])
-                #     f["pred"][i, n, 1] = np.concatenate([
-                #         b[1] for b in blob[n][2]
-                #     ])
 
             f["lnprob"][i] = lnp
             f.attrs["step"] = i

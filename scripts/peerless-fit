@@ -40,14 +40,12 @@ model.system.freeze_parameter("central:dilution")
 compute_blob = True  # len(model.fit_lcs) <= 2
 
 # Initialize the MPI-based pool used for parallelization.
-pool = MPIPool()
+with MPIPool() as pool:
+    if not pool.is_master():
+        # Wait for instructions from the master process.
+        pool.wait()
+        sys.exit(0)
 
-if not pool.is_master():
-    # Wait for instructions from the master process.
-    pool.wait()
-    sys.exit(0)
-
-try:
     basedir = os.path.split(args.filename)[0]
 
     system = model.system
@@ -173,7 +171,3 @@ try:
 
             f["lnprob"][i] = lnp
             f.attrs["step"] = i
-
-finally:
-    # Close the processes.
-    pool.close()

@@ -6,6 +6,7 @@ import sys
 import h5py
 import emcee
 import pickle
+import shutil
 import argparse
 import numpy as np
 from mpipool import MPIPool
@@ -24,6 +25,8 @@ parser.add_argument("--nwalkers", type=int, default=40,
                     help="the number of walkers")
 parser.add_argument("--clobber", action="store_true",
                     help="clobber existing output")
+parser.add_argument("--resample", action="store_true",
+                    help="resample stuck walkers")
 parser.add_argument("--nburn", type=int, default=500,
                     help="the number of burn-in MCMC steps")
 parser.add_argument("--burniter", type=int, default=2,
@@ -38,6 +41,31 @@ with open(args.filename, "rb") as f:
 model.system.central.dilution = 0.0
 model.system.freeze_parameter("central:dilution")
 compute_blob = True  # len(model.fit_lcs) <= 2
+
+
+def create_file(chain_fn, nwalkers):
+    with h5py.File(chain_fn, "w") as f:
+        for k, v in model.spec.items():
+            f.attrs[k] = v
+        f.create_dataset("chain", shape=(args.nsteps, nwalkers),
+                         dtype=[(k, np.float64) for k in cols])
+        f.create_dataset("lnprob", shape=(args.nsteps, nwalkers))
+        f.create_dataset("lnprior", shape=(args.nsteps, nwalkers))
+        f.create_dataset("params", shape=(args.nsteps, nwalkers),
+                         dtype=[("ncadence", np.int64),
+                                ("period", np.float64),
+                                ("impact", np.float64),
+                                ("eccen", np.float64),
+                                ("depth", np.float64)])
+
+        data = np.array([
+            (i, l.time[j], l.flux[j], l.ferr[j])
+            for i, l in enumerate(model.fit_lcs)
+            for j in range(len(l.time))
+        ], dtype=[("chunk", np.int64), ("time", np.float64),
+                  ("flux", np.float64), ("ferr", np.float64)])
+        f.create_dataset("data", data=data)
+
 
 # Initialize the MPI-based pool used for parallelization.
 with MPIPool() as pool:
@@ -67,30 +95,7 @@ with MPIPool() as pool:
             nwalkers += args.nwalkers
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool)
 
-        with h5py.File(chain_fn, "w") as f:
-            for k, v in model.spec.items():
-                f.attrs[k] = v
-            f.create_dataset("chain", shape=(args.nsteps, nwalkers),
-                             dtype=[(k, np.float64) for k in cols])
-            f.create_dataset("lnprob", shape=(args.nsteps, nwalkers))
-            f.create_dataset("lnprior", shape=(args.nsteps, nwalkers))
-            f.create_dataset("params", shape=(args.nsteps, nwalkers),
-                             dtype=[("ncadence", np.int64),
-                                    ("period", np.float64),
-                                    ("impact", np.float64),
-                                    ("eccen", np.float64)])
-
-            # if compute_blob:
-            #     n = sum(len(lc.time) for lc in model.fit_lcs)
-            #     f.create_dataset("pred", shape=(args.nsteps, nwalkers, 2, n))
-
-            data = np.array([
-                (i, l.time[j], l.flux[j], l.ferr[j])
-                for i, l in enumerate(model.fit_lcs)
-                for j in range(len(l.time))
-            ], dtype=[("chunk", np.int64), ("time", np.float64),
-                      ("flux", np.float64), ("ferr", np.float64)])
-            f.create_dataset("data", data=data)
+        create_file(chain_fn, nwalkers)
 
         # Run the MCMC.
         burniter = max(1, args.burniter)
@@ -113,6 +118,22 @@ with MPIPool() as pool:
                 p0 = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
 
         i0 = 0
+
+    elif args.resample:
+        print("resampling")
+        with h5py.File(chain_fn, "r") as f:
+            b = f.attrs["step"]
+            c = 10
+            chain = f["chain"][f["chain"].dtype.names[0]][:b:c]
+        jump = np.diff(chain, axis=0)
+        esjd = np.mean(jump**2, axis=0)
+        std = np.sqrt(np.mean((esjd - esjd.max()) ** 2))
+        m = esjd < esjd.max() - std
+        print(len(esjd), m.sum(), b, esjd)
+
+        assert 0
+        old_fn = chain_fn + ".bkp"
+        shutil.move(chain_fn, old_fn)
 
     else:
         print("restarting...")

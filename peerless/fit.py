@@ -69,6 +69,10 @@ class TransitModel(object):
         if not (self.t0rng[0] < self.system.bodies[0].t0 < self.t0rng[1]):
             return -np.inf
 
+        star = self.system.central
+        if np.any([b.radius > star.radius for b in self.system.bodies]):
+            return -np.inf
+
         lp = 0.0
 
         # planet
@@ -79,7 +83,6 @@ class TransitModel(object):
         lp += self.eb.logpdf(body.e)
 
         # stellar parameters
-        star = self.system.central
         lp -= 0.5 * (
             ((star.mass - self.smass) / self.smass_err) ** 2 +
             ((star.radius - self.srad) / self.srad_err) ** 2
@@ -93,31 +96,31 @@ class TransitModel(object):
     def lnlike(self, compute_blob=True):
         system = self.system
         ll = 0.0
-        # preds = []
-        preds = None
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = (lc.flux - mu) * 1e3
             ll += gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
-                return -np.inf, (0, None)
-            # if compute_blob:
-            #     preds.append((gp.predict(r, lc.time, return_cov=False), mu))
+                return -np.inf, (0, 0.0)
+
+        y = system.light_curve(system.bodies[0].t0, texp=lc.texp, maxdepth=2)
+        f = system.central.flux
+        depth = float((f - y) / f)
 
         if not compute_blob:
-            return ll, (0, None)
+            return ll, (0, depth)
 
         # Compute number of cadences with transits in the other light curves.
         ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
                    for lc in self.other_lcs)
 
-        return ll, (ncad, preds)
+        return ll, (ncad, depth)
 
     def _update_params(self, theta):
         self.system.set_vector(theta[:len(self.system)])
 
     def lnprob(self, theta, compute_blob=True):
-        blob = [None, 0, None, 0.0]
+        blob = [None, 0, 0.0, 0.0]
         try:
             self._update_params(theta)
         except ValueError:

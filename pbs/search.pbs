@@ -1,10 +1,12 @@
 #!/bin/bash
 #PBS -l nodes=1:ppn=20
-#PBS -l walltime=18:00:00
+#PBS -l walltime=48:00:00
 #PBS -l mem=60GB
 #PBS -N pl-search
 #PBS -M danfm@nyu.edu
 #PBS -j oe
+#PBS -o logs
+#PBS -e logs
 
 module purge
 
@@ -17,5 +19,6 @@ RUNDIR=$SCRATCH/peerless/search/${PBS_JOBID/.*}
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python scripts/peerless-search --bright-g-dwarfs -p -q --no-plots --clean -o $RUNDIR
+# python scripts/peerless-search --candidates results/candidates.csv -p $PBS_NP -q --no-plots -o $RUNDIR
+python scripts/peerless-search -p $PBS_NP -q --no-plots -o $RUNDIR
 

@@ -45,7 +45,7 @@ ax.set_xlabel("$T_\mathrm{eff}$")
 ax.xaxis.set_major_locator(pl.MaxNLocator(4))
 ax.yaxis.set_major_locator(pl.MaxNLocator(5))
 fig.set_tight_layout(True)
-fig.savefig("targets.pdf", dpi=400)
+fig.savefig("targets.pdf", dpi=400, bbox_inches="tight")
 
 print("Found {0} targets".format(m.sum()))
 

@@ -11,7 +11,7 @@ import matplotlib.pyplot as pl
 from multiprocessing import Pool
 
 from peerless.fit import setup_fit
-from peerless.catalogs import KICatalog, BlacklistCatalog
+from peerless.catalogs import TargetCatalog
 
 
 def init_spec(args, max_fit_data=250, output_dir="fits"):
@@ -43,25 +43,26 @@ parser.add_argument("-p", "--parallel", type=int, default=None,
                     help="parallelize")
 parser.add_argument("-o", "--output-dir", default="fits",
                     help="the output directory")
+parser.add_argument("-c", "--clobber", action="store_true",
+                    help="overwrite existing models")
 parser.add_argument("--max-fit-data", type=int, default=250,
                     help="the maximum number of points per light curve")
 args = parser.parse_args()
 
 # Load the candidate list.
 candidates = pd.read_csv(args.candidates)
-candidates = candidates[(candidates.num_peaks <= 2) & candidates.accept_bic]
+m = candidates.num_peaks <= 2
+m &= candidates.accept_bic
+m &= candidates.accept_time
 
 # Load the stellar catalog.
-kic = KICatalog().df
+kic = TargetCatalog().df
 
 if args.kicids:
     kicids = args.kicids
 else:
-    kicids = list(set(candidates.kicid))
-
-blacklist = BlacklistCatalog().df
-blacklist = set(blacklist.kicid)
-kicids = [k for k in kicids if k not in blacklist]
+    kicids = list(set(candidates[m].kicid))
+print(kicids)
 
 # Loop over the input KIC IDs.
 systems = dict()
@@ -85,6 +86,9 @@ for kicid in kicids:
 
     # Single transit?
     if len(cands) == 1:
+        fn = os.path.join(args.output_dir, key, "init.pkl")
+        if os.path.exists(fn) and not args.clobber:
+            continue
         row = cands.iloc[0]
         system["t0"] = float(row.transit_time)
         system["radius"] = float(row.transit_ror * star.radius)
@@ -95,20 +99,27 @@ for kicid in kicids:
     times = np.sort(cands.transit_time)
 
     # Fit together.
-    s = dict(system)
-    s["t0"] = times[0]
-    s["period"] = np.mean(np.diff(times))
-    row = cands.mean()
-    s["radius"] = float(row.transit_ror * star.radius)
-    systems[key+".full"] = s
+    fullkey = key+".full"
+    fn = os.path.join(args.output_dir, fullkey, "init.pkl")
+    if args.clobber or not os.path.exists(fn):
+        s = dict(system)
+        s["t0"] = times[0]
+        s["period"] = np.mean(np.diff(times))
+        row = cands.mean()
+        s["radius"] = float(row.transit_ror * star.radius)
+        systems[fullkey] = s
 
     # Fit each transit independently.
     for i, (_, row) in enumerate(cands.iterrows()):
+        fullkey = key+".{0:02d}".format(i)
+        fn = os.path.join(args.output_dir, fullkey, "init.pkl")
+        if os.path.exists(fn) and not args.clobber:
+            continue
         s = dict(system)
         s["t0"] = float(row.transit_time)
         s["radius"] = float(row.transit_ror * star.radius)
         s["transit_number"] = i
-        systems[key+".{0:02d}".format(i)] = s
+        systems[fullkey] = s
 
 # Deal with parallelization.
 if args.parallel != 0:

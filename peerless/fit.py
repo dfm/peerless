@@ -36,25 +36,33 @@ class TransitModel(object):
         body = self.system.bodies[0]
         mx = (
             self.lnlike(compute_blob=False)[0],
-            (body.b, body.radius, body.period)
+            (body.b, body.radius, body.period, body.e, body.omega)
         )
-        prng = np.exp(np.append(np.linspace(np.log(0.1), np.log(10.0), 21), 0))
-        rrng = np.append(np.linspace(0.5, 2, 11), 0)
+        prng = np.exp(np.append(np.linspace(np.log(0.5), np.log(2.0), 6), 0))
+        rrng = body.radius * np.append(np.linspace(0.8, 1.2, 6), 1.0)
         rstar = self.system.central.radius
-        for per in body.period*prng:
-            body.period = per
-            for rad in body.radius*rrng:
-                body.radius = rad
-                for b in np.linspace(0, (1.0+0.99*rad/rstar)**4, 10)**(1/4.):
-                    body.b = b
-                    ll, blob = self.lnlike(compute_blob=False)
-
-                    if blob[1] == 0 and ll > mx[0]:
-                        mx = (ll, (b, rad, per))
+        for ecc in np.linspace(0, 0.8, 4):
+            body.e = ecc
+            for w in np.linspace(-np.pi, np.pi, 4):
+                body.omega = w
+                # self.system.central.dilution = dil
+                for per in body.period*prng:
+                    body.period = per
+                    for rad in rrng:
+                        body.radius = rad
+                        for b in np.linspace(0, 1.0+0.9*rad/rstar, 6):
+                            body.b = b
+                            ll, blob = self.lnlike(compute_blob=False)
+                            if ll > mx[0]:
+                                ll, blob = self.lnlike(compute_blob=True)
+                                if blob[0] == 0:
+                                    mx = (ll, (b, rad, per, ecc, w))
         print(mx)
+        body.e = mx[1][3]
+        body.omega = mx[1][4]
+        body.period = mx[1][2]
         body.b = mx[1][0]
         body.radius = mx[1][1]
-        body.period = mx[1][2]
 
     # Probabilistic model:
     def lnprior(self):
@@ -77,26 +85,24 @@ class TransitModel(object):
             ((star.radius - self.srad) / self.srad_err) ** 2
         )
 
-        # limb darkening
-        q = star.q1
-        lp += np.log(q) + np.log(1.0 - q)
-        q = star.q2
-        lp += np.log(q) + np.log(1.0 - q)
+        # limb darkening etc.
+        lp += self.system.jacobian()
 
         return lp
 
     def lnlike(self, compute_blob=True):
         system = self.system
         ll = 0.0
-        preds = []
+        # preds = []
+        preds = None
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
             r = (lc.flux - mu) * 1e3
             ll += gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(ll)):
                 return -np.inf, (0, None)
-            if compute_blob:
-                preds.append((gp.predict(r, lc.time, return_cov=False), mu))
+            # if compute_blob:
+            #     preds.append((gp.predict(r, lc.time, return_cov=False), mu))
 
         if not compute_blob:
             return ll, (0, None)

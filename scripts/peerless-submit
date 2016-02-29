@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import glob
+from subprocess import check_call
+
+for fn in glob.glob("*/init.pkl"):
+    nm = os.path.split(fn)[0]
+    b = os.path.abspath(nm)
+    l = os.path.join(b, "submitted.lock")
+    if os.path.exists(l):
+        continue
+    cmd = (("cd {0}; touch submitted.lock; "
+            "qsub -N kic{1} ~/projects/peerless/pbs/fit.pbs")
+           .format(b, nm))
+    print(cmd)
+    check_call(cmd, shell=True)

@@ -56,4 +56,4 @@ y = np.array(fits.radius) / 0.01
 ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt=".g", capsize=0)
 
 fig.set_tight_layout(True)
-fig.savefig("full_sample.pdf")
+fig.savefig("full_sample.pdf", bbox_inches="tight")

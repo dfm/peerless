@@ -2,55 +2,33 @@
 
 from __future__ import division, print_function
 
-__all__ = ["load_light_curves_for_kic", "load_light_curves", "LightCurve",
-           "running_median_trend"]
-
 import os
-import fitsio
 import logging
-import requests
 import numpy as np
+from io import BytesIO
+from astropy.io import fits
+from zipfile import ZipFile
 from scipy.ndimage.measurements import label
 
 from .catalogs import KOICatalog
 from .settings import TEXP, PEERLESS_DATA_DIR
 
+__all__ = ["load_light_curves_for_kic", "load_light_curves", "LightCurve",
+           "running_median_trend"]
 
-def load_light_curves_for_kic(kicid, clobber=False, remove_kois=True,
-                              **kwargs):
-    # Make sure that that data directory exists.
-    bp = os.path.join(PEERLESS_DATA_DIR, "data")
-    try:
-        os.makedirs(bp)
-    except os.error:
-        pass
 
-    # Get the list of data URLs.
-    urls = _get_mast_light_curve_urls(kicid)
-
-    # Loop over the URLs and download the files if needed.
-    fns = []
-    for url in urls:
-        fn = os.path.join(bp, url.split("/")[-1])
-        fns.append(fn)
-        if os.path.exists(fn) and not clobber:
-            continue
-
-        # Download the file.
-        r = requests.get(url)
-        if r.status_code != requests.codes.ok:
-            r.raise_for_status()
-        with open(fn, "wb") as f:
-            f.write(r.content)
-
-    # Load the light curves.
+def load_light_curves_for_kic(kicid, remove_kois=True, **kwargs):
     if remove_kois:
         kwargs["remove_kois"] = kicid
-    return load_light_curves(fns, **kwargs)
+    fn = os.path.join(PEERLESS_DATA_DIR, "data", "{0}.zip".format(kicid))
+    return load_light_curves(fn, **kwargs)
 
 
-def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
+def load_light_curves(fn, pdc=True, remove_kois=False,
                       detrend_hw=2.0, inject_system=None):
+    if not os.path.exists(fn):
+        raise ValueError("'{0}' doesn't exist".format(fn))
+
     # Find any KOIs.
     if remove_kois:
         df = KOICatalog().df
@@ -59,68 +37,72 @@ def load_light_curves(fns, pdc=True, delete=False, remove_kois=False,
     # Load the light curves.
     lcs = []
     n_inj_cad = 0
-    for fn in fns:
-        # Load the data.
-        data, hdr = fitsio.read(fn, header=True)
-        texp = hdr["INT_TIME"] * hdr["NUM_FRM"] / (24. * 60. * 60.)
-        x = data["TIME"]
-        q = data["SAP_QUALITY"]
-        if pdc:
-            y = data["PDCSAP_FLUX"]
-            yerr = data["PDCSAP_FLUX_ERR"]
-        else:
-            y = data["SAP_FLUX"]
-            yerr = data["SAP_FLUX_ERR"]
-        if np.any(y[np.isfinite(y)] < 0.0):
-            logging.warning("invalid data: flux < 0")
-            continue
+    with ZipFile(fn, "r") as zf:
+        for n in zf.namelist():
+            with zf.open(n, "r") as f:
+                content = BytesIO(f.read())
+            with fits.open(content) as fts:
+                # Load the meta data.
+                hdr = fts[0].header
+                meta = dict((k.lower(), hdr[k]) for k in hdr)
+                hdr = fts[2].header
+                header = dict((k, hdr[k]) for k in hdr)
+                data = fts[1].data
+                hdr = fts[1].header
 
-        # Load the meta data.
-        hdr = fitsio.read_header(fn, 0)
-        meta = dict((k.lower(), hdr[k]) for k in hdr)
-        hdr = fitsio.read_header(fn, 2)
-        header = dict((k, hdr[k]) for k in hdr)
-
-        # Remove any KOI points.
-        if remove_kois:
-            for _, koi in kois.iterrows():
-                period = float(koi.koi_period)
-                t0 = float(koi.koi_time0bk) % period
-                tau = float(koi.koi_duration) / 24.
-                m = np.abs((x-t0+0.5*period) % period-0.5*period) < 0.8 * tau
-                y[m] = np.nan
-
-        # Remove bad quality points.
-        y[q != 0] = np.nan
-        m = np.isfinite(x) & np.isfinite(y) & np.isfinite(yerr)
-
-        if inject_system is not None:
-            model = inject_system.get_value(
-                np.ascontiguousarray(x[m], dtype=float), texp=texp)
-            n_inj_cad += np.sum(model < 1.0)
-            y[m] *= model
-
-        # Deal with big gaps.
-        lt = np.isfinite(x)
-        lt[m] &= np.append(np.diff(x[m]) < 0.5, True)
-
-        # Loop over contiguous chunks and build light curves.
-        labels, nlabels = label(lt)
-        for i in range(1, nlabels + 1):
-            m0 = m & (labels == i)
-            if not np.any(m0):
+            # Load the data.
+            # data, hdr = fitsio.read(fn, header=True)
+            texp = hdr["INT_TIME"] * hdr["NUM_FRM"] / (24. * 60. * 60.)
+            x = data["TIME"]
+            q = data["SAP_QUALITY"]
+            if pdc:
+                y = data["PDCSAP_FLUX"]
+                yerr = data["PDCSAP_FLUX_ERR"]
+            else:
+                y = data["SAP_FLUX"]
+                yerr = data["SAP_FLUX_ERR"]
+            if np.any(y[np.isfinite(y)] < 0.0):
+                logging.warning("invalid data: flux < 0")
                 continue
-            lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, header,
-                                  data["MOM_CENTR1"][m0],
-                                  data["MOM_CENTR2"][m0],
-                                  data["POS_CORR1"][m0],
-                                  data["POS_CORR2"][m0],
-                                  texp=texp,
-                                  hw=detrend_hw))
 
-        if delete:
-            os.remove(fn)
-    return lcs, n_inj_cad
+            # Remove any KOI points.
+            if remove_kois:
+                for _, koi in kois.iterrows():
+                    period = float(koi.koi_period)
+                    t0 = float(koi.koi_time0bk) % period
+                    tau = float(koi.koi_duration) / 24.
+                    m = np.abs((x-t0+0.5*period) % period-0.5*period) < 0.8*tau
+                    y[m] = np.nan
+
+            # Remove bad quality points.
+            y[q != 0] = np.nan
+            m = np.isfinite(x) & np.isfinite(y) & np.isfinite(yerr)
+
+            if inject_system is not None:
+                model = inject_system.get_value(
+                    np.ascontiguousarray(x[m], dtype=float), texp=texp)
+                n_inj_cad += np.sum(model < 1.0)
+                y[m] *= model
+
+            # Deal with big gaps.
+            lt = np.isfinite(x)
+            lt[m] &= np.append(np.diff(x[m]) < 0.5, True)
+
+            # Loop over contiguous chunks and build light curves.
+            labels, nlabels = label(lt)
+            for i in range(1, nlabels + 1):
+                m0 = m & (labels == i)
+                if not np.any(m0):
+                    continue
+                lcs.append(LightCurve(x[m0], y[m0], yerr[m0], meta, header,
+                                      data["MOM_CENTR1"][m0],
+                                      data["MOM_CENTR2"][m0],
+                                      data["POS_CORR1"][m0],
+                                      data["POS_CORR2"][m0],
+                                      texp=texp,
+                                      hw=detrend_hw))
+
+        return lcs, n_inj_cad
 
 
 def running_median_trend(x, y, hw=2.0):
@@ -159,30 +141,3 @@ class LightCurve(object):
 
     def __len__(self):
         return len(self.time)
-
-
-def _get_mast_light_curve_urls(kic, short_cadence=False, **params):
-    # Build the URL and request parameters.
-    url = "http://archive.stsci.edu/kepler/data_search/search.php"
-    params["action"] = params.get("action", "Search")
-    params["outputformat"] = "JSON"
-    params["coordformat"] = "dec"
-    params["verb"] = 3
-    params["ktc_kepler_id"] = kic
-    params["ordercolumn1"] = "sci_data_quarter"
-    if not short_cadence:
-        params["ktc_target_type"] = "LC"
-
-    # Get the list of files.
-    r = requests.get(url, params=params)
-    if r.status_code != requests.codes.ok:
-        r.raise_for_status()
-
-    # Format the data URLs.
-    kic = "{0:09d}".format(kic)
-    base_url = ("http://archive.stsci.edu/pub/kepler/lightcurves/{0}/{1}/"
-                .format(kic[:4], kic))
-    for row in r.json():
-        ds = row["Dataset Name"].lower()
-        tt = row["Target Type"].lower()
-        yield base_url + "{0}_{1}lc.fits".format(ds, tt[0])

@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import requests
+import argparse
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+from multiprocessing import Pool
+from collections import defaultdict, OrderedDict
+
+from peerless.catalogs import TargetCatalog
+from peerless.settings import PEERLESS_DATA_DIR
+
+
+adaptor = OrderedDict(
+    ktc_kepler_id="Kepler ID",
+    sci_data_set_name="Dataset Name",
+    sci_data_quarter="Quarter",
+    ktc_target_type="Target Type",
+)
+
+
+def _get_mast_light_curve_urls(args, short_cadence=False, **params):
+    # Build the URL and request parameters.
+    url = "http://archive.stsci.edu/kepler/data_search/search.php"
+    params["action"] = params.get("action", "Search")
+    params["outputformat"] = "JSON"
+    params["coordformat"] = "dec"
+    params["max_records"] = 19 * len(args.split(","))
+    params["ktc_kepler_id"] = args
+    params["ordercolumn1"] = "sci_data_quarter"
+    params["ktc_target_type"] = "LC"
+    params["selectedColumnsCsv"] = ",".join(adaptor.keys())
+
+    # Get the list of files.
+    r = requests.post(url, params=params)
+    if r.status_code != requests.codes.ok:
+        r.raise_for_status()
+
+    # Re-map the key names.
+    results = r.json()
+    data = defaultdict(list)
+    for row in results:
+        data[row["Kepler ID"]].append(
+            dict((k, row[v]) for k, v in adaptor.items())
+        )
+
+    # Format the data URLs.
+    ret = []
+    for kicid, datasets in data.items():
+        kic = "{0:09d}".format(int(kicid))
+        base_url = ("http://archive.stsci.edu/pub/kepler/lightcurves/{0}/{1}/"
+                    .format(kic[:4], kic))
+        for row in datasets:
+            ds = row["sci_data_set_name"].lower()
+            tt = row["ktc_target_type"].lower()
+            url = base_url + "{0}_{1}lc.fits".format(ds, tt[0])
+            fn = url.split("/")[-1]
+            row["remote"] = url
+            row["local"] = fn
+            ret.append(row)
+
+    return ret
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="download the information about all the light curves"
+    )
+    parser.add_argument("-o", "--output", default=None,
+                        help="the output directory")
+    parser.add_argument("-b", "--batch", default=50, type=int,
+                        help="the output directory")
+    parser.add_argument("-p", "--parallel", default=0, type=int,
+                        help="run in parallel")
+    args = parser.parse_args()
+
+    if args.output is None:
+        outfile = os.path.join(PEERLESS_DATA_DIR, "catalogs", "datasets.h5")
+    else:
+        outfile = args.output
+
+    df = TargetCatalog().df
+    kicids = np.array(df.kepid)
+
+    if args.parallel > 0:
+        pool = Pool(args.parallel)
+        M = pool.imap_unordered
+    else:
+        M = map
+
+    indlists = [",".join(map("{0}".format, kicids[i:i+args.batch]))
+                for i in range(0, len(kicids) + args.batch, args.batch)]
+
+    result = None
+    for i, datasets in tqdm(enumerate(M(_get_mast_light_curve_urls, indlists)),
+                            total=len(indlists)):
+        cols = list(adaptor.keys()) + ["local", "remote"]
+        df = pd.DataFrame([[row[k] for k in cols] for row in datasets],
+                          columns=cols)
+        if result is None:
+            result = df
+        else:
+            result = pd.concat([result, df])
+
+    print("Saving {0} targets to {1}".format(len(result), outfile))
+    result.to_hdf(outfile, "datasets", index=False)

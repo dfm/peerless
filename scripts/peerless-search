@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
+import time
 import logging
+import argparse
 import traceback
 import numpy as np
+import pandas as pd
 from scipy.stats import beta
 from functools import partial
 from multiprocessing import Pool
@@ -12,8 +15,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 
 from peerless.search import search, plot
-from peerless.data import load_light_curves
-from peerless.catalogs import KICatalog, EBCatalog, KOICatalog
+from peerless.catalogs import TargetCatalog
 
 
 def _wrapper(*args, **kwargs):
@@ -29,236 +31,169 @@ def _wrapper(*args, **kwargs):
     except:
         if not quiet:
             raise
-        with open(os.path.join(kwargs.get("output_dir", "output"),
-                               "errors.txt"), "a") as f:
+        with open(os.path.join(output_dir, "errors.txt"), "a") as f:
             f.write("{0} failed with exception:\n{1}"
                     .format(args, traceback.format_exc()))
     return None
 
 
-if __name__ == "__main__":
-    import argparse
+parser = argparse.ArgumentParser(description="search for single transits")
 
-    parser = argparse.ArgumentParser(description="search for single transits")
+parser.add_argument("kicids", nargs="*", help="some KIC IDs",
+                    type=int)
+parser.add_argument("-c", "--candidates", default=None,
+                    help="only search candidate light curves")
+parser.add_argument("--inject", action="store_true",
+                    help="inject transits into the light curves")
+parser.add_argument("-p", "--parallel", default=0, type=int,
+                    help="parallelize across targets")
+parser.add_argument("-q", "--quiet", action="store_true",
+                    help="log errors instead of raising")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="more output to the screen")
+parser.add_argument("-o", "--output-dir", default="output",
+                    help="the output directory")
+parser.add_argument("--plot-all", action="store_true",
+                    help="make all the plots")
+parser.add_argument("--no-plots", action="store_true",
+                    help="don't make any plots")
 
-    parser.add_argument("kicids", nargs="*", help="some KIC IDs")
-    parser.add_argument("--inject", action="store_true",
-                        help="inject transits into the light curves")
-    parser.add_argument("--include-ebs", action="store_true",
-                        help="by default known EBs are excluded")
-    parser.add_argument("--max-targets", type=int,
-                        help="the maximum number of targets")
-    parser.add_argument("-f", "--filenames", nargs="+",
-                        help="some light curve filenames")
-    parser.add_argument("-p", "--parallel", action="store_true",
-                        help="parallelize across targets")
-    parser.add_argument("-q", "--quiet", action="store_true",
-                        help="log errors instead of raising")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="more output to the screen")
-    parser.add_argument("-c", "--clean", action="store_true",
-                        help="remove temporary light curve files")
-    parser.add_argument("-o", "--output-dir", default="output",
-                        help="the output directory")
-    parser.add_argument("--plot-all", action="store_true",
-                        help="make all the plots")
-    parser.add_argument("--no-plots", action="store_true",
-                        help="don't make any plots")
+# Search parameters:
+parser.add_argument("--duration", type=float,  default=0.6,
+                    help="the transit duration in days")
+parser.add_argument("--detrend-hw", type=float,  default=2.0,
+                    help="the half width of the de-trending window")
+parser.add_argument("--no-remove-kois", action="store_true",
+                    help="leave the known KOIs in the light curves")
+parser.add_argument("--grid-frac", type=float,  default=0.25,
+                    help="search grid spacing in units of the duration")
+parser.add_argument("--noise-hw", type=float,  default=15.0,
+                    help="the half width of the noise estimation window")
+parser.add_argument("--detect-thresh", type=float,  default=25.0,
+                    help="the relative detection threshold")
+parser.add_argument("--max-fit-data", type=int,  default=500,
+                    help="maximum number of points to fit")
+parser.add_argument("--max-peaks", type=int,  default=3,
+                    help="the maximum number of peaks to consider")
 
-    # Preset target lists:
-    parser.add_argument("--planet-hunters", action="store_true",
-                        help="search the planet hunter targets")
-    parser.add_argument("--bright-g-dwarfs", action="store_true",
-                        help="search bright G and K dwarfs")
-    parser.add_argument("--candidates", action="store_true",
-                        help="only search my candidates")
+args = parser.parse_args()
 
-    # Search parameters:
-    parser.add_argument("--duration", type=float,  default=0.6,
-                        help="the transit duration in days")
-    parser.add_argument("--detrend-hw", type=float,  default=2.0,
-                        help="the half width of the de-trending window")
-    parser.add_argument("--no-remove-kois", action="store_true",
-                        help="leave the known KOIs in the light curves")
-    parser.add_argument("--grid-frac", type=float,  default=0.25,
-                        help="search grid spacing in units of the duration")
-    parser.add_argument("--noise-hw", type=float,  default=15.0,
-                        help="the half width of the noise estimation window")
-    parser.add_argument("--detect-thresh", type=float,  default=25.0,
-                        help="the relative detection threshold")
-    parser.add_argument("--max-fit-data", type=int,  default=500,
-                        help="maximum number of points to fit")
-    parser.add_argument("--max-peaks", type=int,  default=3,
-                        help="the maximum number of peaks to consider")
+# Build the dictionary of search keywords.
+function = partial(
+    _wrapper,
+    tau=args.duration,
+    detrend_hw=args.detrend_hw,
+    remove_kois=not args.no_remove_kois,
+    grid_frac=args.grid_frac,
+    noise_hw=args.noise_hw,
+    detect_thresh=args.detect_thresh,
+    output_dir=args.output_dir,
+    plot_all=args.plot_all,
+    no_plots=args.no_plots,
+    max_fit_data=args.max_fit_data,
+    max_peaks=args.max_peaks,
+    verbose=args.verbose,
+    quiet=args.quiet,
+)
 
-    args = parser.parse_args()
 
-    # Build the dictionary of search keywords.
-    function = partial(
-        _wrapper,
-        tau=args.duration,
-        detrend_hw=args.detrend_hw,
-        remove_kois=not args.no_remove_kois,
-        grid_frac=args.grid_frac,
-        noise_hw=args.noise_hw,
-        detect_thresh=args.detect_thresh,
-        output_dir=args.output_dir,
-        plot_all=args.plot_all,
-        no_plots=args.no_plots,
-        max_fit_data=args.max_fit_data,
-        max_peaks=args.max_peaks,
-        verbose=args.verbose,
-        quiet=args.quiet,
-        delete=args.clean,
-    )
+# Build the list of KIC IDs.
+kicids = np.array(TargetCatalog().df.kepid, dtype=int)
+if args.kicids:
+    kicids = np.array(list(set(kicids) & set(args.kicids)), dtype=int)
+if args.candidates is not None:
+    candidates = pd.read_csv(args.candidates)
+    kicids = np.array(list(set(candidates.kicid)))
+assert len(kicids)
 
-    # Build the list of KIC IDs.
-    kicids = args.kicids
+# Build injections.
+if args.inject:
+    np.random.seed(int(os.getpid() + 1000*time.time()) % 4294967295)
+    np.random.shuffle(kicids)
 
-    # Presets.
-    if args.planet_hunters:
-        kicids += [
-            2158850, 3558849, 5010054, 5536555, 5951458, 8410697, 8510748,
-            8540376, 9704149, 9838291, 10024862, 10403228, 10842718, 10960865,
-            11558724, 12066509,
-        ]
-    if args.bright_g_dwarfs:
-        stlr = KICatalog().df
-        m = (4200 <= stlr.teff) & (stlr.teff <= 6100)
-        m &= stlr.radius <= 1.15
-        m &= stlr.dataspan > 365.25*2.
-        m &= stlr.dutycycle > 0.6
-        m &= stlr.rrmscdpp07p5 <= 1000.
-        m &= stlr.kepmag < 15.
-        kicids += list(np.array(stlr[m].kepid))
-    if args.candidates:
-        kicids += [3218908, 3230491, 3239945, 4450472, 4586468, 4754460,
-                   5438845, 6342758, 6551440, 6751029, 8009496, 8410697,
-                   8426957, 8463272, 8505215, 8800954, 9306307, 9730194,
-                   10068041, 10287723, 10321319, 10602068, 10613792, 10842718,
-                   11038446, 11709124, ]
-    kicids = np.array(kicids, dtype=int)
+    injections = []
+    for k in kicids:
+        r = np.exp(np.random.uniform(np.log(0.02), np.log(0.3)))
+        injections.append(dict(
+            kicid=k,
+            q1=np.random.rand(),
+            q2=np.random.rand(),
+            ror=r,
+            period=np.exp(np.random.uniform(np.log(2*365),
+                                            np.log(25*365))),
+            b=np.random.uniform(0, 1+r),
+            e=beta.rvs(0.867, 3.03),
+            omega=np.random.uniform(0, 2*np.pi),
+            t0=np.random.uniform(120, 1600),
+            recovered=False,
+            ncadences=0,
+        ))
+else:
+    injections = [None for _ in range(len(kicids))]
 
-    # Limit the target list.
-    if args.max_targets is not None:
-        if len(kicids) > args.max_targets:
-            logging.warning("Truncating target list from {0} to {1}".format(
-                len(kicids), args.max_targets
-            ))
-        kicids = kicids[:args.max_targets]
+# Check and create the output directory.
+if os.path.exists(args.output_dir):
+    logging.warning("Output directory '{0}' exists"
+                    .format(args.output_dir))
+else:
+    os.makedirs(args.output_dir)
 
-    # Remove EBs from the target list.
-    if not args.include_ebs:
-        # Start with EB catalog:
-        ebs = set(np.array(EBCatalog().df["#KIC"]))
-        l0 = len(kicids)
-        kicids = np.array([i for i in kicids if i not in ebs])
+cand_fn = os.path.join(args.output_dir, "candidates.csv")
+models = ["gp", "outlier", "box1", "box2", "step", "transit"]
+columns = [
+    "kicid", "num_peaks", "peak_id",
+    "accept_bic", "accept_time",
+    "channel", "skygroup", "module", "output", "quarter", "season",
+    "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
+    "transit_ror", "transit_duration", "transit_time", "transit_depth",
+    "chunk_min_time", "chunk_max_time",
+    "centroid_offset", "centroid_offset_err",
+]
+columns += ["lnlike_{0}".format(k) for k in models]
+columns += ["bic_{0}".format(k) for k in models]
+if args.inject:
+    columns += ["injected_{0}".format(k) for k in ["t0", "period", "ror",
+                                                   "b", "e", "omega"]]
+    columns += ["is_injection"]
+with open(cand_fn, "w") as f:
+    f.write("{0}\n".format(",".join(columns)))
+with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
+    f.write("\n".join(map("{0}".format, kicids)))
 
-        # Then the KOI false positives:
-        kois = KOICatalog().df
-        kois = kois[kois.koi_disposition == "FALSE POSITIVE"]
-        kois = set(np.array(kois.kepid))
-        kicids = np.array([i for i in kicids if i not in kois])
+inj_columns = ["kicid", "q1", "q2", "t0", "period", "ror", "b", "e",
+               "omega", "recovered",
+               "ncadences"]
+inj_fn = os.path.join(args.output_dir, "injections.csv")
+if args.inject:
+    with open(inj_fn, "w") as f:
+        f.write("{0}\n".format(",".join(inj_columns)))
 
-        print("Removed {0} known EBs from target list".format(l0-len(kicids)))
+# Deal with parallelization.
+if args.parallel:
+    pool = Pool(args.parallel)
+    M = pool.imap_unordered
+    # M = pool.map
+else:
+    M = map
 
-    # Build injections.
-    if args.inject:
-        injections = []
-        for k in kicids:
-            r = np.exp(np.random.uniform(np.log(0.02), np.log(0.3)))
-            injections.append(dict(
-                kicid=k,
-                q1=np.random.rand(),
-                q2=np.random.rand(),
-                ror=r,
-                period=np.exp(np.random.uniform(np.log(3*365),
-                                                np.log(15*365))),
-                b=np.random.uniform(0, 1+r),
-                e=beta.rvs(0.867, 3.03),
-                omega=np.random.uniform(0, 2*np.pi),
-                t0=np.random.uniform(120, 1600),
-                recovered=False,
-                ncadences=0,
-            ))
-    else:
-        injections = [None for _ in range(len(kicids))]
+if args.verbose:
+    prog = lambda f, *args, **kwargs: f
+else:
+    prog = tqdm
 
-    # Check and create the output directory.
-    if os.path.exists(args.output_dir):
-        logging.warning("Output directory '{0}' exists"
-                        .format(args.output_dir))
-    else:
-        os.makedirs(args.output_dir)
-    cand_fn = os.path.join(args.output_dir, "candidates.csv")
-    models = ["gp", "outlier", "box1", "box2", "step", "transit"]
-    columns = [
-        "kicid", "num_peaks", "peak_id",
-        "accept_bic", "accept_time",
-        "channel", "skygroup", "module", "output", "quarter", "season",
-        "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
-        "transit_ror", "transit_duration", "transit_time", "transit_depth",
-        "chunk_min_time", "chunk_max_time",
-        "centroid_offset", "centroid_offset_err",
-    ]
-    columns += ["lnlike_{0}".format(k) for k in models]
-    columns += ["bic_{0}".format(k) for k in models]
-    if args.inject:
-        columns += ["injected_{0}".format(k) for k in ["t0", "period", "ror",
-                                                       "b", "e", "omega"]]
-        columns += ["is_injection"]
-    with open(cand_fn, "w") as f:
-        f.write("{0}\n".format(",".join(columns)))
-    with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
-        f.write("\n".join(map("{0}".format, kicids)))
-
-    inj_columns = ["kicid", "q1", "q2", "t0", "period", "ror", "b", "e",
-                   "omega", "recovered",
-                   "ncadences"]
-    inj_fn = os.path.join(args.output_dir, "injections.csv")
-    if args.inject:
-        with open(inj_fn, "w") as f:
-            f.write("{0}\n".format(",".join(inj_columns)))
-
-    if len(kicids):
-        # Deal with parallelization.
-        if args.parallel:
-            pool = Pool()
-            M = pool.imap_unordered
-        else:
-            M = map
-
-        if args.verbose:
-            prog = lambda f, *args, **kwargs: f
-        else:
-            prog = tqdm
-
-        for results in prog(M(function, zip(kicids, injections)),
-                            total=len(kicids)):
-            if results is None:
-                continue
-            inj = results.injection
-            peaks = results.peaks
-            if args.inject and inj is not None:
-                with open(inj_fn, "a") as f:
-                    f.write(",".join("{0}".format(inj.get(k, np.nan))
-                                     for k in inj_columns) + "\n")
-            if not len(peaks):
-                continue
-            with open(cand_fn, "a") as f:
-                f.write("\n".join(
-                    ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
-                    for p in peaks) + "\n")
-
-    if args.filenames is not None:
-        lcs, _ = load_light_curves(
-            args.filenames,
-            detrend_hw=args.detrend_hw,
-            remove_kois=not args.no_remove_kois,
-        )
-        results = function(lcs=lcs)
-        if len(results.peaks):
-            with open(cand_fn, "a") as f:
-                f.write("\n".join(
-                    ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
-                    for p in results.peaks) + "\n")
+for results in prog(M(function, list(zip(kicids, injections))),
+                    total=len(kicids)):
+    if results is None:
+        continue
+    inj = results.injection
+    peaks = results.peaks
+    if args.inject and inj is not None:
+        with open(inj_fn, "a") as f:
+            f.write(",".join("{0}".format(inj.get(k, np.nan))
+                             for k in inj_columns) + "\n")
+    if not len(peaks):
+        continue
+    with open(cand_fn, "a") as f:
+        f.write("\n".join(
+            ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
+            for p in peaks) + "\n")

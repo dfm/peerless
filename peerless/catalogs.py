@@ -6,8 +6,6 @@ Code for interfacing with the Exoplanet Archive catalogs.
 
 from __future__ import division, print_function
 
-__all__ = ["KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog"]
-
 import os
 import logging
 from pkg_resources import resource_filename
@@ -17,6 +15,11 @@ import pandas as pd
 from six.moves import urllib
 
 from .settings import PEERLESS_DATA_DIR
+
+__all__ = [
+    "KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog",
+    "TargetCatalog", "DatasetsCatalog",
+]
 
 
 def download():
@@ -157,6 +160,38 @@ class BlacklistCatalog(LocalCatalog):
     filename = "blacklist.csv"
 
 
+class TargetCatalog(LocalCatalog):
+    filename = "targets.csv"
+
+    @property
+    def df(self):
+        if self._df is None:
+            fn = os.path.join(PEERLESS_DATA_DIR, "catalogs", self.filename)
+            try:
+                self._df = pd.read_csv(fn, **(self.args))
+            except OSError:
+                print("The target catalog doesn't exist. "
+                      "You need to run 'peerless-targets'")
+                raise
+        return self._df
+
+
+class DatasetsCatalog(LocalCatalog):
+    filename = "datasets.h5"
+
+    @property
+    def df(self):
+        if self._df is None:
+            fn = os.path.join(PEERLESS_DATA_DIR, "catalogs", self.filename)
+            try:
+                self._df = pd.read_hdf(fn, "datasets", **(self.args))
+            except OSError:
+                print("The datasets catalog doesn't exist. "
+                      "You need to run 'peerless-datasets'")
+                raise
+        return self._df
+
+
 class singleton(object):
 
     def __init__(self, cls):
@@ -175,3 +210,5 @@ KOICatalog = singleton(KOICatalog)
 KICatalog = singleton(KICatalog)
 EBCatalog = singleton(EBCatalog)
 BlacklistCatalog = singleton(BlacklistCatalog)
+TargetCatalog = singleton(TargetCatalog)
+DatasetsCatalog = singleton(DatasetsCatalog)

@@ -14,3 +14,4 @@ dist
 *.so
 *.o[0-9]*
 *.pkl
+peerless/data/targets.csv

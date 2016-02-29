@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import os
 import sys
+import glob
 import numpy
 from Cython.Build import cythonize
 from setuptools import setup, Extension
@@ -23,7 +25,7 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 builtins.__PEERLESS_SETUP__ = True
-import peerless
+import peerless  # NOQA
 
 # Execute the setup command.
 desc = open("README.rst").read()
@@ -36,10 +38,7 @@ setup(
         "peerless",
     ],
     ext_modules=cythonize(exts),
-    scripts=[
-        "scripts/peerless-search",
-        "scripts/peerless-fit",
-    ],
+    scripts=list(glob.glob(os.path.join("scripts", "peerless-*"))),
     url="http://github.com/dfm/peerless",
     license="MIT",
     description="I can haz planetz?",

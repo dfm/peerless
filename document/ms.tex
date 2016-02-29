@@ -10,8 +10,8 @@
 %  * that is all.
 %
 
-\documentclass[twocolumn]{aastex6}
-% \documentclass[onecolumn]{aastex6}
+% \documentclass[twocolumn]{aastex6}
+\documentclass[onecolumn]{aastex6}
 % \documentclass[preprint]{aastex}
 
 \pdfoutput=1
@@ -72,6 +72,7 @@
 
 \newcommand{\T}{\ensuremath{\mathrm{T}}}
 \newcommand{\dd}{\ensuremath{\,\mathrm{d}}}
+\newcommand{\unit}[1]{{\ensuremath{\,\mathrm{#1}}}}
 \newcommand{\bvec}[1]{{\ensuremath{\boldsymbol{#1}}}}
 \newcommand{\appropto}{\mathrel{\vcenter{
   \offinterlineskip\halign{\hfil$##$\cr
@@ -84,11 +85,12 @@
 \newcommand{\hoggtodo}[1]{\todo{HOGG}{blue}{#1}}
 
 % Notation for this paper.
-\newcommand{\period}{{\ensuremath{P}}}
-\newcommand{\unit}[1]{{\ensuremath{\,\mathrm{#1}}}}
+\newcommand{\meanpars}{{\ensuremath{\bvec{\theta}}}}
+\newcommand{\kernpars}{{\ensuremath{\bvec{\alpha}}}}
 
 \newcommand{\params}{{\ensuremath{\bvec{w}}}}
-\newcommand{\poppars}{{\ensuremath{\theta}}}
+\newcommand{\poppars}{{\ensuremath{\bvec{\beta}}}}
+
 
 \newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
 
@@ -100,8 +102,9 @@
 \begin{document}
 
 \title{%
-Single \& double transits discovered in the \kepler\ archive: \\
-the frequency of long-period exoplanets
+The population of long-period exoplanets I. --- \\
+Fully-automated discovery \& characterization of
+long-period transiting exoplanet candidates in the \kepler\ archive
 }
 
 \newcounter{affilcounter}
@@ -206,7 +209,7 @@ photometric data for single transits.
 
 There are two main technical barriers to a search for single transit events.
 The first is that the transit probability for long-period planets is very low;
-scaling as $\propto\period^{-5/3}$ for orbital periods longer than the
+scaling as $\propto P^{-5/3}$ for orbital periods longer than the
 baseline of contiguous observations.
 Therefore, even if long-period planets are intrinsically common, they will
 still be underrepresented in a transiting sample.
@@ -275,7 +278,7 @@ used to place constraints on the occurrence rate of exoplanets \dfmtodo{CITE}.
 These results are sensitive to the detection efficiency and reliability of the
 discovery methodology \dfmtodo{CITE Burke}.
 
-\section{The fully-automated search for long-period transiting exoplanets}
+\section{A fully-automated search method}
 
 To find long-period exoplanets in the \kepler\ light curves, we search for
 individual, high signal-to-noise transit signals using a fully-automated
@@ -287,20 +290,6 @@ signals that don't match a transit shape, and}
 {\item pixel-level vetting to remove some astrophysical false positives.}
 \end{enumerate}
 The following sections describe each of these steps in more detail.
-
-% The search for long-period planets presents several unique challenges.
-% Of these, the most important is the inevitable sensitively to signals falsely
-% identified as being caused by a transit exoplanet when it is actually a
-% systematic false alarm (noise) or an astrophysical false positive.
-% In the following paragraphs, we detail our method for addressing these
-% challenges and quantifying their effects.
-% In summary, we identify false alarms by developing a conservative automated
-% candidate vetting algorithm using the full light curve of each target star and
-% measure the incompleteness introduced by this procedure.
-% To account for astrophysical false positives, we discard candidates that fail
-% the standard transit centroid tests and then statistically incorporate
-% uncertainties introduced by false positives missed by this procedure at a
-% population level.
 
 \subsection{Finding box-shaped candidate events}
 
@@ -322,6 +311,90 @@ than 25-times this noise as candidates.
 
 \subsection{Light curve-level vetting}
 
+In this step of the method, the goal is to discard any signals that are not
+sufficiently ``transit-like'' in shape.
+To quantify this decision, we perform a model comparison between a physical
+transit model and a set of other parameterized models for systematics.
+In order for a candidate to pass this vetting step, the transit model must be
+``preferred'' to any other model as measured using the Bayesian Information
+Criterion (BIC).
+The BIC is not the optimal choice for this model comparison but it is
+computationally intractable to compute thousands of precise marginalized
+likelihoods for each model.
+The BIC can be efficiently computed and it exhibits the desired
+behavior---increasing with the likelihood but flexible models are
+penalized---and we find that it performs sufficiently well in practice.
+
+For up to three candidate transit times per light curve, we select a
+contiguous chunk of PDC light curve approximately centered on the proposed
+transit with no more than 500 cadences \dfmtodo{check me} and compute the BIC
+of each model for this data set.
+We will define the BIC for a model $k$ in the set of $K$ models is given by
+\begin{eqnarray}
+\mathrm{BIC}_k &=& \ln \mathcal{L}^* - \frac{J}{2}\,\log N
+\end{eqnarray}
+where the likelihood function $\mathcal{L}$ is evaluated at its maximum, $J$
+is the number of free parameters in the model, and $N$ is the number of
+data points in the data set.
+
+For each model, we describe the data using a Gaussian Process (GP;
+\dfmtodo{cite}) with a Mat\'ern-3/2 covariance and mean given by the chosen
+model $m_k(t;\,\meanpars)$ parameterized by the parameter vector \meanpars.
+This generative model is specified by the following likelihood function:
+\begin{eqnarray}
+\mathcal{L} = \ln p_k(\bvec{y}\,|\,\meanpars,\,\kernpars) &=&
+- \frac{1}{2}\,\bvec{r}_k(\meanpars)^\T\,K(\kernpars)^{-1}\,
+    \bvec{r}_k(\meanpars)
+- \frac{1}{2}\log\det K(\kernpars) - \frac{N}{2} \log{2\,\pi}
+\end{eqnarray}
+where \bvec{y} is the vector of flux measurements, \bvec{t} are the
+corresponding times, and
+\begin{eqnarray}
+\bvec{r}_k(\meanpars) &=& \bvec{y} - m_k(\bvec{t};\,\meanpars) \quad.
+\end{eqnarray}
+The covariance matrix $K(\kernpars)$ is parameterized by the parameters
+$\kernpars = (\alpha,\,\tau)$ and its elements are given by
+\begin{eqnarray}
+\left[ K(\kernpars) \right]_{ij} &=& \sigma_i^2\,\delta_{ij}
+    + \alpha^2 \left[ 1+\frac{|t_i - t_j|}{\sqrt{3}\,\tau} \right]
+      \exp \left(-\frac{|t_i - t_j|}{\sqrt{3}\,\tau}\right)
+\end{eqnarray}
+where $\sigma_i$ is the reported uncertainty on the $i$-th flux measurement.
+
+The gradients of the likelihood with respect to the parameters \meanpars\
+and \kernpars\ are given by
+\begin{eqnarray}
+\frac{\dd\ln p_k(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \meanpars} &=&
+\frac{\dd m_k(\bvec{t};\,\meanpars)}{\dd\meanpars}^\T \, K(\kernpars)^{-1} \,
+    m_k(\bvec{t};\,\meanpars)
+\end{eqnarray}
+and
+\begin{eqnarray}
+\frac{\dd\ln p_k(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \kernpars} &=&
+\frac{1}{2}\,\mathrm{Tr}\left(
+    \left[ \bvec{\phi}\,\bvec{\phi}^\T - K(\kernpars)^{-1} \right]
+    \,\frac{\dd K(\kernpars)}{\dd\kernpars}
+\right)
+\end{eqnarray}
+where
+\begin{eqnarray}
+\bvec{\phi} &=& K(\kernpars)^{-1}\,\bvec{r}_k(\meanpars) \quad.
+\end{eqnarray}
+Therefore, if we can compute the gradient of the model with respect to its
+parameters, we can efficiently optimize this function to find the maximum
+likelihood parameters using a gradient-based non-linear optimization method.
+To compute the gradients of the transit model, we use a compile-time automatic
+differentiation library \dfmtodo{cite Ceres} and for the other models, we
+choose models that can be easily differentiated analytically.
+
+The models are:
+\begin{itemize}
+{\item a limb-darkened, exposure time integrated transit light curve,}
+{\item a pure Gaussian Process model to capture stellar variability,}
+{\item a single outlier,}
+{\item an step function, and}
+{\item a box.}
+\end{itemize}
 
 
 \subsection{Pixel-level vetting}

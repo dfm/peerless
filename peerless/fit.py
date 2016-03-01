@@ -77,9 +77,17 @@ class TransitModel(object):
 
         # planet
         body = self.system.bodies[0]
+
+        # Impact parameter.
         if body.b < 0.0:
-            lp -= 1e6  # horror
+            return -np.inf
+        elif body.b > 1.0:
+            lp -= body.b - 1.0
+
+        # Flat in log a (and period)
         lp -= np.log(body.a)
+
+        # Beta in eccen
         lp += self.eb.logpdf(body.e)
 
         # stellar parameters

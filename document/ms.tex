@@ -502,14 +502,55 @@ Blah.
 
 \section{Empirical search completeness}
 
+To measure the completeness of our long-period transit search method, we
+exploit the fact that transit signals are sparse and rare.
+Therefore, most light curves contain no transits and we can reliably measure
+the recovery rate of our method on synthetic transit signals---with known
+properties---injected into real light curves.
+This procedure is standard practice in the transit literature and it has been
+used to determine the completeness of the KOI catalog (\dfmtodo{cite}) and
+other independent transit searches (\dfmtodo{cite}).
+
+To reliably capture the full structure of the search completeness function,
+the simulations must sample the (high-dimensional) space of all properties
+that affect the probability of detecting a transit: the stellar properties
+(including variability amplitudes and time scales), the planet's physical
+properties and orbital elements, and any observational effects (noise,
+spacecraft pointing variations, \etc).
+For the modest goals of this paper, we only need a robust constraint on the
+transit detection efficiency \emph{integrated} across the target sample but,
+even so, many simulations per star are required.
+
+The procedure for measuring the recovery rate of simulated transits is as
+follows:
+\begin{enumerate}
+{\item First, a star is randomly selected from the target list, and the PDC
+light curve and stellar properties for that star are loaded.}
+{\item Planetary properties are sampled from the distributions listed in
+\dfmtodo{some table} with phase uniformly distributed across the baseline of
+observations. These properties are resampled until the transit is visible in
+at least one non-flagged cadence.}
+{\item The transit signal induced by this planet is computed and multiplied
+into the PDC light curve.}
+{\item The transit search method described in section \dfmtodo{some section}
+(including de-trending and all automated vetting) is applied to this light
+curve with the injected transit signal.}
+{\item This candidate is flagged as recovered if at least one transit (within
+\dfmtodo{some tolerance}) passes all the cuts imposed by the automated
+vetting.}
+\end{enumerate}
+
 
 \section{The occurrence rate of long-period exoplanets}
 
 Geometric:
 
 \begin{eqnarray}
-Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k(\params)} \\
-&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}\,P^{-2/3}
+Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k(\params)}
+    \, \frac{1 + e(\params)\,\sin\omega(\params)}{1-e(\params)^2} \\
+&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}
+    \, \left[\frac{1 + e(\params)\,\sin \omega(\params)}{1-e(\params)^2}\right]
+    \, P^{-2/3}
 \end{eqnarray}
 
 Temporal:
@@ -527,7 +568,9 @@ Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
                  Q_{\mathrm{geom},k} (\params) \\
 &=& Q_{\mathrm{det},k}(\params) \,
     \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,
-    R_{\star,k}\,T_k\,P^{-5/3} \quad.
+    R_{\star,k}\,T_k
+    \, \left[\frac{1 + e(\params)\,\sin \omega(\params)}{1-e(\params)^2}\right]
+    \, P^{-5/3} \quad.
 \end{eqnarray}
 
 The likelihood function for the catalog of planet candidates is

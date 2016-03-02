@@ -50,7 +50,6 @@ def collect_one(kicid, root=None):
             sig[i] = np.std(depths)
 
         s2n = float(np.abs(np.diff(d))) / np.max(sig)
-        print(s2n)
         if s2n > 5.0:
             fn = "{0}.{1:02d}".format(kicid, np.argmin(d))
         else:

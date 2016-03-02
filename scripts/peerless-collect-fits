@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 from functools import partial
 
-from transit import SimpleSystem
-
 from peerless.autocorr import integrated_time
 from peerless.settings import PEERLESS_DATA_DIR
 
@@ -22,10 +20,7 @@ def collect_one(kicid, root=None):
     if n == 2:
         d, sig = np.empty(2), np.empty(2)
         for i in range(2):
-            if i == 2:
-                s = "full"
-            else:
-                s = "{0:02d}".format(i)
+            s = "{0:02d}".format(i)
             fn = "{0}.{1}".format(kicid, s)
             with open(os.path.join(root, fn, "init.pkl"), "rb") as f:
                 model = pickle.load(f)
@@ -36,24 +31,59 @@ def collect_one(kicid, root=None):
                 num = f.attrs["step"] - 200
                 m = f["params"]["ncadence"][num//2:num] == 0
                 chain = f["chain"][num//2:num][m]
+                if "depth" not in f["params"].dtype.names:
+                    depths = None
+                else:
+                    depths = f["params"]["depth"][num//2:num][m]
 
-            depths = np.empty(1000)
-            durations = np.empty(len(depths))
-            for ind, j in enumerate(np.random.randint(len(chain),
-                                                      size=len(depths))):
-                model.system.set_vector(np.array(list(chain[j])))
-                t0 = model.system.bodies[0].t0
-                depths[ind] = model.system.light_curve(t0)
-                durations[ind] = model.system.bodies[0].duration
+            if depths is None:
+                depths = np.empty(2000)
+                s = model.system
+                for ind, j in enumerate(np.random.randint(len(chain),
+                                                          size=len(depths))):
+                    s.set_vector(np.array(list(chain[j])))
+                    t0 = model.system.bodies[0].t0
+                    f = s.central.flux
+                    depths[ind] = (f - float(s.light_curve(t0))) / f
 
             d[i] = np.mean(depths)
             sig[i] = np.std(depths)
 
-        diff = np.abs(np.diff(d))
-        print(kicid, 1e3 * np.max(diff) / np.mean(d))  # / np.min(sig))
-        # diff = np.abs(stats[1][0] - stats[0][0])
-        # print(stats)
-        # print(diff / stats[0][1], diff / stats[1][1])
+        s2n = float(np.abs(np.diff(d))) / np.max(sig)
+        print(s2n)
+        if s2n > 5.0:
+            fn = "{0}.{1:02d}".format(kicid, np.argmin(d))
+        else:
+            fn = "{0}.full".format(kicid)
+    else:
+        fn = "{0}".format(kicid)
+
+    with open(os.path.join(root, fn, "init.pkl"), "rb") as f:
+        model = pickle.load(f)
+    model.system.central.dilution = 0.0
+    model.system.freeze_parameter("central:dilution")
+
+    with h5py.File(os.path.join(root, fn, "chain.h5"), "r") as f:
+        b = f.attrs["step"]
+        a = 0  # b // 3
+        c = 10
+        m = f["params"]["ncadence"][a:b:c] == 0
+        chain = f["chain"][a:b:c]
+
+    tau = [integrated_time(np.mean(chain[k], axis=1), c=1)
+           for k in chain.dtype.names]
+    jump = np.diff(chain[chain.dtype.names[1]], axis=0)
+    acc = np.sum(np.abs(jump) > 0.0, axis=0)
+    # print(acc / len(chain))
+    # print(np.median(np.abs(jump), axis=0))
+    esjd = np.mean(jump**2, axis=0)
+    std = np.sqrt(np.mean((esjd - esjd.max()) ** 2))
+    m = esjd < esjd.max() - std
+    # print(len(esjd), m.sum(), acc[m] / len(chain))
+
+    nsamps = chain.shape[1] * len(chain)
+    names = model.system.get_parameter_names()
+    print(fn, np.max(tau), nsamps / np.max(tau), nsamps / np.min(tau), names[np.argmax(tau)])
 
 
 parser = argparse.ArgumentParser(
@@ -78,8 +108,4 @@ cands = pd.read_csv(args.candidates)
 kicids = list(set(np.array(cands[cands.accept].kicid)))
 # print(kicids)
 
-print(function(3239945))
-print(function(10613792))
-print(function(8410697))
-print(function(8463272))
-print(function(8800954))
+print(list(map(function, kicids)))

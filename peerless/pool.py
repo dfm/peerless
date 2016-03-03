@@ -568,7 +568,7 @@ class MPIOptimizedPool(GenericPool):
         for i in range(self.size):
             status = MPI.Status()
             result = np.empty(self.dims[0], dtype = 'float64')
-            self.comm.Recv(result, source = MPI.ANY_SOURCE, tag = MPI.ANY_TAG,
+            result = self.comm.recv(source = MPI.ANY_SOURCE, tag = MPI.ANY_TAG,
                            status = status)
             assert status.Get_tag() == TAG_TASK, ("Tag mismatch. Expected "
                                                   "tag %d, but worker %d "
@@ -587,8 +587,7 @@ class MPIOptimizedPool(GenericPool):
                 results[w] = result[:-1]
 
         # Flatten and return
-        results = np.array([item for sublist in results for
-                            item in sublist], dtype = 'float64')
+        results = [item for sublist in results for item in sublist]
 
         return results
 
@@ -611,7 +610,7 @@ class MPIOptimizedPool(GenericPool):
             if tag == TAG_TASK:
                 # Business as usual: the parameter array
                 result = self.apply_function(task)
-                self.comm.Send(result, dest = 0, tag = tag)
+                self.comm.send(result, dest = 0, tag = tag)
             else:
                 # Confirm receipt
                 self.comm.Send(MSG_EMPTY(), dest = 0, tag = tag)
@@ -646,6 +645,7 @@ class MPIOptimizedPool(GenericPool):
         '''
 
         '''
+        return [self.function(x) for x in task]
 
         result = np.zeros(task.shape[0])
         for i, x in enumerate(task):

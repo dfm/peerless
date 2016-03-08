@@ -55,10 +55,10 @@
 % \newcommand{\tab}[1]{\Tab{#1}}
 \newcommand{\tablabel}[1]{\label{tab:#1}}
 
-% \renewcommand{\eqref}[1]{\ref{eq:#1}}
-% \newcommand{\Eq}[1]{Equation~(\eqref{#1})}
-% \newcommand{\eq}[1]{\Eq{#1}}
-% \newcommand{\eqalt}[1]{Equation~\eqref{#1}}
+\renewcommand{\eqref}[1]{\ref{eq:#1}}
+\newcommand{\Eq}[1]{Equation~(\eqref{#1})}
+\newcommand{\eq}[1]{\Eq{#1}}
+\newcommand{\eqalt}[1]{Equation~\eqref{#1}}
 \newcommand{\eqlabel}[1]{\label{eq:#1}}
 
 \newcommand{\sectionname}{Section}
@@ -540,18 +540,67 @@ curve with the injected transit signal.}
 vetting.}
 \end{enumerate}
 
+The fraction of recovered simulations as a function of the relevant parameters
+gives an estimate of the search completeness or the probability of detecting
+an exoplanet transit with a given set of parameters, \emph{conditioned on the
+fact that it transits}.
+We will call this function $Q_{\mathrm{det},k}(\params)$ where \params\ is the
+set of all parameters affecting the transit detectability and $k$ is an index
+running over target stars.
+
+This detection efficiency must then be combined with the geometric transit
+probability function and the window function.
+For the star $k$, the geometric transit probability is given by \dfmtodo{cite}
+\begin{eqnarray}
+Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k}
+    \, \frac{1 + e\,\sin\omega}{1-e^2} \\
+&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}
+    \, \left[\frac{1 + e\,\sin \omega}{1-e^2}\right]
+    \, P^{-2/3}
+\end{eqnarray}
+where the parameters $e$, $\omega$, and $P$ are included in \params.
+Approximating the window function using the binomial probability of observing
+at least one transit \dfmtodo{cite bm14} we find
+\begin{eqnarray}
+Q_{\mathrm{win},k} (\params) &=& 1 - (1 - f_{\mathrm{duty},k})^{T_k/P}
+\end{eqnarray}
+where $f_{\mathrm{duty},k}$ is the duty cycle and $T_k$ is the full
+observation baseline for target $k$.
+
+Combining these detection effects, the total detection efficiency is given by
+\begin{eqnarray}
+Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
+                 Q_{\mathrm{win},k} (\params) \,
+                 Q_{\mathrm{geom},k} (\params) \quad.
+\end{eqnarray}
+For the purposes of this \paper, we are not considering the occurrence rate of
+exoplanets as a function of stellar properties; we will only measure an
+average rate across the target sample that we previously selected.
+Therefore, it is sufficient to estimate the marginalized detection efficiency
+integrated with respect to our prior distributions on the nuisance parameters.
+In this case, the only parameters that we will consider are planet radius and
+orbital period.
+Under this model, the relevant detection efficiency function for long-period
+transiting planets is
+\begin{eqnarray}\eqlabel{full-comp}
+Q(R,\,P) &=& \frac{1}{K} \sum_{k=1}^{K} \int Q_k(\params) \,
+    p(\params_{\{R,\,P\}}) \dd\params_{\{R,\,P\}}
+\end{eqnarray}
+where $\params_{\{R,\,P\}}$ indicates the set of all parameters except radius
+and period.
+
+Since the simulated parameters in the injection and recovery tests described
+above were sampled from the prior distribution $p(\params_{\{R,\,P\}})$, the
+easiest way to estimate \eq{full-comp} is to take the ratio of the weighted
+histogram of the recovered injections to the weighted histogram of all
+simulations where each simulation is weighted by
+$Q_{\mathrm{win},k} (\params) \, Q_{\mathrm{geom},k} (\params)$ evaluated at
+the parameters of the simulation.
+
 
 \section{The occurrence rate of long-period exoplanets}
 
 Geometric:
-
-\begin{eqnarray}
-Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k(\params)}
-    \, \frac{1 + e(\params)\,\sin\omega(\params)}{1-e(\params)^2} \\
-&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}
-    \, \left[\frac{1 + e(\params)\,\sin \omega(\params)}{1-e(\params)^2}\right]
-    \, P^{-2/3}
-\end{eqnarray}
 
 Temporal:
 

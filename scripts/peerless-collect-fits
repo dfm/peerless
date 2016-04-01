@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from functools import partial
+import matplotlib.pyplot as pl
 
 from peerless.autocorr import integrated_time
 from peerless.settings import PEERLESS_DATA_DIR
@@ -28,7 +29,7 @@ def collect_one(kicid, root=None):
             model.system.freeze_parameter("central:dilution")
 
             with h5py.File(os.path.join(root, fn, "chain.h5"), "r") as f:
-                num = f.attrs["step"] - 200
+                num = f.attrs["step"]
                 m = f["params"]["ncadence"][num//2:num] == 0
                 chain = f["chain"][num//2:num][m]
                 if "depth" not in f["params"].dtype.names:
@@ -64,26 +65,51 @@ def collect_one(kicid, root=None):
 
     with h5py.File(os.path.join(root, fn, "chain.h5"), "r") as f:
         b = f.attrs["step"]
-        a = 0  # b // 3
+        a = b // 3
         c = 10
         m = f["params"]["ncadence"][a:b:c] == 0
         chain = f["chain"][a:b:c]
+        params = f["params"][a:b:c]
+        data = f["data"][...]
 
     tau = [integrated_time(np.mean(chain[k], axis=1), c=1)
            for k in chain.dtype.names]
-    jump = np.diff(chain[chain.dtype.names[1]], axis=0)
-    acc = np.sum(np.abs(jump) > 0.0, axis=0)
-    # print(acc / len(chain))
-    # print(np.median(np.abs(jump), axis=0))
-    esjd = np.mean(jump**2, axis=0)
-    std = np.sqrt(np.mean((esjd - esjd.max()) ** 2))
-    m = esjd < esjd.max() - std
-    # print(len(esjd), m.sum(), acc[m] / len(chain))
-
     nsamps = chain.shape[1] * len(chain)
-    names = model.system.get_parameter_names()
-    print(fn, np.max(tau), nsamps / np.max(tau), nsamps / np.min(tau), names[np.argmax(tau)])
+    nind = nsamps / np.mean(tau)
 
+    chain = chain[m]
+    params = params[m]
+
+    # Compute the planet parameters:
+
+    # Period (years):
+    period_samps = params["period"] / 365.25
+    period = np.percentile(period_samps, [16, 50, 84])
+
+    # T0 (KBJD):
+    t0_samps = params["bodies[0]:t0"]
+    t0 = np.percentile(t0_samps, [16, 50, 84])
+
+    # Radius (Jupiter radii):
+    radius_samps = np.exp(chain["bodies[0]:ln_radius"] - np.log(0.0995))
+    radius = np.percentile(radius_samps, [16, 50, 84])
+
+    # Depth (ppt):
+    depth_samps = params["depth"] * 1e3
+    depth = np.percentile(depth_samps, [16, 50, 84])
+
+    print(kicid, nind, period[1], t0[1], radius[1], depth[1])
+
+    x = np.linspace(-2, 2, 5000)
+    for chunk in set(data["chunk"]):
+        gp = model.gps[chunk]
+        m = data["chunk"] == chunk
+
+        t = data["time"]
+        mu = model.system.light_curve()
+
+    print(data.dtype)
+    assert 0
 
 parser = argparse.ArgumentParser(
     description="collect postprocess MCMC results"
@@ -105,6 +131,8 @@ function = partial(collect_one, root=args.fits_root)
 
 cands = pd.read_csv(args.candidates)
 kicids = list(set(np.array(cands[cands.accept].kicid)))
-# print(kicids)
 
-print(list(map(function, kicids)))
+# kicids = [8463272, 3239945, 8410697, 8800954]  # multis
+# kicids = [6342758]
+
+list(map(function, kicids))

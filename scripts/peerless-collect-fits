@@ -4,6 +4,7 @@
 import os
 import h5py
 import pickle
+import corner
 import argparse
 import numpy as np
 import pandas as pd
@@ -69,47 +70,103 @@ def collect_one(kicid, root=None):
         c = 10
         m = f["params"]["ncadence"][a:b:c] == 0
         chain = f["chain"][a:b:c]
+        lnprob = f["lnprob"][a:b:c]
         params = f["params"][a:b:c]
-        data = f["data"][...]
 
     tau = [integrated_time(np.mean(chain[k], axis=1), c=1)
            for k in chain.dtype.names]
     nsamps = chain.shape[1] * len(chain)
     nind = nsamps / np.mean(tau)
 
+    # Remove models with unobserved transits.
+    m2 = np.ones_like(m)
+
+    chain_all = chain[m2]
+    lnprob_all = lnprob[m2]
+    params_all = params[m2]
+
     chain = chain[m]
+    lnprob = lnprob[m]
     params = params[m]
+
+    # Get the median probability model.
+    i = np.argmax(lnprob == np.median(lnprob))
+    model.system.set_vector(np.array(list(chain[i])))
+
+    # Plot the transit.
+    fig, ax = pl.subplots(1, 1, figsize=(3, 2))
+    t0 = model.system.bodies[0].t0
+    period = model.system.bodies[0].period
+    x = np.linspace(-2, 2, 5000)
+    mx, mn = -np.inf, np.inf
+    for gp, lc in zip(model.gps, model.fit_lcs):
+        t = (lc.time - t0 + 0.5*period) % period - 0.5*period
+        mu = model.system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
+        r = (lc.flux - mu) * 1e3
+        p = gp.predict(r, lc.time, return_cov=False) * 1e-3
+        y = lc.flux - p
+        ax.plot(t, y, ".k", rasterized=True)
+        mx = max(mx, y.max())
+        mn = min(mn, y.min())
+
+    mu = model.system.light_curve(x + t0, texp=lc.texp, maxdepth=2)
+    ax.plot(x, mu, color="#ff7f0e", lw=1.5)
+    ax.set_xlim(-2, 2)
+    ax.set_ylim(0.5*(mx+mn) + (mx - mn) * 1.1 * np.array([-0.5, 0.5]))
+    ax.xaxis.set_major_locator(pl.NullLocator())
+    ax.yaxis.set_major_locator(pl.NullLocator())
+    ax.annotate("{0}".format(kicid), xy=(0, 0), xycoords="axes fraction",
+                xytext=(5, 5), textcoords="offset points", fontsize=14)
+    pl.tight_layout()
+    os.makedirs(os.path.join("results", "lcs"), exist_ok=True)
+    fig.savefig(os.path.join("results", "lcs", "{0}.pdf".format(kicid)),
+                bbox_inches="tight", dpi=300)
+    pl.close(fig)
 
     # Compute the planet parameters:
 
     # Period (years):
     period_samps = params["period"] / 365.25
+    period_samps_all = params_all["period"] / 365.25
     period = np.percentile(period_samps, [16, 50, 84])
 
     # T0 (KBJD):
-    t0_samps = params["bodies[0]:t0"]
+    t0_samps = chain["bodies[0]:t0"]
+    t0_samps_all = chain_all["bodies[0]:t0"]
     t0 = np.percentile(t0_samps, [16, 50, 84])
 
     # Radius (Jupiter radii):
-    radius_samps = np.exp(chain["bodies[0]:ln_radius"] - np.log(0.0995))
+    radius_samps = np.exp(chain["bodies[0]:ln_radius"]-np.log(0.0995))
+    radius_samps_all = np.exp(chain_all["bodies[0]:ln_radius"]-np.log(0.0995))
     radius = np.percentile(radius_samps, [16, 50, 84])
 
     # Depth (ppt):
     depth_samps = params["depth"] * 1e3
     depth = np.percentile(depth_samps, [16, 50, 84])
 
+    samples = np.concatenate([
+        [np.log10(period_samps)], [np.log10(radius_samps)], [t0_samps],
+        [lnprob],
+    ]).T
+    samples_all = np.concatenate([
+        [np.log10(period_samps_all)], [np.log10(radius_samps_all)],
+        [t0_samps_all], [lnprob_all],
+    ]).T
+    bins = [np.linspace(a_, b_, 30) for a_, b_ in
+            zip(np.min(samples_all, axis=0), np.max(samples_all, axis=0))]
+    fig = corner.corner(samples, bins, color="g")
+    fig = corner.corner(samples_all, bins, labels=[
+        r"$\log_{10} P / \mathrm{year}$",
+        r"$\log_{10} R / R_\mathrm{J}$",
+        r"$t_0 / \mathrm{KBJD}$",
+        r"$\ln p$",
+    ], fig=fig)
+    os.makedirs(os.path.join("results", "params"), exist_ok=True)
+    fig.savefig(os.path.join("results", "params", "{0}.pdf".format(kicid)),
+                dpi=300)
+    pl.close(fig)
+
     print(kicid, nind, period[1], t0[1], radius[1], depth[1])
-
-    x = np.linspace(-2, 2, 5000)
-    for chunk in set(data["chunk"]):
-        gp = model.gps[chunk]
-        m = data["chunk"] == chunk
-
-        t = data["time"]
-        mu = model.system.light_curve()
-
-    print(data.dtype)
-    assert 0
 
 parser = argparse.ArgumentParser(
     description="collect postprocess MCMC results"
@@ -120,17 +177,22 @@ parser.add_argument("fits_root",
                     help="the root directory of the MCMC fit results")
 parser.add_argument("-o", "--output", default=None,
                     help="the root directory for the output")
+parser.add_argument("kicids", nargs="*", help="some KIC IDs",
+                    type=int)
 args = parser.parse_args()
 
 if args.output is None:
     outdir = os.path.join(PEERLESS_DATA_DIR, "results", "fits")
 else:
     outdir = args.output
+cands = pd.read_csv(args.candidates)
 
 function = partial(collect_one, root=args.fits_root)
 
-cands = pd.read_csv(args.candidates)
-kicids = list(set(np.array(cands[cands.accept].kicid)))
+if args.kicids:
+    kicids = args.kicids
+else:
+    kicids = list(set(np.array(cands[cands.accept].kicid)))
 
 # kicids = [8463272, 3239945, 8410697, 8800954]  # multis
 # kicids = [6342758]

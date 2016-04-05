@@ -253,7 +253,10 @@ def search(kicid_and_injection=None,
                 system.ror = ror
                 mu = system.get_value(x)
                 A = np.concatenate((np.vander(x, 2).T, [mu]), axis=0).T
-                w = np.linalg.solve(np.dot(A.T, A), np.dot(A.T, y))
+                try:
+                    w = np.linalg.solve(np.dot(A.T, A), np.dot(A.T, y))
+                except np.linalg.LinAlgError:
+                    continue
                 d = np.sum((y - np.dot(A, w))**2)
                 if d < best[0]:
                     best = (d, t0, dur, np.sqrt(w[-1])*ror)

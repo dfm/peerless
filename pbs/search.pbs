@@ -20,5 +20,5 @@ mkdir -p $RUNDIR
 
 cd $SRCDIR
 # python scripts/peerless-search --candidates results/candidates.csv -p $PBS_NP -q --no-plots -o $RUNDIR
-python scripts/peerless-search -p $PBS_NP -q --no-plots -o $RUNDIR
+python scripts/peerless-search -p $PBS_NP -q -o $RUNDIR
 

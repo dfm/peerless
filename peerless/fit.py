@@ -81,8 +81,11 @@ class TransitModel(object):
         # Impact parameter.
         if body.b < 0.0:
             return -np.inf
+        elif body.b > 2.0:
+            return -np.inf
         elif body.b > 1.0:
-            lp -= body.b - 1.0
+            lp += np.log(np.cos(0.5*np.pi*(1.0 - body.b)))
+            # lp -= body.b - 1.0
 
         # Flat in log a (and period)
         lp -= np.log(body.a)

@@ -233,22 +233,36 @@ def search(kicid_and_injection=None,
         # 2. transit
         m = np.abs(x - t0) < tau
         ind = np.arange(len(x))[m][np.argmin(y[m])]
+        ror = np.sqrt(max(d, 1.0 - y[ind]))
         system = transit.SimpleSystem(
             period=3000.0,
             t0=x[ind],
-            ror=np.sqrt(max(d, 1.0 - y[ind])),
+            ror=ror,
             duration=tau,
             impact=0.5,
         )
         system.freeze_parameter("ln_period")
-        system.freeze_parameter("impact")
-        best = (np.inf, 0.0)
+        # system.freeze_parameter("impact")
+        system.freeze_parameter("q1_param")
+        system.freeze_parameter("q2_param")
+        best = (np.inf, system.t0, 0.0, ror)
         for dur in np.linspace(0.1*tau, 2*tau, 50):
             system.duration = dur
-            d = np.sum((y - system.get_value(x))**2)
-            if d < best[0]:
-                best = (d, dur)
-        system.duration = best[1]
+            for t0 in x[ind] + np.linspace(-0.1*tau, 0.1*tau, 7):
+                system.t0 = t0
+                system.ror = ror
+                mu = system.get_value(x)
+                A = np.concatenate((np.vander(x, 2).T, [mu]), axis=0).T
+                try:
+                    w = np.linalg.solve(np.dot(A.T, A), np.dot(A.T, y))
+                except np.linalg.LinAlgError:
+                    continue
+                d = np.sum((y - np.dot(A, w))**2)
+                if d < best[0]:
+                    best = (d, t0, dur, np.sqrt(w[-1])*ror)
+        system.t0 = best[1]
+        system.duration = best[2]
+        system.ror = best[3]
 
         # 3. step
         best = (np.inf, 0, 0.0, 0.0)
@@ -331,9 +345,15 @@ def search(kicid_and_injection=None,
             n = gp.get_parameter_names()
 
             if name == "transit":
+                bounds[n.index("mean:ln_duration")] = np.log(
+                    (system.duration/2.0, system.duration*2.0)
+                )
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
-                bounds[n.index("mean:q1_param")] = (-10, 10)
-                bounds[n.index("mean:q2_param")] = (-10, 10)
+                if "mean:impact" in n:
+                    bounds[n.index("mean:impact")] = (0, 1.0)
+                if "mean:q1_param" in n:
+                    bounds[n.index("mean:q1_param")] = (-10, 10)
+                    bounds[n.index("mean:q2_param")] = (-10, 10)
 
             bounds[n.index("kernel:k2:ln_M_0_0")] = (np.log(0.1), None)
             bounds[n.index("white:value")] = (2*np.log(0.5*np.median(yerr)),

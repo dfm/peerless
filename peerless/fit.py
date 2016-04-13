@@ -81,8 +81,11 @@ class TransitModel(object):
         # Impact parameter.
         if body.b < 0.0:
             return -np.inf
+        elif body.b > 2.0:
+            return -np.inf
         elif body.b > 1.0:
-            lp -= body.b - 1.0
+            lp += np.log(np.cos(0.5*np.pi*(1.0 - body.b)))
+            # lp -= body.b - 1.0
 
         # Flat in log a (and period)
         lp -= np.log(body.a)
@@ -158,6 +161,7 @@ class TransitModel(object):
         self.system.freeze_parameter("bodies*t0")
         p0 = self.system.get_vector()
         r = minimize(self._nll, p0, jac=self._grad_nll, method="L-BFGS-B")
+        # print(r)
         if r.success:
             self.system.set_vector(r.x)
         else:
@@ -167,6 +171,69 @@ class TransitModel(object):
         self.system.thaw_parameter("bodies*t0")
 
         if not niter > 1:
+            self.system.freeze_parameter("central:*")
+            p0 = self.system.get_vector()
+            r = minimize(self._nll, p0, jac=self._grad_nll, method="L-BFGS-B")
+
+            # Thaw the stellar parameters.
+            self.system.thaw_parameter("central:*")
+            self.system.freeze_parameter("central:dilution")
+
+            # Final optimization.
+            p0 = self.system.get_vector()
+            r = minimize(self._nlp, p0, method="L-BFGS-B")
+            print(r)
+
+            # Compute second derivative.
+            eps = 1.234e-6
+            vector = self.system.get_vector()
+            grad = np.zeros((len(vector), len(vector)))
+            for i in range(len(vector)):
+                vector[i] += eps
+                for j in range(i, len(vector)):
+                    vector[j] += eps
+                    grad[i, j] += self.lnprob(vector)[0]
+                    vector[j] -= 2*eps
+                    grad[i, j] -= self.lnprob(vector)[0]
+                    vector[j] += eps
+
+                vector[i] -= 2*eps
+                for j in range(i, len(vector)):
+                    vector[j] += eps
+                    grad[i, j] -= self.lnprob(vector)[0]
+                    vector[j] -= 2*eps
+                    grad[i, j] += self.lnprob(vector)[0]
+                    vector[j] += eps
+
+                vector[i] += eps
+
+            grad[np.tril_indices_from(grad)] = grad[np.triu_indices_from(grad)]
+            grad /= 4 * eps**2
+
+            names = self.system.get_parameter_names()
+            sigma = -np.linalg.inv(grad)
+            samples = np.random.multivariate_normal(vector, sigma, 10000)
+            import corner
+            fig = corner.corner(samples)
+            fig.savefig("blah.png")
+
+            samples = np.array(list(map(tuple, samples)),
+                               dtype=[(n, float) for n in names])
+            radius_samps = np.log10(np.exp(samples["bodies[0]:ln_radius"]-np.log(0.0995)))
+            radius = np.percentile(radius_samps, [16, 50, 84])
+            print(radius)
+
+            _G = 2945.4625385377644
+            mstar = np.exp(samples["central:ln_mass"])
+            a = samples["bodies[0]:sqrt_a_cos_i"] ** 2 + samples["bodies[0]:sqrt_a_sin_i"] ** 2
+            period_samps = 2 * np.pi * np.sqrt(a * a * a / _G / mstar) / 365.25
+            period = np.percentile(np.log10(period_samps), [16, 50, 84])
+            print(period)
+
+
+            assert 0
+            self.system.thaw_parameter("central:*")
+
             return
 
         for gp, lc in zip(self.gps, self.fit_lcs):
@@ -180,12 +247,16 @@ class TransitModel(object):
                 gp.set_vector(p0)
         self.optimize(niter=niter - 1)
 
+    def _nlp(self, theta):
+        lnp, blob = self.lnprob(theta)
+        if blob[1] > 0 or not np.isfinite(lnp):
+            return 1e10
+        return -lnp
+
     def _nll(self, theta):
         try:
             self.system.set_vector(theta)
         except ValueError:
-            return 1e10
-        if self.system.bodies[0].b > 1.0:
             return 1e10
 
         nll = 0.0
@@ -204,14 +275,12 @@ class TransitModel(object):
             self.system.set_vector(theta)
         except ValueError:
             return np.zeros_like(theta)
-        if self.system.bodies[0].b > 1.0:
-            return np.zeros_like(theta)
 
         system = self.system
         g = np.zeros_like(theta)
         for gp, lc in zip(self.gps, self.fit_lcs):
             mu = system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
-            gmu = 1e3 * system.get_gradient(lc.time, texp=lc.texp)
+            gmu = 1e3 * system.get_gradient(lc.time, texp=lc.texp, maxdepth=2)
             r = (lc.flux - mu) * 1e3
             alpha = gp.apply_inverse(r)
             g -= np.dot(gmu, alpha)

@@ -302,10 +302,11 @@ signals that don't match a transit shape, and}
 \end{enumerate}
 The following sections describe each of these steps in more detail.
 
-The model comparison step is computationally expensive because we estimate the
-marginalized likelihoods for the light curve data under several different
-models describing a transit and many other processes that ``look'' like
-transits but are actually caused by noise.
+The model comparison step (step 2) is the key component of our method that
+enables robust automation but it is also computationally expensive because we
+must estimate the marginalized likelihoods for the light curve under several
+different models describing a transit and many other processes that ``look''
+like transits but are actually caused by noise.
 This step is also conservative; unless a signal is a very convincing transit,
 it won't pass the test.
 In practice, this means that all but the highest signal-to-noise events will

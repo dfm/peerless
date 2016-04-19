@@ -11,8 +11,8 @@
 %
 
 % \documentclass[twocolumn]{aastex6}
-\documentclass[onecolumn]{aastex6}
-% \documentclass[preprint]{aastex}
+% \documentclass[onecolumn]{aastex6}
+\documentclass[preprint,12pt]{aastex}
 
 \pdfoutput=1
 
@@ -104,7 +104,7 @@
 \begin{document}
 
 \title{%
-The population of long-period exoplanets I. --- \\
+The population of long-period exoplanets --- \\
 Fully-automated discovery \& characterization of
 long-period transiting exoplanet candidates in the \kepler\ archive
 }
@@ -215,12 +215,12 @@ scaling as $\propto P^{-5/3}$ for orbital periods longer than the
 baseline of contiguous observations.
 Therefore, even if long-period planets are intrinsically common, they will
 still be underrepresented in a transiting sample.
-The second challenge is that there are substantial signals in the observed
+The second challenge is that there are many signals in the observed
 light curves caused by stochastic processes---both instrumental
 (pointing jitter, temperature variations, \etc) and astrophysical (stellar
-variability, \etc)---that can masquerade as transit signals.
-In practice, even using the most sophisticated systematics removal methods,
-these false signal far outnumber the true single transits.
+variability, \etc)---that can masquerade as transits.
+Even using the most sophisticated methods for removing this variability, false
+signal far outnumber the true single transits.
 
 Nearly every transit search algorithm is built on the same principles and many
 of the same decisions are made.
@@ -251,19 +251,35 @@ because humans are able to robustly distinguish transit signals from the noise
 and this project has yielded some promising long-period candidates and
 confirmed planets \citep[for example][]{Wang:2013} \dfmtodo{CITE Wang 2015}.
 One shortcoming of the PH method is that it can be difficult to fully quantify
-the performance (completeness and reliability) of the search and PH does not
-evaluate their users using synthetic transit signals as is now common practice
-in the transit search literature \dfmtodo{is this still true?}.
-This means that the PH sample of candidates cannot be used for robust
+the performance (completeness and reliability) of the search results.
+% and PH does not
+% evaluate their users using synthetic transit signals as is now common practice
+% in the transit search literature \dfmtodo{is this still true?}.
+This means that the PH sample of candidates cannot be reliably used for robust
 population inference.
 
+Visual inspection and hand-curation by experts has also been used to find the
+transits of long-period planets in previously known planetary systems
+(\dfmtodo{CITE single transit KOIs}).
+All light curves in the \kepler\ archive with \kepler\ Objects of Interest
+(KOIs) were visually inspected to find candidate single transits.
+This is a reasonable idea because long-period planets with transiting inner
+planets are expected to have a higher geometric transit probability.
+The selection effects introduced by restricting the target sample like this
+are difficult to take into account when making inferences about the population
+of long-period planets.
+
 To study the occurrence rate of long-period exoplanets, we have developed a
-fully-automated method for searching the archival \kepler\ light curves for
-these systems with only one or two transits.
-Using this method, we detect XXX long-period transiting planet candidates and
-YYY long-period eclipsing binary candidates.
-We estimate that the population level false positive rate in this exoplanet
-candidate sample is about ZZZ\%.
+fully-automated method to search the archival \kepler\ light curves and
+reliably discover long-period planets with only one or two transits.
+Using this method, we search the 40,000 brightest Sun-like stars and detect
+XXX long-period astrophysical transit candidates.
+Of these, YYY are likely to be exoplanets with radii equal to or smaller than
+Jupiter's radius.
+Using transit injection and recovery, we measure the completeness of our
+search procedure.
+We estimate that the population level astrophysical false positive rate in
+this candidate sample is about ZZZ\%.
 By injecting synthetic transit signals into the \kepler\ light curves, we
 measure the completeness of our search method.
 Based on this catalog of exoplanet candidates and the search completeness, we
@@ -272,13 +288,6 @@ For large planets, these results are consistent with previous measurements of
 long-period, giant planet occurrence rates based on radial velocity surveys
 and we demonstrate that small---and possibly rocky---planets are more common
 than their larger counterparts even at long orbital periods.
-
-Data from the \kepler\ Mission has been used to discover a diverse zoo of
-thousands of exoplanets of all sizes orbiting stars of all types.
-It has be demonstrated that these catalogs of exoplanet discoveries can be
-used to place constraints on the occurrence rate of exoplanets \dfmtodo{CITE}.
-These results are sensitive to the detection efficiency and reliability of the
-discovery methodology \dfmtodo{CITE Burke}.
 
 \section{A fully-automated search method}
 
@@ -293,10 +302,26 @@ signals that don't match a transit shape, and}
 \end{enumerate}
 The following sections describe each of these steps in more detail.
 
+The model comparison step is computationally expensive because we estimate the
+marginalized likelihoods for the light curve data under several different
+models describing a transit and many other processes that ``look'' like
+transits but are actually caused by noise.
+This step is also conservative; unless a signal is a very convincing transit,
+it won't pass the test.
+In practice, this means that all but the highest signal-to-noise events will
+be rejected at this step.
+Therefore, in the inexpensive first step---the initial candidate search---we
+can restrict the candidate list to high signal-to-noise events without a
+substantial loss in detection efficiency.
+
 \subsection{Finding box-shaped candidate events}
 
-It is not feasible to compute a full model comparison at every time in the
-light curve so we must first find potentially interesting events.
+It is not computationally feasible to run a full model comparison at every
+time in the light curve so we must first find potentially interesting events.
+For our purposes, ``interesting'' means high signal-to-noise and previously
+unknown.
+We restrict our search to high signal-to-noise transits since the
+
 To generate this list, we apply a standard ``box least squares'' (BLS;
 \dfmtodo{CITE}) method with a single (non-periodic) box.
 First, we filter the PDC (\dfmtodo{CITE}) light curves using a running
@@ -304,6 +329,14 @@ windowed median with a half-width of \dfmtodo{how many} to remove stellar
 variability.
 We then compute the signal-to-noise of the depth of a 0.6~day long transit on
 a grid of times spanning the full \kepler\ baseline.
+We only need to use a single transit duration because the following steps in
+this procedure are only sensitive to transits with very high signal-to-noise
+so, in practice, the results of this step are insensitive to the specific
+choice of duration.
+
+As previously mentioned, the following steps will only detect high
+signal-to-noise transits.
+Therefore, we use this
 To avoid edge effects, we apodize this detection scalar near any large gaps in
 the time series using a logistic function with width equal to one transit
 duration.
@@ -602,6 +635,14 @@ the parameters of the simulation.
 function of planet radius and orbital period.
 
 \dfmtodo{Analytic fit?}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[width=\textwidth]{figures/completeness.pdf}
+\end{center}
+\caption{%
+\figlabel{completeness}}
+\end{figure*}
 
 
 \section{The occurrence rate of long-period exoplanets}

@@ -57,7 +57,6 @@ class TransitModel(object):
                                 ll, blob = self.lnlike(compute_blob=True)
                                 if blob[0] == 0:
                                     mx = (ll, (b, rad, per, ecc, w))
-        print(mx)
         body.e = mx[1][3]
         body.omega = mx[1][4]
         body.period = mx[1][2]
@@ -181,7 +180,6 @@ class TransitModel(object):
             # Final optimization.
             p0 = self.system.get_vector()
             r = minimize(self._nlp, p0, method="L-BFGS-B")
-            print(r)
 
             return
 

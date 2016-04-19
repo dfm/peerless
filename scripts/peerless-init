@@ -52,8 +52,7 @@ args = parser.parse_args()
 # Load the candidate list.
 candidates = pd.read_csv(args.candidates)
 m = candidates.num_peaks <= 2
-m &= candidates.accept_bic
-m &= candidates.accept_time
+m &= candidates.accept
 
 # Load the stellar catalog.
 kic = TargetCatalog().df

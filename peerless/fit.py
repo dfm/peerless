@@ -161,7 +161,6 @@ class TransitModel(object):
         self.system.freeze_parameter("bodies*t0")
         p0 = self.system.get_vector()
         r = minimize(self._nll, p0, jac=self._grad_nll, method="L-BFGS-B")
-        # print(r)
         if r.success:
             self.system.set_vector(r.x)
         else:
@@ -183,56 +182,6 @@ class TransitModel(object):
             p0 = self.system.get_vector()
             r = minimize(self._nlp, p0, method="L-BFGS-B")
             print(r)
-
-            # Compute second derivative.
-            eps = 1.234e-6
-            vector = self.system.get_vector()
-            grad = np.zeros((len(vector), len(vector)))
-            for i in range(len(vector)):
-                vector[i] += eps
-                for j in range(i, len(vector)):
-                    vector[j] += eps
-                    grad[i, j] += self.lnprob(vector)[0]
-                    vector[j] -= 2*eps
-                    grad[i, j] -= self.lnprob(vector)[0]
-                    vector[j] += eps
-
-                vector[i] -= 2*eps
-                for j in range(i, len(vector)):
-                    vector[j] += eps
-                    grad[i, j] -= self.lnprob(vector)[0]
-                    vector[j] -= 2*eps
-                    grad[i, j] += self.lnprob(vector)[0]
-                    vector[j] += eps
-
-                vector[i] += eps
-
-            grad[np.tril_indices_from(grad)] = grad[np.triu_indices_from(grad)]
-            grad /= 4 * eps**2
-
-            names = self.system.get_parameter_names()
-            sigma = -np.linalg.inv(grad)
-            samples = np.random.multivariate_normal(vector, sigma, 10000)
-            import corner
-            fig = corner.corner(samples)
-            fig.savefig("blah.png")
-
-            samples = np.array(list(map(tuple, samples)),
-                               dtype=[(n, float) for n in names])
-            radius_samps = np.log10(np.exp(samples["bodies[0]:ln_radius"]-np.log(0.0995)))
-            radius = np.percentile(radius_samps, [16, 50, 84])
-            print(radius)
-
-            _G = 2945.4625385377644
-            mstar = np.exp(samples["central:ln_mass"])
-            a = samples["bodies[0]:sqrt_a_cos_i"] ** 2 + samples["bodies[0]:sqrt_a_sin_i"] ** 2
-            period_samps = 2 * np.pi * np.sqrt(a * a * a / _G / mstar) / 365.25
-            period = np.percentile(np.log10(period_samps), [16, 50, 84])
-            print(period)
-
-
-            assert 0
-            self.system.thaw_parameter("central:*")
 
             return
 

@@ -98,6 +98,8 @@
 
 % no more bad lines!
 \sloppy\sloppypar
+\widowpenalty10000
+\clubpenalty500
 
 % \slugcomment{Not to appear in Nonlearned J., 45.}
 
@@ -200,7 +202,7 @@ with at least three observed transits \citep[for example][]{Petigura:2013,
 Burke:2014, Rowe:2015}.
 For \kepler, with a baseline of about four years, this sets an absolute upper
 limit on the detectable periods of about two years.
-In the Solar System, Jupiter---with a period of 12 years---dominates the
+In the Solar System, Jupiter~--~with a period of 12 years~--~dominates the
 planetary dynamics and, since it would only exhibit at most one transit in the
 \kepler\ data, it would be missed by most existing transit search procedures.
 It is possible to discover long-period planets like this using targeted radial
@@ -216,9 +218,9 @@ baseline of contiguous observations.
 Therefore, even if long-period planets are intrinsically common, they will
 still be underrepresented in a transiting sample.
 The second challenge is that there are many signals in the observed
-light curves caused by stochastic processes---both instrumental
+light curves caused by stochastic processes~--~both instrumental
 (pointing jitter, temperature variations, \etc) and astrophysical (stellar
-variability, \etc)---that can masquerade as transits.
+variability, \etc)~--~that can masquerade as transits.
 Even using the most sophisticated methods for removing this variability, false
 signal far outnumber the true single transits.
 
@@ -286,7 +288,7 @@ Based on this catalog of exoplanet candidates and the search completeness, we
 constrain the occurrence rate of long-period exoplanets.
 For large planets, these results are consistent with previous measurements of
 long-period, giant planet occurrence rates based on radial velocity surveys
-and we demonstrate that small---and possibly rocky---planets are more common
+and we demonstrate that small~--~and possibly rocky~--~planets are more common
 than their larger counterparts even at long orbital periods.
 
 \section{A fully-automated search method}
@@ -311,17 +313,16 @@ This step is also conservative; unless a signal is a very convincing transit,
 it won't pass the test.
 In practice, this means that all but the highest signal-to-noise events will
 be rejected at this step.
-Therefore, in the inexpensive first step---the initial candidate search---we
+Therefore, in the inexpensive first step~--~the initial candidate search~--~we
 can restrict the candidate list to high signal-to-noise events without a
 substantial loss in detection efficiency.
 
-\subsection{Finding box-shaped candidate events}
+\subsection{Initial candidate events}
 
 It is not computationally feasible to run a full model comparison at every
 time in the light curve so we must first find potentially interesting events.
 For our purposes, ``interesting'' means high signal-to-noise and previously
 unknown.
-We restrict our search to high signal-to-noise transits since the
 
 To generate this list, we apply a standard ``box least squares'' (BLS;
 \dfmtodo{CITE}) method with a single (non-periodic) box.
@@ -337,7 +338,6 @@ choice of duration.
 
 As previously mentioned, the following steps will only detect high
 signal-to-noise transits.
-Therefore, we use this
 To avoid edge effects, we apodize this detection scalar near any large gaps in
 the time series using a logistic function with width equal to one transit
 duration.
@@ -358,8 +358,8 @@ The BIC is not the optimal choice for this model comparison but it is
 computationally intractable to compute thousands of precise marginalized
 likelihoods for each model.
 The BIC can be efficiently computed and it exhibits the desired
-behavior---increasing with the likelihood but flexible models are
-penalized---and we find that it performs sufficiently well in practice.
+behavior~--~increasing with the likelihood but flexible models are
+penalized~--~and we find that it performs sufficiently well in practice.
 
 For up to three candidate transit times per light curve, we select a
 contiguous chunk of PDC light curve approximately centered on the proposed
@@ -376,52 +376,6 @@ data points in the data set.
 For each model, we describe the data using a Gaussian Process (GP;
 \dfmtodo{cite}) with a Mat\'ern-3/2 covariance and mean given by the chosen
 model $m_k(t;\,\meanpars)$ parameterized by the parameter vector \meanpars.
-This generative model is specified by the following likelihood function:
-\begin{eqnarray}
-\mathcal{L} = \ln p_k(\bvec{y}\,|\,\meanpars,\,\kernpars) &=&
-- \frac{1}{2}\,\bvec{r}_k(\meanpars)^\T\,K(\kernpars)^{-1}\,
-    \bvec{r}_k(\meanpars)
-- \frac{1}{2}\log\det K(\kernpars) - \frac{N}{2} \log{2\,\pi}
-\end{eqnarray}
-where \bvec{y} is the vector of flux measurements, \bvec{t} are the
-corresponding times, and
-\begin{eqnarray}
-\bvec{r}_k(\meanpars) &=& \bvec{y} - m_k(\bvec{t};\,\meanpars) \quad.
-\end{eqnarray}
-The covariance matrix $K(\kernpars)$ is parameterized by the parameters
-$\kernpars = (\alpha,\,\tau)$ and its elements are given by
-\begin{eqnarray}
-\left[ K(\kernpars) \right]_{ij} &=& \sigma_i^2\,\delta_{ij}
-    + \alpha^2 \left[ 1+\frac{|t_i - t_j|}{\sqrt{3}\,\tau} \right]
-      \exp \left(-\frac{|t_i - t_j|}{\sqrt{3}\,\tau}\right)
-\end{eqnarray}
-where $\sigma_i$ is the reported uncertainty on the $i$-th flux measurement.
-
-The gradients of the likelihood with respect to the parameters \meanpars\
-and \kernpars\ are given by
-\begin{eqnarray}
-\frac{\dd\ln p_k(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \meanpars} &=&
-\frac{\dd m_k(\bvec{t};\,\meanpars)}{\dd\meanpars}^\T \, K(\kernpars)^{-1} \,
-    m_k(\bvec{t};\,\meanpars)
-\end{eqnarray}
-and
-\begin{eqnarray}
-\frac{\dd\ln p_k(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \kernpars} &=&
-\frac{1}{2}\,\mathrm{Tr}\left(
-    \left[ \bvec{\phi}\,\bvec{\phi}^\T - K(\kernpars)^{-1} \right]
-    \,\frac{\dd K(\kernpars)}{\dd\kernpars}
-\right)
-\end{eqnarray}
-where
-\begin{eqnarray}
-\bvec{\phi} &=& K(\kernpars)^{-1}\,\bvec{r}_k(\meanpars) \quad.
-\end{eqnarray}
-Therefore, if we can compute the gradient of the model with respect to its
-parameters, we can efficiently optimize this function to find the maximum
-likelihood parameters using a gradient-based non-linear optimization method.
-To compute the gradients of the transit model, we use a compile-time automatic
-differentiation library \dfmtodo{cite Ceres} and for the other models, we
-choose models that can be easily differentiated analytically.
 
 The models are:
 \begin{itemize}
@@ -511,7 +465,7 @@ are not properly accounted for.
 The goal of this project is to discover the transits of long-period planets
 that have not yet been discovered.
 Therefore, when studying the light curve of an eclipsing binary star or a star
-with known transiting planet candidates---on shorter periods---we also remove
+with known transiting planet candidates~--~on shorter periods~--~we also remove
 all the in-transit data for the candidate using the parameters provided by the
 \project{NASA Exoplanet
 Archive}\footnote{\url{http://exoplanetarchive.ipac.caltech.edu/}; We
@@ -541,8 +495,8 @@ Blah.
 To measure the completeness of our long-period transit search method, we
 exploit the fact that transit signals are sparse and rare.
 Therefore, most light curves contain no transits and we can reliably measure
-the recovery rate of our method on synthetic transit signals---with known
-properties---injected into real light curves.
+the recovery rate of our method on synthetic transit signals~--~with known
+properties~--~injected into real light curves.
 This procedure is standard practice in the transit literature and it has been
 used to determine the completeness of the KOI catalog (\dfmtodo{cite}) and
 other independent transit searches (\dfmtodo{cite}).
@@ -689,8 +643,8 @@ Tim to write some words here.
 
 The discovery and characterization of transiting planets based on a single
 transit event is crucial for the future of transiting exoplanet surveys.
-Many of the most dynamically influential planets---like Jupiter in our Solar
-system---exhibit only a single transit in the full observational baseline of
+Many of the most dynamically influential planets~--~like Jupiter in our Solar
+system~--~exhibit only a single transit in the full observational baseline of
 the \kepler.
 This will become even more of a problem as upcoming surveys move to shorter
 contiguous observations.
@@ -778,7 +732,86 @@ York University (NYU).
 
 \appendix
 
-\section{Supervised classification}
+\section{Gaussian process regression}
+
+Gaussian Processes (GPs) are a class of non-parametric, stochastic models that
+have been demonstrated to be good effective models for the variability in
+\kepler\ light curves.
+A simple GP model can be used to capture residual non-transit variability in
+light curves.
+In this \paper, we use a GP model for two steps: light curve--level transit
+shape vetting and parameter estimation.
+A full discussion of GPs is beyond the scope of this \paper, so we will only
+summarize the most relevant points here and direct an interested reader to
+\dfmtodo{cite RW} for more details.
+
+A GP model is specified by the following likelihood function
+\begin{eqnarray}\eqlabel{gplike}
+\mathcal{L} = \ln p(\bvec{y}\,|\,\meanpars,\,\kernpars) &=&
+- \frac{1}{2}\,\bvec{r}(\meanpars)^\T\,K(\kernpars)^{-1}\,
+    \bvec{r}(\meanpars)
+- \frac{1}{2}\log\det K(\kernpars) - \frac{N}{2} \log{2\,\pi}
+\end{eqnarray}
+where \bvec{y} is a list of measurements in a scalar time series~--~in this
+case, fluxes~--~measured at the times \bvec{t}, and
+\begin{eqnarray}
+\bvec{r}(\meanpars) &=& \bvec{y} - m(\bvec{t};\,\meanpars)
+\end{eqnarray}
+is the vector of residuals away from the mean model $m(\bvec{t};\,\meanpars)$.
+For the purposes of this paper, we model the covariance matrix $K(\kernpars)$
+using the Mat\'ern-3/2 kernel.
+Under this model, the elements of $K(\kernpars)$ are given by
+\begin{eqnarray}\eqlabel{matern}
+\left[ K(\kernpars) \right]_{ij} &=& \sigma_i^2\,\delta_{ij}
+    + \alpha^2 \left[ 1+\frac{|t_i - t_j|}{\sqrt{3}\,\tau} \right]
+      \exp \left(-\frac{|t_i - t_j|}{\sqrt{3}\,\tau}\right)
+\end{eqnarray}
+where $\sigma_i$ is the reported uncertainty on the $i$-th measurement in the
+time series and $\delta_{ij}$ is the Kronecker delta.
+
+This covariance function (\eqalt{matern}) is specified by an amplitude
+$\alpha$ and a time scale $\tau$ and we will simultaneously fit for these
+hyperparameters $\kernpars=(\alpha,\,\tau)$ and the parameters of the mean
+model \meanpars.
+To efficiently find the parameter set that maximizes \eq{gplike} using a
+non-linear optimization routine\footnote{We use the L-BFGS-B method as
+implemented in SciPy \url{%
+http://docs.scipy.org/doc/scipy/reference/generated/%
+scipy.optimize.minimize.html}.},
+it is useful to be able to compute the gradient of \eq{gplike} with respect to
+the parameters \meanpars\ and \kernpars.
+These gradients are given by
+\begin{eqnarray}\eqlabel{gpmeangrad}
+\frac{\dd\ln p(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \meanpars} &=&
+\frac{\dd m(\bvec{t};\,\meanpars)}{\dd\meanpars}^\T \, K(\kernpars)^{-1} \,
+    m(\bvec{t};\,\meanpars)
+\end{eqnarray}
+and
+\begin{eqnarray}
+\frac{\dd\ln p(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \kernpars} &=&
+\frac{1}{2}\,\mathrm{Tr}\left(
+    \left[ \bvec{\phi}\,\bvec{\phi}^\T - K(\kernpars)^{-1} \right]
+    \,\frac{\dd K(\kernpars)}{\dd\kernpars}
+\right)
+\end{eqnarray}
+where
+\begin{eqnarray}
+\bvec{\phi} &=& K(\kernpars)^{-1}\,\bvec{r}(\meanpars) \quad.
+\end{eqnarray}
+
+To evaluate \eq{gpmeangrad}, we must also evaluate the derivative of the mean
+model with respect to its parameters.
+For this \paper, the model $m(\bvec{t};\,\meanpars)$ will sometimes be the
+limb-darkened, exposure time-integrated transit of a planet on a Keplerian
+orbit and the parameters \meanpars\ are the physical and orbital parameters of
+the planet and star.
+Analytically computing the gradient of a simple transit model is possible
+\citep{Pal:2008} but it becomes substantially more tedious as the model
+becomes more realistic.
+Therefore, we use a compile-time automatic differentiation library\footnote{%
+More specifically, we use the \texttt{Jet} object from the BSD-licensed Ceres
+Solver \url{http://ceres-solver.org}} \citep{Agarwal:2016} to compute first
+derivatives of the full transit model to machine precision.
 
 
 \clearpage

@@ -1,34 +1,40 @@
-% This paper is part of the single transits project.
-% Copyright 2015 Dan Foreman-Mackey (NYU) and the co-authors listed below.
-%
-%  RULES OF THE GAME
-%
-%  * 80 characters
-%  * line breaks at the ends of sentences
-%  * eqnarrys ONLY
-%  * ``light curve'' not ``light-curve'' or ``lightcurve''
-%  * that is all.
-%
+% Copyright 2015-2016 Dan Foreman-Mackey and the co-authors listed below.
 
-% \documentclass[twocolumn]{aastex6}
-% \documentclass[onecolumn]{aastex6}
-\documentclass[preprint,12pt]{aastex}
+\documentclass[manuscript, letterpaper]{aastex6}
 
 \pdfoutput=1
 
-\usepackage{color,hyperref}
-\definecolor{linkcolor}{rgb}{0,0,0.5}
-\hypersetup{colorlinks=true,linkcolor=linkcolor,citecolor=linkcolor,
-            filecolor=linkcolor,urlcolor=linkcolor}
 \usepackage{url}
 \usepackage{amssymb,amsmath}
-\usepackage{subfigure}
-\usepackage{booktabs}
-
 \usepackage{natbib}
 \bibliographystyle{aasjournal}
 
+% omg AASTEX 6.0 -- modifications from HOGG
+\setlength{\voffset}{0in}
+\setlength{\hoffset}{0in}
+\setlength{\textwidth}{6.5in}
+\setlength{\textheight}{9in}
+\setlength{\headheight}{0ex}
+\setlength{\headsep}{\baselinestretch\baselineskip} % this is 2 lines in ``manuscript''
+\setlength{\topmargin}{-\headsep}
+
+\setlength{\skip\footins}{24pt}
+\linespread{0.54} % close to 10/13 spacing in ``manuscript''
+\setlength{\parindent}{0.54\baselineskip}
+\hypersetup{colorlinks = false}
+\makeatletter % you know you are living your life wrong when you need to do this
+\long\def\frontmatter@title@above{
+\vspace*{-\headsep}\vspace*{\headheight}
+\noindent\footnotesize
+{\noindent\footnotesize\textsc{\@journalinfo}}\par
+{\noindent\scriptsize Preprint typeset using \LaTeX\ style AASTeX6 with
+modifications by David W. Hogg and Daniel Foreman-Mackey.
+}\par\vspace*{-\baselineskip}\vspace*{0.625in}
+}%
+\makeatother
+
 \newcommand{\project}[1]{\textsl{#1}}
+
 \newcommand{\kepler}{\project{Kepler}}
 \newcommand{\KT}{\project{K2}}
 \newcommand{\tess}{\project{TESS}}
@@ -36,9 +42,11 @@
 \newcommand{\jwst}{\project{JWST}}
 \newcommand{\terra}{\project{TERRA}}
 \newcommand{\pdc}{\project{PDC}}
+\newcommand{\bls}{\project{BLS}}
+
 \newcommand{\license}{MIT License}
 
-\newcommand{\paper}{article}
+\newcommand{\paper}{paper}
 
 \newcommand{\foreign}[1]{\emph{#1}}
 \newcommand{\etal}{\foreign{et\,al.}}
@@ -79,10 +87,12 @@
     \propto\cr\noalign{\kern2pt}\sim\cr\noalign{\kern-2pt}}}}}
 \newcommand{\densityunit}{{\ensuremath{\mathrm{nat}^{-2}}}}
 
+
 % TO DOS
 \newcommand{\todo}[3]{{\color{#2}\emph{#1}: #3}}
 \newcommand{\dfmtodo}[1]{\todo{DFM}{red}{#1}}
 \newcommand{\hoggtodo}[1]{\todo{HOGG}{blue}{#1}}
+
 
 % Notation for this paper.
 \newcommand{\meanpars}{{\ensuremath{\bvec{\theta}}}}
@@ -94,14 +104,14 @@
 \newcommand{\rate}{{\ensuremath{\Gamma}}}
 
 
-\newcommand{\datareleaseurl}{{\url{http://bbq.dfm.io/ketu}}}
+\shorttitle{The population of long-period exoplanets}
+\shortauthors{Foreman-Mackey, Hogg, Morton, \etal}
+% \submitted{Submitted to \textit{The Astrophysical Journal}}
 
 % no more bad lines!
 \sloppy\sloppypar
 \widowpenalty10000
 \clubpenalty500
-
-% \slugcomment{Not to appear in Nonlearned J., 45.}
 
 \begin{document}
 
@@ -109,6 +119,7 @@
 The population of long-period exoplanets --- \\
 Fully-automated discovery \& characterization of
 long-period transiting exoplanet candidates in the \kepler\ archive
+\vspace{-3\baselineskip}  % OMG AASTEX6 IS SO BROKEN
 }
 
 \newcounter{affilcounter}
@@ -190,106 +201,71 @@ stars: statistics
 
 \section{Introduction}
 
-The transit method of exoplanet detection and characterization has been
-demonstrated as a powerful method for building systematic catalogs of
-exoplanets.
-Despite the great success of the \kepler\ Mission with thousands of planet
-discoveries \citep{Burke:2014, Rowe:2015}, current methods for exoplanet
-discoveries are currently limited in the range of orbital periods that can be
-studied.
-Specifically, the standard transit search procedures only discover signals
-with at least three observed transits \citep[for example][]{Petigura:2013,
-Burke:2014, Rowe:2015}.
+Data from the \kepler\ Mission has been used to discover thousands of
+transiting exoplanets.
+The systematic nature of these discoveries and careful quantification of
+survey selection effects, search completeness, and catalog reliability has
+enabled many diverse studies of the detailed frequency and distribution of
+exoplanets \citep[for example,][]{Howard:2012, Petigura:2013,
+Foreman-Mackey:2014, Dressing:2015, Burke:2015, Mulders:2015}.
+So far, these results have been limited to relatively short orbital periods
+because existing transit search methods require the observation of multiple
+transits within the baseline of the data.
 For \kepler, with a baseline of about four years, this sets an absolute upper
 limit on the detectable periods of about two years.
 In the Solar System, Jupiter~--~with a period of 12 years~--~dominates the
 planetary dynamics and, since it would only exhibit at most one transit in the
-\kepler\ data, it would be missed by most existing transit search procedures.
+\kepler\ data, an exo-Jupiter would be missed by most existing transit search
+procedures.
 It is possible to discover long-period planets like this using targeted radial
-velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014}
-\dfmtodo{CITE Bryan \etal} but the cost of implementing a systematic RV search
-is substantially higher than searching the existing and forthcoming
-photometric data for single transits.
+velocity (RV) surveys \citep[for example][]{Butler:2006, Knutson:2014,
+Bryan:2016} but the cost of implementing a systematic RV search is
+substantially higher than searching the existing and forthcoming photometric
+data for single transits.
 
-There are two main technical barriers to a search for single transit events.
+There are two main technical barriers to a systematic search for single
+transit events.
 The first is that the transit probability for long-period planets is very low;
 scaling as $\propto P^{-5/3}$ for orbital periods longer than the
 baseline of contiguous observations.
 Therefore, even if long-period planets are intrinsically common, they will
-still be underrepresented in a transiting sample.
-The second challenge is that there are many signals in the observed
-light curves caused by stochastic processes~--~both instrumental
-(pointing jitter, temperature variations, \etc) and astrophysical (stellar
-variability, \etc)~--~that can masquerade as transits.
-Even using the most sophisticated methods for removing this variability, false
-signal far outnumber the true single transits.
+be underrepresented in a transiting sample.
+The second challenge is that there are many signals in the observed light
+curves caused by stochastic processes~--~both instrumental and
+astrophysical~--~that can masquerade as transits.
+Even when the most sophisticated methods for removing this variability are
+used, false signals far outnumber the true single transits in any traditional
+search.
 
-Nearly every transit search algorithm is built on the same principles and many
-of the same decisions are made.
-In particular, at the heart of most methods is a matched filtering step where
-the likelihood of an approximate transit model is computed on a grid in the
-physical parameters \citep[\kepler\ Data Processing
-Handbook\footnote{\url{https://archive.stsci.edu/kepler/manuals/KSCI-19081-001_Data_Processing_Handbook.pdf}};][]{%
-Petigura:2013, Huang:2013, Dressing:2015, Foreman-Mackey:2015}.
-Using these methods, and substantial hand-curation, some long-period
-transiting candidates have been published \citep[for example][]{Batalha:2013,
-Huang:2013, Kipping:2014a}.
-For more recent data releases, the community has settled on more conservative
-selection criteria where candidates are required to have multiple transits
-\citep[for example][]{Petigura:2013, Burke:2014, Rowe:2015}.
-Even the \project{QATS} algorithm \citep{Carter:2013} for finding
-quasiperiodic transits builds on much the same infrastructure.
-This means that there has never been a systematic search for single transits
-in the full \kepler\ dataset.
+At the heart of all periodic transit search procedures is a filtering step
+based on ``box least squares'' \citep[\bls;][]{Kovacs:2002}.
+This step produces a list of candidate transit times that is then vetted to
+remove the substantial fraction of false signals using some combination of
+automated heuristics and expert curation.
+In practice, the fraction of false signals can be substantially reduced by
+requiring that at least three self-consistent transits be observed \citep[The
+\kepler\ Data Processing Handbook%
+\footnote{\url{https://archive.stsci.edu/kepler/manuals/KSCI-19081-001_Data_Processing_Handbook.pdf}};][]{Petigura:2013,
+Burke:2014, Rowe:2015, Coughlin:2015}.
 
-A qualitatively different approach to planet search is employed by the
-\project{Planet Hunters} (PH)
-project\footnote{\url{http://www.planethunters.org/}} \citep{Fischer:2012}.
-PH is a ``citizen science'' project where visitors to the website look at
-sections of light curve and mark the locations of transits that can be
-identified visually.
-Visual inspection can be a useful search technique for large single transits
-because humans are able to robustly distinguish transit signals from the noise
-and this project has yielded some promising long-period candidates and
-confirmed planets \citep[for example][]{Wang:2013} \dfmtodo{CITE Wang 2015}.
-One shortcoming of the PH method is that it can be difficult to fully quantify
-the performance (completeness and reliability) of the search results.
-% and PH does not
-% evaluate their users using synthetic transit signals as is now common practice
-% in the transit search literature \dfmtodo{is this still true?}.
-This means that the PH sample of candidates cannot be reliably used for robust
-population inference.
+Recent work has yielded discoveries of long-period transiting planets with
+only one or two transits identified in archival \kepler\ and \KT\ light curves
+by visual inspection \citep{Wang:2013, Kipping:2014a, Osborn:2016,
+Kipping:2016, Uehara:2016, Wang:2015}.
+Since all of these discoveries rely on human interaction, it is intractable to
+reliably constrain the completeness of these catalogs and they cannot be used
+to measure the occurrence rate of long-period planets.
 
-Visual inspection and hand-curation by experts has also been used to find the
-transits of long-period planets in previously known planetary systems
-(\dfmtodo{CITE single transit KOIs}).
-All light curves in the \kepler\ archive with \kepler\ Objects of Interest
-(KOIs) were visually inspected to find candidate single transits.
-This is a reasonable idea because long-period planets with transiting inner
-planets are expected to have a higher geometric transit probability.
-The selection effects introduced by restricting the target sample like this
-are difficult to take into account when making inferences about the population
-of long-period planets.
+In this \paper, we develop a systematic method of reliably discovering the
+transits of large long-period companions in photometric time series
+\emph{without human intervention}.
+Since the search methodology is fully-automated, we can robustly measure the
+search completeness~--~using injection and recovery tests~--~and use these
+products to place probabilistic constraints on the occurrence rate of
+long-period planets.
+We apply this method to a subset of the archival data from the \kepler\
+Mission and produce a catalog of discoveries.
 
-To study the occurrence rate of long-period exoplanets, we have developed a
-fully-automated method to search the archival \kepler\ light curves and
-reliably discover long-period planets with only one or two transits.
-Using this method, we search the 40,000 brightest Sun-like stars and detect
-XXX long-period astrophysical transit candidates.
-Of these, YYY are likely to be exoplanets with radii equal to or smaller than
-Jupiter's radius.
-Using transit injection and recovery, we measure the completeness of our
-search procedure.
-We estimate that the population level astrophysical false positive rate in
-this candidate sample is about ZZZ\%.
-By injecting synthetic transit signals into the \kepler\ light curves, we
-measure the completeness of our search method.
-Based on this catalog of exoplanet candidates and the search completeness, we
-constrain the occurrence rate of long-period exoplanets.
-For large planets, these results are consistent with previous measurements of
-long-period, giant planet occurrence rates based on radial velocity surveys
-and we demonstrate that small~--~and possibly rocky~--~planets are more common
-than their larger counterparts even at long orbital periods.
 
 \section{A fully-automated search method}
 
@@ -391,6 +367,7 @@ The models are:
 
 
 \begin{figure*}
+\vspace{\baselineskip}
 \begin{center}
 \includegraphics[width=\textwidth]{figures/model_comp.pdf}
 \end{center}
@@ -428,14 +405,15 @@ For the known EBs, we simply remove these targets from the candidate list.
 For the confirmed and candidate KOIs from \dfmtodo{Coughlin}, we remove data
 within 2 transit durations of the known candidates.
 
-\begin{figure*}
+\begin{figure}
+\vspace{\baselineskip}
 \begin{center}
 \includegraphics{figures/targets.pdf}
 \end{center}
 \caption{%
 Blah.
 \figlabel{targets}}
-\end{figure*}
+\end{figure}
 
 
 We start with the PDC-MAP light curves downloaded from
@@ -476,14 +454,15 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 \subsection{Parameter estimation}
 
 
-\begin{figure*}
+\begin{figure}
+\vspace{\baselineskip}
 \begin{center}
 \includegraphics{figures/full_sample.pdf}
 \end{center}
 \caption{%
 Blah.
 \figlabel{full-sample}}
-\end{figure*}
+\end{figure}
 
 
 \subsection{Discussion of some interesting systems}
@@ -591,13 +570,14 @@ function of planet radius and orbital period.
 
 \dfmtodo{Analytic fit?}
 
-\begin{figure*}
+\begin{figure}
+\vspace{\baselineskip}
 \begin{center}
 \includegraphics[width=\textwidth]{figures/completeness.pdf}
 \end{center}
 \caption{%
 \figlabel{completeness}}
-\end{figure*}
+\end{figure}
 
 
 \section{The occurrence rate of long-period exoplanets}
@@ -701,35 +681,46 @@ a transit model to other heuristic models including stellar variability or
 instrumental effects.
 
 
-\acknowledgments
+% \acknowledgments
 It is a pleasure to thank
 \ldots
 for helpful contributions to the ideas and code presented here.
-DFM and DWH were partially supported by the National Science Foundation
-(grant IIS-1124794),
-the National Aeronautics and Space Administration
-(grant NNX12AI50G), and the Moore--Sloan Data Science Environment at NYU.
+
+DWH was partially supported by the National Science Foundation (grant
+IIS-1124794), the National Aeronautics and Space Administration (grant
+NNX12AI50G), and the Moore--Sloan Data Science Environment at NYU.
 
 This research made use of the NASA \project{Astrophysics Data System} and the
 NASA Exoplanet Archive.
-The Archive is operated by the California Institute of Technology, under
-contract with NASA under the Exoplanet Exploration Program.
+The Exoplanet Archive is operated by the California Institute of Technology,
+under contract with NASA under the Exoplanet Exploration Program.
 This \paper\ includes data collected by the \kepler\ mission. Funding for the
 \kepler\ mission is provided by the NASA Science Mission directorate.
 We are grateful to the entire \kepler\ team, past and present.
-Their tireless efforts were all essential to the tremendous success of the mission
-and the successes of \KT, present and future.
+Their tireless efforts were all essential to the tremendous success of the
+mission and the successes of \KT, present and future.
+
 These data were obtained from the Mikulski Archive for Space Telescopes
 (MAST).
 STScI is operated by the Association of Universities for Research in
 Astronomy, Inc., under NASA contract NAS5-26555.
 Support for MAST is provided by the NASA Office of Space Science via grant
 NNX13AC07G and by other grants and contracts.
-Computing resources were provided by High Performance Computing (HPC) at New
-York University (NYU).
+
+Computing resources were provided by High Performance Computing at New York
+University.
 
 \facility{Kepler}
+\software{%
+    \project{ceres} \citep{Agarwal:2016},
+    \project{corner.py} \citep{Foreman-Mackey:2016},
+    \project{emcee} \citep{Foreman-Mackey:2013},
+    \project{george} \citep{Ambikasaran:2016},
+	\project{matplotlib} \citep{Hunter:2007},
+	\project{numpy} \citep{Van-Der-Walt:2011},
+	\project{scipy} \citep{Jones:2001}}.
 
+\newpage
 \appendix
 
 \section{Gaussian process regression}
@@ -816,17 +807,5 @@ derivatives of the full transit model to machine precision.
 
 \clearpage
 \bibliography{peerless}
-\clearpage
-
-
-% \begin{figure}[p]
-% \begin{center}
-% \includegraphics{figures/pca.pdf}
-% \end{center}
-% \caption{%
-% The top 10 eigen light curves (ELCs) generated by running principal component
-% analysis on all the aperture photometry from Campaign~1.
-% \figlabel{pca}}
-% \end{figure}
 
 \end{document}

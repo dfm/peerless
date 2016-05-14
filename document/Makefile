@@ -13,8 +13,9 @@ ${NAME}.pdf: ${NAME}.tex *.bib
 	${LATEX} ${NAME}
 	bibtex ${NAME}
 	${LATEX} ${NAME}
-	( grep Rerun ${NAME}.log && ${LATEX} ${NAME} ) || echo "Done."
-	( grep Rerun ${NAME}.log && ${LATEX} ${NAME} ) || echo "Done."
+	( grep "Rerun to get" ${NAME}.log && ${LATEX} ${NAME} ) || echo "Done."
+	( grep "Rerun to get" ${NAME}.log && ${LATEX} ${NAME} ) || echo "Done."
 
 clean:
 	${RM} $(foreach suff, ${TMP_SUFFS}, ${NAME}.${suff})
+	${RM} msNotes.bib

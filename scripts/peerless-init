@@ -14,11 +14,11 @@ from peerless.fit import setup_fit
 from peerless.catalogs import TargetCatalog
 
 
-def init_spec(args, max_fit_data=250, output_dir="fits"):
+def init_spec(args, max_fit_data=250, output_dir="fits", fit_kois=False):
     key, spec = args
 
     # Initialize the model.
-    model = setup_fit(spec, fit_kois=True, max_points=max_fit_data)
+    model = setup_fit(spec, fit_kois=fit_kois, max_points=max_fit_data)
 
     # Plot.
     basedir = os.path.join(output_dir, key)
@@ -45,6 +45,8 @@ parser.add_argument("-o", "--output-dir", default="fits",
                     help="the output directory")
 parser.add_argument("-c", "--clobber", action="store_true",
                     help="overwrite existing models")
+parser.add_argument("-k", "--fit-kois", action="store_true",
+                    help="fit the KOIs as well")
 parser.add_argument("--max-fit-data", type=int, default=250,
                     help="the maximum number of points per light curve")
 args = parser.parse_args()
@@ -129,5 +131,5 @@ else:
 
 # Initialize.
 f = partial(init_spec, max_fit_data=args.max_fit_data,
-            output_dir=args.output_dir)
+            output_dir=args.output_dir, fit_kois=args.fit_kois)
 list(M(f, systems.items()))

@@ -465,9 +465,6 @@ Blah.
 \end{figure}
 
 
-\subsection{Discussion of some interesting systems}
-
-
 
 \section{Empirical search completeness}
 
@@ -621,64 +618,7 @@ Tim to write some words here.
 
 \section{Discussion}\sectlabel{discussion}
 
-The discovery and characterization of transiting planets based on a single
-transit event is crucial for the future of transiting exoplanet surveys.
-Many of the most dynamically influential planets~--~like Jupiter in our Solar
-system~--~exhibit only a single transit in the full observational baseline of
-the \kepler.
-This will become even more of a problem as upcoming surveys move to shorter
-contiguous observations.
-For example, the \tess\ Mission is planned to get full-sky coverage at
-half-hour cadence but most of the sky will only be targeted for a month.
-This means that even habitable zone planets orbiting cool stars will transit
-their host \emph{at most once in the entire lifetime of the Mission}!
 
-To date, no methods exist for systematically and robustly discovering single
-transit events based on large photometric surveys.
-In this \paper, we present a novel and conceptually unique solution to this
-problem drawing on machine learning methods for supervised classification.
-This method has immense potential because it can be designed to be very robust
-to false positives and it can exploit the detailed shape of physical transits.
-
-Despite the fact that single transits are unlikely even if these long-period
-planets are intrinsically common, we estimate that $\sim 60$ events should be
-detectable in the \kepler\ archival dataset by extrapolating recent models of
-planet occurrence rates and taking selection effects into account.
-When applied to 3500 light curves from the \kepler\ dataset, this method
-recovers one previously unknown single transit event at
-$830.8093\pm0.0002$~KBJD in the light curve of KIC 10602068.
-This rate is consistent with the predicted yield of 60 events in the full
-dataset of 190,000 light curves.
-
-Assuming a bound Keplerian orbit, we place constraints on the physical
-properties of this transit candidate KIC 10602068.01.
-Using photometrically derived stellar properties, we find that this candidate
-has a radius of $2.1 \pm 0.4\,R_\mathrm{J}$ placing it as a very large planet
-or brown dwarf or a small star.
-
-This method for transit search is built using supervised classification and
-its performance relies on several strong assumptions about the datasets and
-these assumptions are sometimes violated leading to some transit-like signals
-that appear to be caused by noise to be misclassified as transits.
-The most severe assumption is that the noise properties of the data are
-stationary.
-In other words, we assume that variability in one subset of a light curve is
-completely spanned by the variability in the other sections.
-This assumption is, in general, false because the stochastic processes that
-cause stellar variability are complicated and non-stationary and the detector
-is plagued by non-negligible catastrophic changes in sensitivity and response.
-We attempt to mitigate this problem by using light curves that have been
-preprocessed to remove most of the instrumental effects and carefully dividing
-the data into subsets but some false positives are still incorrectly
-identified as candidates.
-
-One possible method for reducing the false positive rate would be to augment
-the training dataset using heuristic simulations of common false positives or
-the light curves of ``similar'' stars.
-Another option is to recognize that this search drastically reduces the
-parameter space requiring evaluation and comparing the predictive power of
-a transit model to other heuristic models including stellar variability or
-instrumental effects.
 
 
 % \acknowledgments

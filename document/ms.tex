@@ -9,7 +9,10 @@
 \usepackage{natbib}
 \bibliographystyle{aasjournal}
 
-% omg AASTEX 6.0 -- modifications from HOGG
+% ----------------------------------- %
+% start of AASTeX mods by DWH and DFM %
+% ----------------------------------- %
+
 \setlength{\voffset}{0in}
 \setlength{\hoffset}{0in}
 \setlength{\textwidth}{6.5in}
@@ -18,7 +21,6 @@
 \setlength{\headsep}{\baselinestretch\baselineskip} % this is 2 lines in ``manuscript''
 \setlength{\topmargin}{-\headsep}
 
-\setlength{\skip\footins}{24pt}
 \linespread{0.54} % close to 10/13 spacing in ``manuscript''
 \setlength{\parindent}{0.54\baselineskip}
 \hypersetup{colorlinks = false}
@@ -33,20 +35,28 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 }%
 \makeatother
 
-\newcommand{\project}[1]{\textsl{#1}}
+% Section spacing:
+\makeatletter
+\let\origsection\section
+\renewcommand\section{\@ifstar{\starsection}{\nostarsection}}
+\newcommand\nostarsection[1]{\sectionprelude\origsection{#1}}
+\newcommand\starsection[1]{\sectionprelude\origsection*{#1}}
+\newcommand\sectionprelude{\vspace{1em}}
+\makeatother
 
+\sloppy\sloppypar
+
+% ------------------ %
+% end of AASTeX mods %
+% ------------------ %
+
+% Projects:
+\newcommand{\project}[1]{\textsl{#1}}
 \newcommand{\kepler}{\project{Kepler}}
 \newcommand{\KT}{\project{K2}}
 \newcommand{\tess}{\project{TESS}}
-\newcommand{\plato}{\project{PLATO}}
-\newcommand{\jwst}{\project{JWST}}
-\newcommand{\terra}{\project{TERRA}}
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\bls}{\project{BLS}}
-
-\newcommand{\license}{MIT License}
-
-\newcommand{\paper}{paper}
 
 \newcommand{\foreign}[1]{\emph{#1}}
 \newcommand{\etal}{\foreign{et\,al.}}
@@ -54,10 +64,10 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\True}{\foreign{True}}
 \newcommand{\Truth}{\foreign{Truth}}
 
-% \newcommand{\figref}[1]{\ref{fig:#1}}
-% \newcommand{\Fig}[1]{\figurename~\figref{#1}}
-% \newcommand{\fig}[1]{\Fig{#1}}
-\newcommand{\figlabel}[1]{\label{fig:#1}}
+\newcommand{\dfmfigref}[1]{\ref{fig:#1}}
+\newcommand{\dfmFig}[1]{Figure~\dfmfigref{#1}}
+\newcommand{\dfmfig}[1]{\dfmFig{#1}}
+\newcommand{\dfmfiglabel}[1]{\label{fig:#1}}
 
 % \newcommand{\Tab}[1]{Table~\ref{tab:#1}}
 % \newcommand{\tab}[1]{\Tab{#1}}
@@ -94,24 +104,21 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\hoggtodo}[1]{\todo{HOGG}{blue}{#1}}
 
 
-% Notation for this paper.
+% Helpers for this paper:
+\newcommand{\license}{MIT License}
+\newcommand{\paper}{paper}
+
+% Notation for this paper:
 \newcommand{\meanpars}{{\ensuremath{\bvec{\theta}}}}
 \newcommand{\kernpars}{{\ensuremath{\bvec{\alpha}}}}
-
 \newcommand{\params}{{\ensuremath{\bvec{w}}}}
 \newcommand{\poppars}{{\ensuremath{\bvec{\beta}}}}
-
 \newcommand{\rate}{{\ensuremath{\Gamma}}}
 
 
 \shorttitle{The population of long-period exoplanets}
 \shortauthors{Foreman-Mackey, Hogg, Morton, \etal}
 % \submitted{Submitted to \textit{The Astrophysical Journal}}
-
-% no more bad lines!
-\sloppy\sloppypar
-\widowpenalty10000
-\clubpenalty500
 
 \begin{document}
 
@@ -243,10 +250,8 @@ This step produces a list of candidate transit times that is then vetted to
 remove the substantial fraction of false signals using some combination of
 automated heuristics and expert curation.
 In practice, the fraction of false signals can be substantially reduced by
-requiring that at least three self-consistent transits be observed \citep[The
-\kepler\ Data Processing Handbook%
-\footnote{\url{https://archive.stsci.edu/kepler/manuals/KSCI-19081-001_Data_Processing_Handbook.pdf}};][]{Petigura:2013,
-Burke:2014, Rowe:2015, Coughlin:2015}.
+requiring that at least three self-consistent transits be observed
+\citep{Petigura:2013, Burke:2014, Rowe:2015, Coughlin:2015}.
 
 Recent work has yielded discoveries of long-period transiting planets with
 only one or two transits identified in archival \kepler\ and \KT\ light curves
@@ -366,8 +371,7 @@ The models are:
 \subsection{Pixel-level vetting}
 
 
-\begin{figure*}
-\vspace{\baselineskip}
+\begin{figure*}[p]~\\
 \begin{center}
 \includegraphics[width=\textwidth]{figures/model_comp.pdf}
 \end{center}
@@ -378,8 +382,10 @@ data as black points and the best fit mean model prediction.
 The examples represent the following model categories:
 \emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
 transit.
-\figlabel{model-comp}}
+\dfmfiglabel{model-comp}}
 \end{figure*}
+
+\dfmfig{model-comp}
 
 
 \section{A catalog of exoplanet \& binary candidates}
@@ -405,14 +411,13 @@ For the known EBs, we simply remove these targets from the candidate list.
 For the confirmed and candidate KOIs from \dfmtodo{Coughlin}, we remove data
 within 2 transit durations of the known candidates.
 
-\begin{figure}
-\vspace{\baselineskip}
+\begin{figure}~\\
 \begin{center}
 \includegraphics{figures/targets.pdf}
 \end{center}
 \caption{%
 Blah.
-\figlabel{targets}}
+\dfmfiglabel{targets}}~\\
 \end{figure}
 
 
@@ -454,15 +459,14 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 \subsection{Parameter estimation}
 
 
-\begin{figure}
-\vspace{\baselineskip}
+\begin{figure*}~\\
 \begin{center}
 \includegraphics{figures/full_sample.pdf}
 \end{center}
 \caption{%
 Blah.
-\figlabel{full-sample}}
-\end{figure}
+\dfmfiglabel{full-sample}}~\\
+\end{figure*}
 
 
 
@@ -567,14 +571,13 @@ function of planet radius and orbital period.
 
 \dfmtodo{Analytic fit?}
 
-\begin{figure}
-\vspace{\baselineskip}
+\begin{figure*}[p]~\\
 \begin{center}
 \includegraphics[width=\textwidth]{figures/completeness.pdf}
 \end{center}
 \caption{%
-\figlabel{completeness}}
-\end{figure}
+\dfmfiglabel{completeness}}
+\end{figure*}
 
 
 \section{The occurrence rate of long-period exoplanets}
@@ -618,10 +621,21 @@ Tim to write some words here.
 
 \section{Discussion}\sectlabel{discussion}
 
+We have developed a fully-automated method to search for the transits and
+eclipses of long-period companions in photometric time series.
+Applying this method to a subset of the \kepler\ archival light curves, we
+discovered XX astrophysical transits.
+Of these discoveries, at least about YY are likely to be planetary in nature.
+Combining this catalog of discoveries with a measurement of the completeness
+of our search method, we place a constraint on the occurrence rate of
+long-period exoplanets.
+
+Our method for transit detection finds convincing transit-shaped signals does
+a model comparison between a physical transit model.
 
 
 
-% \acknowledgments
+\acknowledgments
 It is a pleasure to thank
 \ldots
 for helpful contributions to the ideas and code presented here.

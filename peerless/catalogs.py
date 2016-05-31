@@ -156,6 +156,12 @@ class EBCatalog(LocalCatalog):
     args = dict(skiprows=7)
 
 
+class LongPeriodEBCatalog(LocalCatalog):
+    filename = "lpebs.csv"
+    args = dict(delim_whitespace=True,
+                names=["kicid", "period", "width", "t0", "ra", "dec"])
+
+
 class BlacklistCatalog(LocalCatalog):
     filename = "blacklist.csv"
 

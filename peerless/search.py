@@ -242,7 +242,6 @@ def search(kicid_and_injection=None,
             impact=0.5,
         )
         system.freeze_parameter("ln_period")
-        # system.freeze_parameter("impact")
         system.freeze_parameter("q1_param")
         system.freeze_parameter("q2_param")
         best = (np.inf, system.t0, 0.0, ror)
@@ -323,9 +322,15 @@ def search(kicid_and_injection=None,
             boxes.append(BoxModel(tmn, tmx, data=(x, y)))
             check_gradient(boxes[-1], x)
 
+        # # 5. vee
+        # vee = VeeModel(depth=1., t0=system.t0, log_b=-0.5,
+        #                log_a=np.log(0.1/24.))
+        # check_gradient(vee, x)
+
         # Loop over models and compare them.
         models = OrderedDict([
             ("transit", system),
+            # ("vee", vee),
             ("box1", boxes[1]),
             ("step", step),
             ("gp", constant),
@@ -390,11 +395,16 @@ def search(kicid_and_injection=None,
 
             # Initialize one of the boxes using the transit shape.
             if name == "transit" and np.any(system.get_value(x) < 1.0):
+                depth = 1.0 - float(system.get_value(system.t0))
+
                 models["box1"].mn = system.t0 - 0.5*system.duration
                 models["box1"].mx = system.t0 + 0.5*system.duration
 
+                # models["vee"].t0 = system.t0
+                # models["vee"].log_b = np.log(0.5*system.duration)
+                # models["vee"].depth = depth
+
                 # Fit the centroids.
-                depth = 1.0 - float(system.get_value(system.t0))
                 tm = (1.0 - system.get_value(x)) / depth
                 A = np.vander(tm, 2)
                 AT = A.T
@@ -493,6 +503,7 @@ def search(kicid_and_injection=None,
                 print()
 
         # Save the transit parameters.
+        peak["transit_impact"] = system.impact
         peak["transit_duration"] = system.duration
         peak["transit_ror"] = system.ror
         peak["transit_time"] = system.t0
@@ -717,6 +728,50 @@ class BoxModel(ModelingMixin):
             before_value=np.ones_like(t) * a,
             in_value=np.ones_like(t) * c,
             after_value=np.ones_like(t) * b,
+        )
+
+
+class VeeModel(ModelingMixin):
+
+    def __init__(self, **kwargs):
+        self.flux = 1.0
+        self.t0 = kwargs.pop("t0")
+        super(VeeModel, self).__init__(**kwargs)
+
+    def get_value(self, t):
+        dt = np.abs(t - self.t0)
+        b = np.exp(self.log_b)
+        a = np.exp(self.log_a)
+
+        ma = dt <= a
+        mb = (dt > a) & (dt <= a + b)
+
+        v = self.flux
+        v -= self.depth * ma
+        v += self.depth / b * (dt - b - a) * mb
+
+        return v
+
+    @ModelingMixin.parameter_sort
+    def get_gradient(self, t):
+        dt = np.abs(t - self.t0)
+        a = np.exp(self.log_a)
+        b = np.exp(self.log_b)
+
+        ma = dt <= a
+        mb = (dt > a) & (dt <= a + b)
+
+        da = -self.depth / b * mb
+        dlog_a = da * a
+        db = -self.depth / (b*b) * (dt - a) * mb
+        dlog_b = db * b
+        ddepth = -1.0 * ma + (dt - a - b) / b * mb
+
+        return dict(
+            log_b=dlog_b,
+            log_a=dlog_a,
+            depth=ddepth,
+            # t0=-self.depth / b * mb * np.sign(t - self.t0),
         )
 
 

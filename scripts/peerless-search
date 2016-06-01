@@ -59,21 +59,21 @@ parser.add_argument("--no-plots", action="store_true",
                     help="don't make any plots")
 
 # Search parameters:
-parser.add_argument("--duration", type=float,  default=0.6,
+parser.add_argument("--duration", type=float, default=0.6,
                     help="the transit duration in days")
-parser.add_argument("--detrend-hw", type=float,  default=2.0,
+parser.add_argument("--detrend-hw", type=float, default=2.0,
                     help="the half width of the de-trending window")
 parser.add_argument("--no-remove-kois", action="store_true",
                     help="leave the known KOIs in the light curves")
-parser.add_argument("--grid-frac", type=float,  default=0.25,
+parser.add_argument("--grid-frac", type=float, default=0.25,
                     help="search grid spacing in units of the duration")
-parser.add_argument("--noise-hw", type=float,  default=15.0,
+parser.add_argument("--noise-hw", type=float, default=15.0,
                     help="the half width of the noise estimation window")
-parser.add_argument("--detect-thresh", type=float,  default=25.0,
+parser.add_argument("--detect-thresh", type=float, default=25.0,
                     help="the relative detection threshold")
-parser.add_argument("--max-fit-data", type=int,  default=500,
+parser.add_argument("--max-fit-data", type=int, default=500,
                     help="maximum number of points to fit")
-parser.add_argument("--max-peaks", type=int,  default=3,
+parser.add_argument("--max-peaks", type=int, default=3,
                     help="the maximum number of peaks to consider")
 
 args = parser.parse_args()
@@ -146,6 +146,7 @@ columns = [
     "channel", "skygroup", "module", "output", "quarter", "season",
     "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
     "transit_ror", "transit_duration", "transit_time", "transit_depth",
+    "transit_impact",
     "chunk_min_time", "chunk_max_time",
     "centroid_offset", "centroid_offset_err",
 ]

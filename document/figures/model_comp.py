@@ -23,7 +23,7 @@ fig, axes = pl.subplots(2, 2, figsize=(8, 8))
 os.makedirs("cache", exist_ok=True)
 for a, ax, (disp, name, kicid, peak_id) in zip("abcd", axes.flatten(), models):
     fn = os.path.join("cache", "{0}.pkl".format(kicid))
-    if os.path.exists(fn):
+    if False and os.path.exists(fn):
         print("using cached file: {0}".format(fn))
         with open(fn, "rb") as f:
             results = pickle.load(f)
@@ -43,7 +43,8 @@ for a, ax, (disp, name, kicid, peak_id) in zip("abcd", axes.flatten(), models):
     x0 = np.linspace(rng[0], rng[1], 500)
     ax.plot(24*(x[m] - t0), y[m], ".", color=COLORS["DATA"])
 
-    mu = gp.predict(y0, x0, return_cov=False)
+    # mu = gp.predict(y0, x0, return_cov=False)
+    mu = gp.mean.get_value(x0)
     ax.plot(24*(x0 - t0), mu, color=COLORS["MODEL_2"], lw=2.5, alpha=0.8)
     ax.annotate("({0})".format(a), xy=(0, 0), xycoords="axes fraction",
                 xytext=(5, 12), textcoords="offset points")
@@ -52,5 +53,7 @@ for a, ax, (disp, name, kicid, peak_id) in zip("abcd", axes.flatten(), models):
     ax.set_yticklabels([])
     ax.set_xlabel("hours since event")
     ax.set_title("KIC {0}".format(kicid, disp))
+
+    break
 
 fig.savefig("model_comp.pdf", bbox_inches="tight")

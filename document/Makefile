@@ -1,4 +1,4 @@
-LATEX       = pdflatex
+LATEX       = pdflatex -interaction=nonstopmode -halt-on-error
 BASH        = bash -c
 ECHO        = echo
 RM          = rm -rf

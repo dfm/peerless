@@ -13,11 +13,18 @@ import matplotlib.pyplot as pl
 
 from peerless.autocorr import integrated_time
 from peerless.settings import PEERLESS_DATA_DIR
+from peerless.catalogs import TargetCatalog
 
 
 def collect_one(kicid, root=None):
     n = int((cands.kicid == kicid).sum())
     assert n in [1, 2]
+
+    # Get the stellar properties.
+    kic = TargetCatalog().df
+    star = kic[kic.kepid == kicid]
+    teff = float(star.teff)
+    teff_err = np.mean(np.abs(np.array(star[["teff_err1", "teff_err2"]])))
 
     if n == 2:
         d, sig = np.empty(2), np.empty(2)
@@ -125,6 +132,14 @@ def collect_one(kicid, root=None):
 
     # Compute the planet parameters:
 
+    # Equilibrium temperature (K):
+    a = chain["bodies[0]:sqrt_a_cos_i"]**2 + chain["bodies[0]:sqrt_a_sin_i"]**2
+    factor = np.sqrt(0.5 * np.exp(chain["central:ln_radius"]) / a)
+    albedo = 0.0  # np.random.uniform(0, 0.34, len(factor))
+    factor *= (1.0 - albedo) ** 0.25
+    teq_samps = (teff + teff_err * np.random.randn(len(factor))) * factor
+    teq = np.percentile(teq_samps, [16, 50, 84])
+
     # Period (years):
     period_samps = params["period"] / 365.25
     period_samps_all = params_all["period"] / 365.25
@@ -166,7 +181,7 @@ def collect_one(kicid, root=None):
                 dpi=300)
     pl.close(fig)
 
-    print(kicid, nind, period[1], t0[1], radius[1], depth[1])
+    print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1])
 
 parser = argparse.ArgumentParser(
     description="collect postprocess MCMC results"

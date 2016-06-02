@@ -150,6 +150,10 @@ class TransitModel(object):
         if not np.isfinite(ll):
             return -np.inf, blob
 
+        # reject samples with other transits.
+        if blob[1] > 0:
+            return -np.inf, blob
+
         return lp + ll, blob
 
     def __call__(self, theta):

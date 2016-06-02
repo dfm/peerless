@@ -37,7 +37,11 @@ stlr = stlr.rename(columns={"radius": "stlr_radius"})
 cands = pd.read_csv(os.path.join(args.search_dir, "candidates.csv"))
 cands["offset"] = cands.centroid_offset * (1./cands.transit_depth - 1)
 cands["accept_offset"] = cands.offset < args.offset_thresh
-cands["accept"] = cands.accept_offset & cands.accept_time & cands.accept_bic
+cands["accept_impact"] = cands.transit_impact + cands.transit_ror < 1.0
+cands["accept"] = (
+    cands.accept_offset & cands.accept_time & cands.accept_bic &
+    cands.accept_impact
+)
 print("Found {0} candidates".format(cands["accept"].sum()))
 
 cands.to_csv(os.path.join(outdir, "candidates.csv"), index=False)
@@ -51,6 +55,9 @@ for inj_fn in glob.glob(os.path.join(args.inj_root, "*", "injections.csv")):
     can = pd.read_csv(os.path.join(root, "candidates.csv"))
     if not np.any(can.centroid_offset > 0):
         print("Skipping '{0}' with missing centroids".format(root))
+        continue
+    if not "transit_impact" in can:
+        print("Skipping '{0}' with missing impacts".format(root))
         continue
     can = can.groupby(["kicid", "is_injection"], as_index=False).first()
 
@@ -68,9 +75,11 @@ for inj_fn in glob.glob(os.path.join(args.inj_root, "*", "injections.csv")):
     # Apply the same centroid offset threshold to the injections.
     inj["offset"] = inj.centroid_offset * (1./inj.transit_depth - 1)
     inj["accept_offset"] = inj.offset < args.offset_thresh
+    inj["accept_impact"] = inj.transit_impact + inj.transit_ror < 1.0
     inj["accept"] = (
         (inj.offset > 0) & inj.accept_offset &
-        inj.accept_time & inj.accept_bic
+        inj.accept_time & inj.accept_bic &
+        inj.accept_impact
     )
     inj["run_id"] = int(os.path.split(root)[1])
 

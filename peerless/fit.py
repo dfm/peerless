@@ -23,7 +23,16 @@ class TransitModel(object):
     def __init__(self, spec, gps, system, smass, smass_err, srad, srad_err,
                  fit_lcs, other_lcs):
         self.spec = spec
-        self.t0rng = system.bodies[0].t0 + np.array([-0.5, 0.5])
+
+        # Put a prior range on the reference time.
+        t0 = system.bodies[0].t0
+        self.t0rng = t0 + np.array([-0.5, 0.5])
+
+        # Put a minimum prior bound on the period.
+        tmn = np.min([np.min(lc.time) for lc in np.append(other_lcs, fit_lcs)])
+        tmx = np.max([np.max(lc.time) for lc in np.append(other_lcs, fit_lcs)])
+        self.min_period = np.max([np.abs(t0 - tmn), np.abs(tmx - t0)])
+
         self.gps = gps
         self.system = system
         self.smass = smass
@@ -45,7 +54,6 @@ class TransitModel(object):
             body.e = ecc
             for w in np.linspace(-np.pi, np.pi, 4):
                 body.omega = w
-                # self.system.central.dilution = dil
                 for per in body.period*prng:
                     body.period = per
                     for rad in rrng:
@@ -76,6 +84,10 @@ class TransitModel(object):
 
         # planet
         body = self.system.bodies[0]
+
+        # Minimum period.
+        if body.period < self.min_period:
+            return -np.inf
 
         # Impact parameter.
         if body.b < 0.0:

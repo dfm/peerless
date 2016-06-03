@@ -145,6 +145,19 @@ def collect_one(kicid, root=None):
     period_samps_all = params_all["period"] / 365.25
     period = np.percentile(period_samps, [16, 50, 84])
 
+    # Duration (hours):
+    b = params["impact"]
+    e = params["eccen"]
+    Rsoa = np.exp(chain["central:ln_radius"]) / a
+    k = np.exp(chain["bodies[0]:ln_radius"] - chain["central:ln_radius"])
+    incl = np.arctan2(chain["bodies[0]:sqrt_a_sin_i"],
+                      chain["bodies[0]:sqrt_a_cos_i"])
+    sin_omega = chain["bodies[0]:sqrt_e_sin_omega"] / np.sqrt(e)
+    dur_samps = period_samps / np.pi * np.sqrt(1-e**2) / (1+e*sin_omega)
+    dur_samps *= np.arcsin(Rsoa*np.sqrt((1+k)**2 - b**2) / np.sin(incl))
+    dur_samps *= 365.25 * 24.
+    duration = np.percentile(dur_samps, [16, 50, 84])
+
     # T0 (KBJD):
     t0_samps = chain["bodies[0]:t0"]
     t0_samps_all = chain_all["bodies[0]:t0"]
@@ -181,7 +194,8 @@ def collect_one(kicid, root=None):
                 dpi=300)
     pl.close(fig)
 
-    print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1])
+    print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1],
+          duration[1])
 
 parser = argparse.ArgumentParser(
     description="collect postprocess MCMC results"

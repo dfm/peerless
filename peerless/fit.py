@@ -32,6 +32,8 @@ class TransitModel(object):
         tmn = np.min([np.min(lc.time) for lc in np.append(other_lcs, fit_lcs)])
         tmx = np.max([np.max(lc.time) for lc in np.append(other_lcs, fit_lcs)])
         self.min_period = np.max([np.abs(t0 - tmn), np.abs(tmx - t0)])
+        if system.bodies[0].period < self.min_period:
+            self.min_period = 0.8 * system.bodies[0].period
 
         self.gps = gps
         self.system = system

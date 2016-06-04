@@ -134,9 +134,10 @@ class TransitModel(object):
         if not compute_blob:
             return ll, (0, depth)
 
-        # Compute number of cadences with transits in the other light curves.
-        ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
-                   for lc in self.other_lcs)
+        # # Compute number of cadences with transits in the other light curves.
+        # ncad = sum((system.light_curve(lc.time) < system.central.flux).sum()
+        #            for lc in self.other_lcs)
+        ncad = 0
 
         return ll, (ncad, depth)
 

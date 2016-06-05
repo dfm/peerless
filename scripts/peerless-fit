@@ -100,11 +100,15 @@ with MPIPool() as pool:
     if args.clobber or not os.path.exists(chain_fn):
         p0 = system.get_vector()
         m = np.isfinite(p0)
-        while not np.all(m):
+        for i in range(100):
             p0[np.isnan(p0)] = 0.0
             p0[(p0 < 0.0) & (~m)] = -10.0
             p0[(p0 > 0.0) & (~m)] = 10.0
             m = np.isfinite(p0)
+            if np.all(m):
+                break
+        else:
+            raise ValueError("invalid starting coordinates")
 
         ndim, nwalkers = len(p0), args.nwalkers
         while nwalkers <= ndim * 2:

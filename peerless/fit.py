@@ -46,7 +46,7 @@ class TransitModel(object):
 
         body = self.system.bodies[0]
         mx = (
-            self.lnlike(compute_blob=False)[0],
+            self.lnprob(self.system.get_vector())[0],
             (body.b, body.radius, body.period, body.e, body.omega)
         )
         prng = np.exp(np.append(np.linspace(np.log(0.5), np.log(2.0), 6), 0))
@@ -62,11 +62,9 @@ class TransitModel(object):
                         body.radius = rad
                         for b in np.linspace(0, 1.0+0.9*rad/rstar, 6):
                             body.b = b
-                            ll, blob = self.lnlike(compute_blob=False)
-                            if ll > mx[0]:
-                                ll, blob = self.lnlike(compute_blob=True)
-                                if blob[0] == 0:
-                                    mx = (ll, (b, rad, per, ecc, w))
+                            ll, blob = self.lnprob(self.system.get_vector())
+                            if ll > mx[0] and blob[0] == 0:
+                                mx = (ll, (b, rad, per, ecc, w))
         body.e = mx[1][3]
         body.omega = mx[1][4]
         body.period = mx[1][2]

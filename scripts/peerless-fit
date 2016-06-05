@@ -93,6 +93,7 @@ with MPIPool() as pool:
     basedir = os.path.split(args.filename)[0]
 
     system = model.system
+    system.bodies[0].b = np.abs(system.bodies[0].b)
     cols = system.get_parameter_names()
 
     # Set up the output.

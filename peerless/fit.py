@@ -222,6 +222,8 @@ class TransitModel(object):
             self.system.set_vector(theta)
         except ValueError:
             return 1e10
+        if self.system.bodies[0].period < self.min_period:
+            return 1e10
 
         nll = 0.0
         system = self.system
@@ -230,8 +232,6 @@ class TransitModel(object):
             r = (lc.flux - mu) * 1e3
             nll -= gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(nll)):
-                return 1e10
-            if not np.isfinite(self.lnprob(theta)[0]):
                 return 1e10
 
         return nll
@@ -252,8 +252,6 @@ class TransitModel(object):
             g -= np.dot(gmu, alpha)
             if not (np.any(mu < system.central.flux)
                     and np.all(np.isfinite(g))):
-                return np.zeros_like(theta)
-            if not np.isfinite(self.lnprob(theta)[0]):
                 return np.zeros_like(theta)
 
         return g

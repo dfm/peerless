@@ -231,6 +231,8 @@ class TransitModel(object):
             nll -= gp.lnlikelihood(r, quiet=True)
             if not (np.any(mu < system.central.flux) and np.isfinite(nll)):
                 return 1e10
+            if not np.isfinite(self.lnprob(theta)[0]):
+                return 1e10
 
         return nll
 
@@ -250,6 +252,8 @@ class TransitModel(object):
             g -= np.dot(gmu, alpha)
             if not (np.any(mu < system.central.flux)
                     and np.all(np.isfinite(g))):
+                return np.zeros_like(theta)
+            if not np.isfinite(self.lnprob(theta)[0]):
                 return np.zeros_like(theta)
 
         return g

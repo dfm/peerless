@@ -127,10 +127,14 @@ with MPIPool() as pool:
             # Don't allow -inf initialization.
             lp = np.array([lnprob(v)[0] for v in p0])
             m = ~np.isfinite(lp)
-            while np.any(m):
+            for i in range(100):
                 p0[m] = coord[None, :] + 1e-6 * np.random.randn(m.sum(), ndim)
                 lp[m] = np.array([lnprob(v)[0] for v in p0[m]])
                 m = ~np.isfinite(lp)
+                if np.all(np.isfinite(lp)):
+                    break
+            else:
+                raise ValueError("invalid starting coordinates")
 
             ret = sampler.run_mcmc(p0, args.nburn)
             p0 = ret[0]

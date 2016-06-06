@@ -54,6 +54,4 @@ for a, ax, (disp, name, kicid, peak_id) in zip("abcd", axes.flatten(), models):
     ax.set_xlabel("hours since event")
     ax.set_title("KIC {0}".format(kicid, disp))
 
-    break
-
 fig.savefig("model_comp.pdf", bbox_inches="tight")

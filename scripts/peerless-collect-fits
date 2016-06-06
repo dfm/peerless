@@ -249,5 +249,5 @@ df.to_csv(os.path.join(args.output, "fits.csv"), index=False)
 n = 4
 with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
     for _, row in df.sort_values("radius").iterrows():
-        f.write("\includegraphics[width=0.2\\textwidth]{{{0}/lcs/{1}.pdf}}\n"
+        f.write("\includegraphics[width=0.25\\textwidth]{{{0}/lcs/{1}.pdf}}\n"
                 .format(args.fig_output, int(row.kicid)))

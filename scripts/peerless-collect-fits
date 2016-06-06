@@ -86,13 +86,6 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     nsamps = chain.shape[1] * len(chain)
     nind = nsamps / np.mean(tau)
 
-    # Remove models with unobserved transits.
-    m2 = np.ones_like(m)
-
-    chain_all = chain[m2]
-    lnprob_all = lnprob[m2]
-    params_all = params[m2]
-
     chain = chain[m]
     lnprob = lnprob[m]
     params = params[m]
@@ -253,6 +246,4 @@ n = 4
 with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
     for _, row in df.sort_values("radius").iterrows():
         f.write("\includegraphics[width={0}\\textwidth]{{{1}/{2}.pdf}}\n"
-                .format(1.0 / n,
-                        os.path.join(args.tex_output, args.fig_output),
-                        int(row.kicid)))
+                .format(1.0 / n, args.fig_output, int(row.kicid)))

@@ -4,7 +4,6 @@
 import os
 import h5py
 import pickle
-import corner
 import argparse
 import numpy as np
 import pandas as pd
@@ -13,12 +12,12 @@ import matplotlib.pyplot as pl
 from multiprocessing import Pool
 from collections import OrderedDict
 
-from peerless.autocorr import integrated_time
-from peerless.settings import PEERLESS_DATA_DIR
+from peerless.plot_setup import COLORS
 from peerless.catalogs import TargetCatalog
+from peerless.autocorr import integrated_time
 
 
-def collect_one(kicid, root=None, output="results"):
+def collect_one(kicid, root=None, fig_output="document/figures"):
     n = int((cands.kicid == kicid).sum())
     assert n in [1, 2]
 
@@ -113,22 +112,22 @@ def collect_one(kicid, root=None, output="results"):
         mu = model.system.light_curve(lc.time, texp=lc.texp, maxdepth=2)
         r = (lc.flux - mu) * 1e3
         p = gp.predict(r, lc.time, return_cov=False) * 1e-3
-        y = lc.flux - p
-        ax.plot(t, y, ".k", rasterized=True)
+        y = (lc.flux - p - 1.0) * 1e3
+        ax.plot(t, y, ".", color=COLORS["DATA"], rasterized=True)
         mx = max(mx, y.max())
         mn = min(mn, y.min())
 
     mu = model.system.light_curve(x + t0, texp=lc.texp, maxdepth=2)
-    ax.plot(x, mu, color="#ff7f0e", lw=1.5)
+    ax.plot(x, (mu - 1.0) * 1e3, color=COLORS["MODEL_2"], lw=1.5)
     ax.set_xlim(-2, 2)
     ax.set_ylim(0.5*(mx+mn) + (mx - mn) * 1.1 * np.array([-0.5, 0.5]))
     ax.xaxis.set_major_locator(pl.NullLocator())
-    ax.yaxis.set_major_locator(pl.NullLocator())
+    ax.yaxis.set_major_locator(pl.MaxNLocator(4))
     ax.annotate("{0}".format(kicid), xy=(0, 0), xycoords="axes fraction",
                 xytext=(5, 5), textcoords="offset points", fontsize=14)
     pl.tight_layout()
-    os.makedirs(os.path.join(output, "lcs"), exist_ok=True)
-    fig.savefig(os.path.join(output, "lcs", "{0}.pdf".format(kicid)),
+    os.makedirs(os.path.join(fig_output, "lcs"), exist_ok=True)
+    fig.savefig(os.path.join(fig_output, "lcs", "{0}.pdf".format(kicid)),
                 bbox_inches="tight", dpi=300)
     pl.close(fig)
 
@@ -144,7 +143,6 @@ def collect_one(kicid, root=None, output="results"):
 
     # Period (years):
     period_samps = params["period"] / 365.25
-    period_samps_all = params_all["period"] / 365.25
     period = np.percentile(period_samps, [16, 50, 84])
 
     # Duration (hours):
@@ -162,39 +160,37 @@ def collect_one(kicid, root=None, output="results"):
 
     # T0 (KBJD):
     t0_samps = chain["bodies[0]:t0"]
-    t0_samps_all = chain_all["bodies[0]:t0"]
     t0 = np.percentile(t0_samps, [16, 50, 84])
 
     # Radius (Jupiter radii):
     radius_samps = np.exp(chain["bodies[0]:ln_radius"]-np.log(0.0995))
-    radius_samps_all = np.exp(chain_all["bodies[0]:ln_radius"]-np.log(0.0995))
     radius = np.percentile(radius_samps, [16, 50, 84])
 
     # Depth (ppt):
     depth_samps = params["depth"] * 1e3
     depth = np.percentile(depth_samps, [16, 50, 84])
 
-    samples = np.concatenate([
-        [np.log10(period_samps)], [np.log10(radius_samps)], [t0_samps],
-        [lnprob],
-    ]).T
-    samples_all = np.concatenate([
-        [np.log10(period_samps_all)], [np.log10(radius_samps_all)],
-        [t0_samps_all], [lnprob_all],
-    ]).T
-    bins = [np.linspace(a_, b_, 30) for a_, b_ in
-            zip(np.min(samples_all, axis=0), np.max(samples_all, axis=0))]
-    fig = corner.corner(samples, bins, color="g")
-    fig = corner.corner(samples_all, bins, labels=[
-        r"$\log_{10} P / \mathrm{year}$",
-        r"$\log_{10} R / R_\mathrm{J}$",
-        r"$t_0 / \mathrm{KBJD}$",
-        r"$\ln p$",
-    ], fig=fig)
-    os.makedirs(os.path.join(output, "params"), exist_ok=True)
-    fig.savefig(os.path.join(output, "params", "{0}.pdf".format(kicid)),
-                dpi=300)
-    pl.close(fig)
+    # samples = np.concatenate([
+    #     [np.log10(period_samps)], [np.log10(radius_samps)], [t0_samps],
+    #     [lnprob],
+    # ]).T
+    # samples_all = np.concatenate([
+    #     [np.log10(period_samps_all)], [np.log10(radius_samps_all)],
+    #     [t0_samps_all], [lnprob_all],
+    # ]).T
+    # bins = [np.linspace(a_, b_, 30) for a_, b_ in
+    #         zip(np.min(samples_all, axis=0), np.max(samples_all, axis=0))]
+    # fig = corner.corner(samples, bins, color="g")
+    # fig = corner.corner(samples_all, bins, labels=[
+    #     r"$\log_{10} P / \mathrm{year}$",
+    #     r"$\log_{10} R / R_\mathrm{J}$",
+    #     r"$t_0 / \mathrm{KBJD}$",
+    #     r"$\ln p$",
+    # ], fig=fig)
+    # os.makedirs(os.path.join(fig_output, "params"), exist_ok=True)
+    # fig.savefig(os.path.join(fig_output, "params", "{0}.pdf".format(kicid)),
+    #             dpi=300)
+    # pl.close(fig)
 
     print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1],
           duration[1])
@@ -225,19 +221,20 @@ parser.add_argument("candidates",
                     help="the csv of candidate files")
 parser.add_argument("fits_root",
                     help="the root directory of the MCMC fit results")
-parser.add_argument("-o", "--output", default=None,
+parser.add_argument("-o", "--output", default="results",
                     help="the root directory for the output")
+parser.add_argument("-f", "--fig-output", default="figures",
+                    help="the root directory for the figure output")
+parser.add_argument("-t", "--tex-output", default="document",
+                    help="the root directory for the TeX output")
 parser.add_argument("kicids", nargs="*", help="some KIC IDs",
                     type=int)
 args = parser.parse_args()
 
-if args.output is None:
-    outdir = os.path.join(PEERLESS_DATA_DIR, "results", "fits")
-else:
-    outdir = args.output
 cands = pd.read_csv(args.candidates)
 
-function = partial(collect_one, root=args.fits_root, output=args.output)
+function = partial(collect_one, root=args.fits_root,
+                   fig_output=os.path.join(args.tex_output, args.fig_output))
 
 if args.kicids:
     kicids = args.kicids
@@ -251,3 +248,11 @@ cols.remove("kicid")
 cols = ["kicid"] + cols
 df = df[cols]
 df.to_csv(os.path.join(args.output, "fits.csv"), index=False)
+
+n = 4
+with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
+    for _, row in df.sort_values("radius").iterrows():
+        f.write("\includegraphics[width={0}\\textwidth]{{{1}/{2}.pdf}}\n"
+                .format(1.0 / n,
+                        os.path.join(args.tex_output, args.fig_output),
+                        int(row.kicid)))

@@ -16,6 +16,9 @@ from peerless.plot_setup import COLORS
 from peerless.catalogs import TargetCatalog
 from peerless.autocorr import integrated_time
 
+from matplotlib import rcParams
+rcParams["figure.autolayout"] = False
+
 
 def collect_one(kicid, root=None, fig_output="document/figures"):
     n = int((cands.kicid == kicid).sum())
@@ -118,10 +121,11 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     ax.yaxis.set_major_locator(pl.MaxNLocator(4))
     ax.annotate("{0}".format(kicid), xy=(0, 0), xycoords="axes fraction",
                 xytext=(5, 5), textcoords="offset points", fontsize=14)
-    pl.tight_layout()
+    # pl.tight_layout()
+    fig.subplots_adjust(left=0.2, bottom=0.03, right=0.98, top=0.97)
     os.makedirs(os.path.join(fig_output, "lcs"), exist_ok=True)
     fig.savefig(os.path.join(fig_output, "lcs", "{0}.pdf".format(kicid)),
-                bbox_inches="tight", dpi=300)
+                dpi=300)
     pl.close(fig)
 
     # Compute the planet parameters:
@@ -245,5 +249,5 @@ df.to_csv(os.path.join(args.output, "fits.csv"), index=False)
 n = 4
 with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
     for _, row in df.sort_values("radius").iterrows():
-        f.write("\includegraphics[width={0}\\textwidth]{{{1}/{2}.pdf}}\n"
-                .format(1.0 / n, args.fig_output, int(row.kicid)))
+        f.write("\includegraphics[width=0.2\\textwidth]{{{0}/lcs/{1}.pdf}}\n"
+                .format(args.fig_output, int(row.kicid)))

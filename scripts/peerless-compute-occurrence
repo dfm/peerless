@@ -91,12 +91,11 @@ for (rmin, rmax), (pmin, pmax) in product(rbins, pbins):
 
     results.append((
         rmin, rmax, pmin, pmax,
-        len(fits), Q, vol, int_rate, int_rate/vol, int_rate/vol/np.sqrt(N),
+        len(fits), Q, int_rate/vol, int_rate/vol/np.sqrt(N),
     ))
 
 # Save the results.
 df = pd.DataFrame(results, columns=[
-    "rmin", "rmax", "pmin", "pmax", "N", "Q", "V", "rate", "rate_dens",
-    "rate_dens_uncert",
+    "rmin", "rmax", "pmin", "pmax", "N", "Q", "rate", "rate_uncert",
 ])
 df.to_csv(os.path.join(args.output, "rate.csv"), index=False)

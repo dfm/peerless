@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import argparse
+import numpy as np
+import pandas as pd
+from itertools import product
+
+from peerless.catalogs import TargetCatalog
+
+# Newton's constant in $R_\odot^3 M_\odot^{-1} {days}^{-2}$.
+_G = 2945.4625385377644
+
+# Default grid
+default_rmin = 0.009155 / 0.0995
+default_rmax = 1.0
+default_pmin = 2.0
+default_pmax = 25.0
+
+
+parser = argparse.ArgumentParser(
+    description="compute the occurrence rate of long-period planets"
+)
+parser.add_argument("fits", help="fit summary file")
+parser.add_argument("injections", help="injections summary file")
+
+parser.add_argument("--rmin", type=float, default=default_rmin,
+                    help="the minimum radius in Jupiter radii")
+parser.add_argument("--rmax", type=float, default=default_rmax,
+                    help="the maximum radius in Jupiter radii")
+parser.add_argument("--rbins", type=int, default=2,
+                    help="the number of radius bins")
+
+parser.add_argument("--pmin", type=float, default=default_pmin,
+                    help="the minimum period in years")
+parser.add_argument("--pmax", type=float, default=default_pmax,
+                    help="the maximum period in years")
+parser.add_argument("--pbins", type=int, default=1,
+                    help="the number of period bins")
+
+parser.add_argument("-o", "--output", default="results",
+                    help="the root directory for the output")
+args = parser.parse_args()
+
+# Load the target and injection tables.
+targets = TargetCatalog().df
+targets = targets[np.isfinite(targets.mass)]
+inj0 = pd.read_hdf(args.injections, "injections")
+inj0 = pd.merge(inj0, targets, left_on="kicid", right_on="kepid",
+                suffixes=["", "_stlr"])
+inj0 = pd.DataFrame(inj0[np.isfinite(inj0.mass)])
+fits0 = pd.read_csv(args.fits)
+
+# Define the grids.
+rgrid = np.exp(np.linspace(np.log(args.rmin), np.log(args.rmax), args.rbins+1))
+rbins = [(float(rgrid[i]), float(rgrid[i+1])) for i in range(args.rbins)]
+pgrid = np.exp(np.linspace(np.log(args.pmin), np.log(args.pmax), args.pbins+1))
+pbins = [(float(pgrid[i]), float(pgrid[i+1])) for i in range(args.pbins)]
+
+results = []
+for (rmin, rmax), (pmin, pmax) in product(rbins, pbins):
+    m = (rmin * 0.0995 <= inj0.radius) & (inj0.radius <= rmax * 0.0995)
+    m &= (pmin * 365.25 <= inj0.period) & (inj0.period <= pmax * 365.25)
+    inj = pd.DataFrame(inj0[m])
+    rec = inj.accept
+
+    # Geometric.
+    fk = inj.dutycycle
+    Tk = inj.dataspan
+    Mk = inj.mass
+    Rk = inj.radius_stlr
+    Qk = (4*np.pi/(_G * Mk))**(1./3) * Rk
+
+    period = inj.injected_period
+    Qt = period**(-2./3) * (1.0 - (1.0 - fk)**(Tk / period))
+
+    eccen = inj.injected_e
+    omega = inj.injected_omega
+    Qe = (1.0 + eccen * np.sin(omega)) / (1.0 - eccen**2)
+
+    Q = (Qk * Qt * Qe)[rec].sum() / len(inj)
+
+    m = ((pmin < fits0.period) & (fits0.period < pmax) &
+        (rmin < fits0.radius) & (fits0.radius < rmax))
+    fits = fits0[m]
+
+    N = len(fits)
+    int_rate = N / (Q * len(targets))
+    vol = (np.log(pmax) - np.log(pmin)) * (np.log(rmax) - np.log(rmin))
+
+    results.append((
+        rmin, rmax, pmin, pmax,
+        len(fits), Q, vol, int_rate, int_rate/vol, int_rate/vol/np.sqrt(N),
+    ))
+
+# Save the results.
+df = pd.DataFrame(results, columns=[
+    "rmin", "rmax", "pmin", "pmax", "N", "Q", "V", "rate", "rate_dens",
+    "rate_dens_uncert",
+])
+df.to_csv(os.path.join(args.output, "rate.csv"), index=False)

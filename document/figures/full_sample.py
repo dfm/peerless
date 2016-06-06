@@ -21,7 +21,7 @@ for f in np.exp(np.linspace(np.log(0.001), np.log(100), 8)):
     ax.plot(x0, y0, "k", lw=0.5, alpha=0.5)
 
 ax.loglog(x, y, ".", color=COLORS["DATA"], ms=4)
-ax.set_xlim(1.1, 450.)
+ax.set_xlim(0.5, 450.)
 ax.set_ylim(0.3, 30)
 ax.set_xlabel("orbital period [days]")
 ax.set_ylabel("planet radius [$R_\oplus$]")
@@ -43,17 +43,23 @@ period = np.array("0.2408467 0.61519726 1.0000174 1.8808476 11.862615 "
                   "29.447498 84.016846 164.79132".split(), dtype=float)
 ax.plot(period * 365, rad / rad[2], "o",  # color=COLORS["MODEL_2"],
         ms=4, mec="none")
-ax.set_xlim(0.5, max(x0))
 ax.axvline(4.2*365 / 2., color="k", alpha=0.6)
 ax.axvline(4.2*365, color="k", ls="dashed", alpha=0.6)
 
-fits = pd.read_csv("fits.csv")
+fig.set_tight_layout(True)
+fig.savefig("full_sample_zoom.pdf", bbox_inches="tight")
 
-xerr = np.array(fits[["period_err_1", "period_err_2"]]).T
-yerr = np.array(fits[["radius_err_1", "radius_err_2"]]).T / 0.01
-x = np.array(fits.period)
-y = np.array(fits.radius) / 0.01
+ax.set_xlim(0.5, max(x0))
+fig.savefig("full_sample.pdf", bbox_inches="tight")
+
+fits = pd.read_csv("../../results/fits.csv")
+
+pf = 365.25
+rf = 0.0995 / 0.00915
+xerr = np.array(fits[["period_uncert_minus", "period_uncert_plus"]]).T * pf
+yerr = np.array(fits[["radius_uncert_minus", "radius_uncert_plus"]]).T * rf
+x = np.array(fits.period) * pf
+y = np.array(fits.radius) * rf
 ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt=".g", capsize=0)
 
-fig.set_tight_layout(True)
-fig.savefig("full_sample.pdf", bbox_inches="tight")
+fig.savefig("full_sample_plus_cands.pdf", bbox_inches="tight")

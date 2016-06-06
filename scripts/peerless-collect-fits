@@ -10,13 +10,15 @@ import numpy as np
 import pandas as pd
 from functools import partial
 import matplotlib.pyplot as pl
+from multiprocessing import Pool
+from collections import OrderedDict
 
 from peerless.autocorr import integrated_time
 from peerless.settings import PEERLESS_DATA_DIR
 from peerless.catalogs import TargetCatalog
 
 
-def collect_one(kicid, root=None):
+def collect_one(kicid, root=None, output="results"):
     n = int((cands.kicid == kicid).sum())
     assert n in [1, 2]
 
@@ -125,8 +127,8 @@ def collect_one(kicid, root=None):
     ax.annotate("{0}".format(kicid), xy=(0, 0), xycoords="axes fraction",
                 xytext=(5, 5), textcoords="offset points", fontsize=14)
     pl.tight_layout()
-    os.makedirs(os.path.join("results", "lcs"), exist_ok=True)
-    fig.savefig(os.path.join("results", "lcs", "{0}.pdf".format(kicid)),
+    os.makedirs(os.path.join(output, "lcs"), exist_ok=True)
+    fig.savefig(os.path.join(output, "lcs", "{0}.pdf".format(kicid)),
                 bbox_inches="tight", dpi=300)
     pl.close(fig)
 
@@ -189,13 +191,32 @@ def collect_one(kicid, root=None):
         r"$t_0 / \mathrm{KBJD}$",
         r"$\ln p$",
     ], fig=fig)
-    os.makedirs(os.path.join("results", "params"), exist_ok=True)
-    fig.savefig(os.path.join("results", "params", "{0}.pdf".format(kicid)),
+    os.makedirs(os.path.join(output, "params"), exist_ok=True)
+    fig.savefig(os.path.join(output, "params", "{0}.pdf".format(kicid)),
                 dpi=300)
     pl.close(fig)
 
     print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1],
           duration[1])
+
+    return OrderedDict([
+        ("kicid", kicid),
+        ("period", period[1]),
+        ("period_uncert_plus", period[2]-period[1]),
+        ("period_uncert_minus", period[1]-period[0]),
+        ("t0", t0[1]),
+        ("t0_uncert_plus", t0[2]-t0[1]),
+        ("t0_uncert_minus", t0[1]-t0[0]),
+        ("radius", radius[1]),
+        ("radius_uncert_plus", radius[2]-radius[1]),
+        ("radius_uncert_minus", radius[1]-radius[0]),
+        ("teq", teq[1]),
+        ("teq_uncert_plus", teq[2]-teq[1]),
+        ("teq_uncert_minus", teq[1]-teq[0]),
+        ("duration", duration[1]),
+        ("duration_uncert_plus", duration[2]-duration[1]),
+        ("duration_uncert_minus", duration[1]-duration[0]),
+    ])
 
 parser = argparse.ArgumentParser(
     description="collect postprocess MCMC results"
@@ -216,14 +237,17 @@ else:
     outdir = args.output
 cands = pd.read_csv(args.candidates)
 
-function = partial(collect_one, root=args.fits_root)
+function = partial(collect_one, root=args.fits_root, output=args.output)
 
 if args.kicids:
     kicids = args.kicids
 else:
     kicids = list(set(np.array(cands[cands.accept].kicid)))
 
-# kicids = [8463272, 3239945, 8410697, 8800954]  # multis
-# kicids = [6342758]
-
-list(map(function, kicids))
+pool = Pool()
+df = pd.DataFrame(list(pool.map(function, kicids)))
+cols = df.columns.tolist()
+cols.remove("kicid")
+cols = ["kicid"] + cols
+df = df[cols]
+df.to_csv(os.path.join(args.output, "fits.csv"), index=False)

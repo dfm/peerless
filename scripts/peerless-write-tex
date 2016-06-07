@@ -58,7 +58,7 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
         rows = []
         for v in ["period", "t0", "radius", "teq"]:
             u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]])
-            nd = int(-min(0, np.floor(np.min(np.log10(u)) - 1)))
+            nd = int(-min(0, np.floor(np.min(np.log10(u)))))
             minus = ("{{0:.{0:d}f}}".format(nd)).format(u[0])
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])

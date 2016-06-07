@@ -30,8 +30,12 @@ with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
 
 
 with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
-    f.write("kic id & period [years] & $t_0$ [KBJD] & radius [$R_\mathrm{J}$] "
-            "& $T_\mathrm{eq}$ [K] & comments \\\\\n")
+    f.write("""\\tablehead{
+    \colhead{kic id} & \colhead{period [years]} & \colhead{$t_0$ [KBJD]} &
+    \colhead{radius [$R_\mathrm{J}$]} & \colhead{$T_\mathrm{eq}$ [K]} &
+    \colhead{comments}
+}
+\startdata\n""")
     for _, row in df.sort_values("kicid").iterrows():
         # Compute the comment.
         koi = kois[kois.kepid == row.kicid]
@@ -59,4 +63,6 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
             rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
+        rows.append(comment)
         f.write(" & ".join(rows) + "\\\\\n")
+    f.write("\enddata\n")

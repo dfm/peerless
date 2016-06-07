@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import argparse
+import numpy as np
+import pandas as pd
+
+from peerless.catalogs import LongPeriodEBCatalog, KOICatalog
+
+
+parser = argparse.ArgumentParser(
+    description="write TeX tables for the paper"
+)
+parser.add_argument("fits", help="the csv of fit results")
+parser.add_argument("-f", "--fig-output", default="figures",
+                    help="the root directory for the figure output")
+parser.add_argument("-t", "--tex-output", default="document",
+                    help="the root directory for the TeX output")
+args = parser.parse_args()
+
+df = pd.read_csv(args.fits)
+kois = KOICatalog().df
+lpebs = LongPeriodEBCatalog().df
+
+with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
+    for _, row in df.sort_values("radius").iterrows():
+        f.write("\includegraphics[width=0.25\\textwidth]{{{0}/lcs/{1}.pdf}}\n"
+                .format(args.fig_output, int(row.kicid)))
+
+
+with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
+    f.write("kic id & period [years] & $t_0$ [KBJD] & radius [$R_\mathrm{J}$] "
+            "& $T_\mathrm{eq}$ [K] & comments \\\\\n")
+    for _, row in df.sort_values("kicid").iterrows():
+        # Compute the comment.
+        koi = kois[kois.kepid == row.kicid]
+        comment = []
+        if len(koi):
+            koiname = int(koi.kepoi_name.iloc[0][1:-3])
+            name = "KOI {0}".format(koiname)
+            if not koi.kepler_name.isnull().iloc[0]:
+                name += " / Kepler-{0}".format(
+                    int(koi.kepler_name.iloc[0][7:-2]))
+            comment.append(name)
+        lpeb = lpebs[lpebs.kicid == row.kicid]
+        if len(lpeb):
+            comment.append("known EB")
+        comment = "; ".join(comment)
+
+        # And the columns of the table.
+        f.write("{0:d} & ".format(int(row.kicid)))
+
+        rows = []
+        for v in ["period", "t0", "radius", "teq"]:
+            u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]])
+            nd = int(-min(0, np.floor(np.min(np.log10(u)) - 1)))
+            minus = ("{{0:.{0:d}f}}".format(nd)).format(u[0])
+            plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
+            mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
+            rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
+        f.write(" & ".join(rows) + "\\\\\n")

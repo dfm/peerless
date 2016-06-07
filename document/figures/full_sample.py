@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from plot_setup import COLORS
+from peerless.plot_setup import COLORS
 
 import matplotlib
 import numpy as np
@@ -36,6 +36,9 @@ x, y = kois[m].koi_period, kois[m].koi_prad
 ax.plot(x, y, ".",  # color=COLORS["MODEL_1"],
         ms=3, alpha=0.3, zorder=-1)
 
+fig.set_tight_layout(True)
+fig.savefig("full_sample_no_ss_zoom.pdf", bbox_inches="tight")
+
 # Plot the solar system.
 rad = np.array("2439.7 6051.8 6371.00 3389.5 69911 58232 25362 24622"
                .split(), dtype=float)
@@ -46,7 +49,6 @@ ax.plot(period * 365, rad / rad[2], "o",  # color=COLORS["MODEL_2"],
 ax.axvline(4.2*365 / 2., color="k", alpha=0.6)
 ax.axvline(4.2*365, color="k", ls="dashed", alpha=0.6)
 
-fig.set_tight_layout(True)
 fig.savefig("full_sample_zoom.pdf", bbox_inches="tight")
 
 ax.set_xlim(0.5, max(x0))

@@ -58,11 +58,18 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
         rows = []
         for v in ["period", "t0", "radius", "teq"]:
             u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]])
-            nd = int(-min(0, np.floor(np.min(np.log10(u)))))
+            nd = int(-min(0, np.floor(np.min(np.log10(u)) - 1)))
             minus = ("{{0:.{0:d}f}}".format(nd)).format(u[0])
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
-            rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
+            if nd > 3:
+                u = "{0}".format(minus)[-2:]
+                rows.append("${0}({1})$".format(mean, u))
+            elif plus == minus:
+                rows.append("${0}\pm{1}$".format(mean, minus))
+            else:
+                rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus,
+                                                             plus))
         rows.append(comment)
         f.write(" & ".join(rows) + "\\\\\n")
     f.write("\enddata\n")

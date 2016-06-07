@@ -4,6 +4,8 @@
 
 \pdfoutput=1
 
+\usepackage{microtype}
+
 \usepackage{url}
 \usepackage{amssymb,amsmath}
 \usepackage{natbib}
@@ -209,6 +211,8 @@ stars: statistics
 \section{Introduction}
 
 EB catalog: \citep{Kirk:2016}
+
+Microlensing OR: \citep{Shvartzvald:2016}
 
 Data from the \kepler\ Mission has been used to discover thousands of
 transiting exoplanets.
@@ -460,10 +464,17 @@ downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
 
 \subsection{Parameter estimation}
 
+\begin{figure*}[p]~\\
+\begin{center}
+\include{lcfig}
+\end{center}
+\caption{%
+\dfmfiglabel{lightcurves}}
+\end{figure*}
 
 \begin{figure*}~\\
 \begin{center}
-\includegraphics{figures/full_sample.pdf}
+\includegraphics{figures/full_sample_plus_cands.pdf}
 \end{center}
 \caption{%
 Blah.

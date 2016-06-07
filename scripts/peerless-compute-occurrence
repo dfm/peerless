@@ -58,6 +58,7 @@ rbins = [(float(rgrid[i]), float(rgrid[i+1])) for i in range(args.rbins)]
 pgrid = np.exp(np.linspace(np.log(args.pmin), np.log(args.pmax), args.pbins+1))
 pbins = [(float(pgrid[i]), float(pgrid[i+1])) for i in range(args.pbins)]
 
+# Note this only works because we injected
 results = []
 for (rmin, rmax), (pmin, pmax) in product(rbins, pbins):
     m = (rmin * 0.0995 <= inj0.radius) & (inj0.radius <= rmax * 0.0995)
@@ -72,11 +73,11 @@ for (rmin, rmax), (pmin, pmax) in product(rbins, pbins):
     Rk = inj.radius_stlr
     Qk = (4*np.pi/(_G * Mk))**(1./3) * Rk
 
-    period = inj.injected_period
+    period = inj.period
     Qt = period**(-2./3) * (1.0 - (1.0 - fk)**(Tk / period))
 
-    eccen = inj.injected_e
-    omega = inj.injected_omega
+    eccen = inj.e
+    omega = inj.omega
     Qe = (1.0 + eccen * np.sin(omega)) / (1.0 - eccen**2)
 
     Q = (Qk * Qt * Qe)[rec].sum() / len(inj)

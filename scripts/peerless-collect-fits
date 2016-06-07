@@ -167,27 +167,9 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     depth_samps = params["depth"] * 1e3
     depth = np.percentile(depth_samps, [16, 50, 84])
 
-    # samples = np.concatenate([
-    #     [np.log10(period_samps)], [np.log10(radius_samps)], [t0_samps],
-    #     [lnprob],
-    # ]).T
-    # samples_all = np.concatenate([
-    #     [np.log10(period_samps_all)], [np.log10(radius_samps_all)],
-    #     [t0_samps_all], [lnprob_all],
-    # ]).T
-    # bins = [np.linspace(a_, b_, 30) for a_, b_ in
-    #         zip(np.min(samples_all, axis=0), np.max(samples_all, axis=0))]
-    # fig = corner.corner(samples, bins, color="g")
-    # fig = corner.corner(samples_all, bins, labels=[
-    #     r"$\log_{10} P / \mathrm{year}$",
-    #     r"$\log_{10} R / R_\mathrm{J}$",
-    #     r"$t_0 / \mathrm{KBJD}$",
-    #     r"$\ln p$",
-    # ], fig=fig)
-    # os.makedirs(os.path.join(fig_output, "params"), exist_ok=True)
-    # fig.savefig(os.path.join(fig_output, "params", "{0}.pdf".format(kicid)),
-    #             dpi=300)
-    # pl.close(fig)
+    # Impact / eccentricity:
+    impact = np.percentile(b, [16, 50, 84])
+    eccen = np.percentile(e, [16, 50, 84])
 
     print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1],
           duration[1])
@@ -209,6 +191,15 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
         ("duration", duration[1]),
         ("duration_uncert_plus", duration[2]-duration[1]),
         ("duration_uncert_minus", duration[1]-duration[0]),
+        ("depth", depth[1]),
+        ("depth_uncert_plus", depth[2]-depth[1]),
+        ("depth_uncert_minus", depth[1]-depth[0]),
+        ("impact", impact[1]),
+        ("impact_uncert_plus", impact[2]-impact[1]),
+        ("impact_uncert_minus", impact[1]-impact[0]),
+        ("eccen", eccen[1]),
+        ("eccen_uncert_plus", eccen[2]-eccen[1]),
+        ("eccen_uncert_minus", eccen[1]-eccen[0]),
     ])
 
 parser = argparse.ArgumentParser(

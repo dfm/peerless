@@ -62,7 +62,7 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             minus = ("{{0:.{0:d}f}}".format(nd)).format(u[0])
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
-            if nd > 3:
+            if nd > 5:
                 u = "{0}".format(minus)[-2:]
                 rows.append("${0}({1})$".format(mean, u))
             elif plus == minus:

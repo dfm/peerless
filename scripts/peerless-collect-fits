@@ -198,8 +198,8 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
         ("impact_uncert_plus", impact[2]-impact[1]),
         ("impact_uncert_minus", impact[1]-impact[0]),
         ("eccen", eccen[1]),
-        ("eccen_uncert_plus", eccen[2]-eccen[1]),
-        ("eccen_uncert_minus", eccen[1]-eccen[0]),
+        ("eccen_uncert_plus", eccen[2]-impact[1]),
+        ("eccen_uncert_minus", eccen[1]-impact[0]),
     ])
 
 parser = argparse.ArgumentParser(
@@ -236,14 +236,3 @@ cols.remove("kicid")
 cols = ["kicid"] + cols
 df = df[cols]
 df.to_csv(os.path.join(args.output, "fits.csv"), index=False)
-
-n = 4
-with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
-    for _, row in df.sort_values("radius").iterrows():
-        f.write("\includegraphics[width=0.25\\textwidth]{{{0}/lcs/{1}.pdf}}\n"
-                .format(args.fig_output, int(row.kicid)))
-
-with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
-    for _, row in df.sort_values("radius").iterrows():
-        f.write("\includegraphics[width=0.25\\textwidth]{{{0}/lcs/{1}.pdf}}\n"
-                .format(args.fig_output, int(row.kicid)))

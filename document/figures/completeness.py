@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function
 
-from plot_setup import SQUARE_FIGSIZE, COLORS
+from peerless.plot_setup import SQUARE_FIGSIZE, COLORS
 
 import numpy as np
 import pandas as pd

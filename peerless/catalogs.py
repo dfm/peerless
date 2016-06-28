@@ -166,6 +166,15 @@ class BlacklistCatalog(LocalCatalog):
     filename = "blacklist.csv"
 
 
+class UeharaCatalog(LocalCatalog):
+    filename = "uehara.csv"
+    args = dict(delim_whitespace=True)
+
+
+class WangCatalog(LocalCatalog):
+    filename = "wang.csv"
+
+
 class TargetCatalog(LocalCatalog):
     filename = "targets.csv"
 

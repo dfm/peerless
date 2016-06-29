@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from peerless.catalogs import (
-    KOICatalog, UeharaCatalog, WangCatalog
+    CumulativeCatalog, UeharaCatalog, WangCatalog
 )
 
 
@@ -22,7 +22,7 @@ parser.add_argument("-t", "--tex-output", default="document",
 args = parser.parse_args()
 
 df = pd.read_csv(args.fits)
-kois = KOICatalog().df
+kois = CumulativeCatalog().df
 wang = WangCatalog().df
 uehara = UeharaCatalog().df
 

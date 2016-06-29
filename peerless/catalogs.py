@@ -18,7 +18,8 @@ from .settings import PEERLESS_DATA_DIR
 
 __all__ = [
     "KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog",
-    "TargetCatalog", "DatasetsCatalog",
+    "TargetCatalog", "DatasetsCatalog", "CumulativeCatalog", "UeharaCatalog",
+    "WangCatalog",
 ]
 
 
@@ -109,6 +110,10 @@ class KOICatalog(ExoplanetArchiveCatalog):
 
 class KICatalog(ExoplanetArchiveCatalog):
     name = "q1_q17_dr24_stellar"
+
+
+class CumulativeCatalog(ExoplanetArchiveCatalog):
+    name = "cumulative"
 
 
 class CatalogDownloadError(Exception):

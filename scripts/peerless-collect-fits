@@ -27,6 +27,9 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     # Get the stellar properties.
     kic = TargetCatalog().df
     star = kic[kic.kepid == kicid]
+    if not len(star):
+        print("Skipping {0}...".format(kicid))
+        return
     teff = float(star.teff)
     teff_err = np.mean(np.abs(np.array(star[["teff_err1", "teff_err2"]])))
 
@@ -213,8 +216,6 @@ parser.add_argument("-o", "--output", default="results",
                     help="the root directory for the output")
 parser.add_argument("-f", "--fig-output", default="figures",
                     help="the root directory for the figure output")
-parser.add_argument("-t", "--tex-output", default="document",
-                    help="the root directory for the TeX output")
 parser.add_argument("kicids", nargs="*", help="some KIC IDs",
                     type=int)
 args = parser.parse_args()
@@ -230,7 +231,8 @@ else:
     kicids = list(set(np.array(cands[cands.accept].kicid)))
 
 pool = Pool()
-df = pd.DataFrame(list(pool.map(function, kicids)))
+df = pd.DataFrame([v for v in list(pool.map(function, kicids))
+                   if v is not None])
 cols = df.columns.tolist()
 cols.remove("kicid")
 cols = ["kicid"] + cols

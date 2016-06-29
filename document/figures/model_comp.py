@@ -48,9 +48,9 @@ for a, ax, (disp, name, kicid, peak_id) in zip("abcd", axes.flatten(), models):
     ax.plot(24*(x[m] - t0), y[m], ".", color=COLORS["DATA"])
 
     mu = gp.predict(y0, x0, return_cov=False)
-    # mu = gp.mean.get_value(x0)
     ax.plot(24*(x0 - t0), mu, color=COLORS["MODEL_2"], lw=2.5, alpha=0.8)
-    ax.annotate("({0})".format(a), xy=(0, 0), xycoords="axes fraction",
+    ax.annotate("({0}) {1}".format(a, disp),
+                xy=(0, 0), xycoords="axes fraction",
                 xytext=(5, 12), textcoords="offset points")
 
     ax.set_xlim(24*(rng - t0))

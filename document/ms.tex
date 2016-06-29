@@ -356,7 +356,7 @@ For the \kepler\ light curves, this procedure yields at least one candidate
 event in about 1~percent of targets and the three highest signal-to-noise
 events are investigated in the following step.
 
-\subsection{Step 2 -- Light curve vetting}
+\subsection{Step 2 -- Light curve vetting}\sectlabel{light-curve-vetting}
 
 In this step of the method, the goal is to discard any signals that are not
 sufficiently ``transit-like'' in shape.
@@ -402,7 +402,7 @@ sensitivity dropouts (SPSDs; \dfmtodo{CITE}), and}
 {\item \modelname{box} -- a box to catch signals that are well fit by the
 search scalar but insufficiently transit-like to be convincing.}
 \end{itemize}
-The functional forms of these models are given in Appendix \dfmtodo{SOME APP}.
+The functional forms of these models are given in \app{model-details}.
 
 \dfmfig{model-comp} shows representative events that fall into different
 classes and the corresponding maximum-likelihood model.
@@ -749,7 +749,90 @@ University.
 \newpage
 \appendix
 
-\section{Gaussian process regression}
+\section{Details of the light curve models}\sectlabel{model-details}
+
+In \sect{light-curve-vetting}, the five light curve models were listed.
+In this section, we give the mathematical details of each model and list the
+parameters that are fit.
+Each model~--~except the \modelname{transit} model~--~can be easily
+differentiated with respect to its parameters.
+As discussed in the following section, this feature is crucial for efficient
+and robust likelihood maximization.
+
+\begin{itemize}
+
+{\item
+The \modelname{box} model is given by
+\begin{eqnarray}
+m_\mathrm{box}(t) &=& \left\{\begin{array}{ll}
+a, & \mbox{if $t \le t_\mathrm{min}$} \\
+b, & \mbox{if $t_\mathrm{min} < t \le t_\mathrm{max}$} \\
+c, & \mbox{if $t_\mathrm{max} < t$}
+\end{array}\right.
+\end{eqnarray}
+where $a$, $b$, and $c$ are free parameters, and $t_\mathrm{min}$ and
+$t_\mathrm{max}$ are fixed.
+In practice, we include two different \modelname{box} models where
+$t_\mathrm{min}$ and $t_\mathrm{max}$ are set using different heuristics.
+The first \modelname{box} has the bounds set to match the ingress and
+egress of the best fit \modelname{transit}.
+The second \modelname{box} is chosen based on the largest change points in the
+light curve.
+}
+
+{\item
+The \modelname{step} model is given by
+\begin{eqnarray}
+m_\mathrm{step}(t) &=& \left\{\begin{array}{ll}
+m_1 + h_1\,\exp\left([t - t_0] / w_1\right), & \mbox{if $t < t_0$} \\
+m_2 + h_2\,\exp\left([t_0 - t] / w_2\right), & \mbox{if $t_0 \le t$}
+\end{array}\right.
+\end{eqnarray}
+where all of the parameters~--~including $t_0$~--~are included in the fit.
+To ensure that the widths $w_*$ remain positive, we fit for $\log w_*$.
+}
+
+{\item
+For the \modelname{outlier} model, we iterate through all cadences $t_n$
+within 0.3~days of the candidate transit time and evaluate the model as
+\begin{eqnarray}
+m_\mathrm{outlier}(t) &=& \left\{\begin{array}{ll}
+f(t_0), & \mbox{if $t = t_0$} \\
+\mathrm{median}[f(t \ne t_0)], & \mbox{if $t \ne t_0$}
+\end{array}\right.
+\end{eqnarray}
+where $f(t)$ is the observed time series.
+With this model, no non-linear optimization is required and the final value of
+$t_0$ is the one with the maximum likelihood in this grid search.
+}
+
+{\item
+The \modelname{variability} model only has one parameter, the flux $m_0$ and
+$m_\mathrm{variability}(t) = m_0$ at all times.
+The variability is captured by the Gaussian Process residual model.
+}
+
+{\item
+Finally, the \modelname{transit} model is an exposure time integrated,
+limb darkened light curve \citep{Mandel:2002, Kipping:2010} parameterized by
+the radius ratio between the planet and star, the transit duration, the
+transit time, the impact parameter, and two quadratic limb darkening
+coefficients \citep{Kipping:2013}.
+Analytically computing the gradient of a simple transit model is possible
+\citep{Pal:2008} but it becomes substantially more tedious as the model
+becomes more realistic.
+Therefore, we instead use a compile-time automatic differentiation
+library\footnote{More specifically, we use the \texttt{Jet} object from the
+BSD-licensed Ceres Solver \url{http://ceres-solver.org}} \citep{Agarwal:2016}
+to efficiently compute first derivatives of the full transit model with
+respect to the orbital and physical parameters to machine precision.
+}
+
+\end{itemize}
+
+
+
+\section{Gaussian process regression}\sectlabel{gp-regression}
 
 Gaussian Processes (GPs) are a class of non-parametric, stochastic models that
 have been demonstrated to be good effective models for the variability in

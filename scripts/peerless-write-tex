@@ -55,6 +55,8 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
         comment = "; ".join(comment)
 
         notes = []
+        if row.n_transits > 1:
+            notes.append("\dagger")
         w = wang[wang.kicid == row.kicid]
         if len(w):
             notes.append("a")

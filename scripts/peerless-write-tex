@@ -47,6 +47,8 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
                 name += " / Kepler-{0}".format(
                     int(koi.kepler_name.iloc[0][7:-2]))
             comment.append(name)
+        elif row.kicid == 8800954:
+            comment = ["KOI 1274 / Kepler-421"]
         lpeb = lpebs[lpebs.kicid == row.kicid]
         if len(lpeb):
             comment.append("known EB")

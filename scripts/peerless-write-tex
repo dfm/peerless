@@ -35,7 +35,7 @@ with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
 with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{kic id} & \colhead{period [years]} & \colhead{$t_0$ [KBJD]} &
-    \colhead{radius [$R_\mathrm{J}$]} & \colhead{$T_\mathrm{eq}$ [K]} &
+    \colhead{radius [$R_\mathrm{J}$]} & \colhead{$T_\mathrm{eq}$\\tablenotemark{*} [K]} &
     \colhead{comments}
 }
 \\rotate

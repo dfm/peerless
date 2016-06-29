@@ -454,18 +454,34 @@ where $\delta$ is the observed transit depth \citep{Bryson:2013}.
 
 \section{Results: a catalog of long-period transiting exoplanet candidates}
 
+To limit the scope of this paper while still demonstrating the applicability
+of our method, we search the \kepler\ archival light curves of the brightest
+and quietest Sun-like stars for long-period transiting exoplanets.
+In this section, we describe the target selection process, the parameter
+estimation procedure, and present the catalog of discoveries.
 
-\subsection{Target selection}\sectlabel{data}
 
-For the purposes of this \paper, we select the $\sim40,000$ brightest and
-quietest G and K dwarfs from the \kepler\ catalog using the following
-parameters:
+\subsection{Target selection}\sectlabel{target-selection}
+
+We select the $\sim40,000$ brightest and quietest G and K dwarfs from the
+\kepler\ catalog using the most recent catalog of stellar parameters%
+\footnote{Parameters from the \textsf{q1\_q17\_dr24\_stellar} table from the
+NASA Exoplanet Archive \citep[][with updates]{Huber:2014}.} and the cuts used
+by \citet{Burke:2015}:
 \begin{itemize}
 {\item $4200\unit{K} \le T_\mathrm{eff} \le 6100\unit{K}$,}
 {\item $R_\star \le 1.15\,R_\odot$,}
+{\item $\mathrm{data\,span} \ge 2\,\mathrm{years}$,}
+{\item $\mathrm{duty\,cycle} \ge 0.6$,}
 {\item $K_p \le 15\unit{mag}$, and}
 {\item $\mathrm{CDPP}_{7.5\unit{hrs}} \le 1000\unit{ppm}$.}
 \end{itemize}
+We continue by excluding the light curves of known eclipsing
+binaries\footnote{\url{http://keplerebs.villanova.edu/}} \citep{Kirk:2016} and
+other known false positives \citep{Coughlin:2016}.
+The final catalog contains 39,518 targets and the parameter distribution is
+shown in \dfmfig{targets}.
+
 We also restrict the sample to only include targets with a data span of more
 than two years and a duty cycle of better than $0.6$.
 Since the \kepler\ data have been searched for shorter period planets

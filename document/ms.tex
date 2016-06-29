@@ -901,17 +901,6 @@ where
 
 To evaluate \eq{gpmeangrad}, we must also evaluate the derivative of the mean
 model with respect to its parameters.
-For this \paper, the model $m(\bvec{t};\,\meanpars)$ will sometimes be the
-limb-darkened, exposure time-integrated transit of a planet on a Keplerian
-orbit and the parameters \meanpars\ are the physical and orbital parameters of
-the planet and star.
-Analytically computing the gradient of a simple transit model is possible
-\citep{Pal:2008} but it becomes substantially more tedious as the model
-becomes more realistic.
-Therefore, we use a compile-time automatic differentiation library\footnote{%
-More specifically, we use the \texttt{Jet} object from the BSD-licensed Ceres
-Solver \url{http://ceres-solver.org}} \citep{Agarwal:2016} to compute first
-derivatives of the full transit model to machine precision.
 
 
 \clearpage

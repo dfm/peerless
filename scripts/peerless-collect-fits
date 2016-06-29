@@ -214,6 +214,8 @@ parser.add_argument("fits_root",
                     help="the root directory of the MCMC fit results")
 parser.add_argument("-o", "--output", default="results",
                     help="the root directory for the output")
+parser.add_argument("-t", "--tex-output", default="document",
+                    help="the root directory for the TeX output")
 parser.add_argument("-f", "--fig-output", default="figures",
                     help="the root directory for the figure output")
 parser.add_argument("kicids", nargs="*", help="some KIC IDs",

@@ -117,6 +117,8 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\poppars}{{\ensuremath{\bvec{\beta}}}}
 \newcommand{\rate}{{\ensuremath{\Gamma}}}
 
+\newcommand{\modelname}[1]{{\textsf{#1}}}
+
 
 \shorttitle{The population of long-period exoplanets}
 \shortauthors{Foreman-Mackey, Hogg, Morton, \etal}
@@ -349,7 +351,7 @@ series using a robust running windowed variance estimate of the detection
 scalar and accepting peaks more than 25-times this noise as candidates.
 
 For the \kepler\ light curves, this procedure yields at least one candidate
-event in about 10~percent of targets and the three highest signal-to-noise
+event in about 1~percent of targets and the three highest signal-to-noise
 events are investigated in the following step.
 
 \subsection{Step 2 -- Light curve vetting}
@@ -387,18 +389,29 @@ model $m_k(t;\,\meanpars)$ parameterized by the parameter vector \meanpars.
 We consider the following mean models and this list provides a qualitative
 justification for each model:
 \begin{itemize}
-{\item a limb-darkened, exposure time integrated transit light curve,}
-{\item a pure Gaussian Process model to capture stellar variability,}
-{\item a single outlier to account for a bad data point,}
-{\item a step function to describe sudden pixel sensitivity dropouts (SPSDs;
-\dfmtodo{CITE}), and}
-{\item a box to catch signals that are well fit by the search scalar but
-insufficiently transit-like to be convincing.}
+{\item \modelname{transit} -- a limb-darkened, exposure time integrated
+transit light curve,}
+{\item \modelname{variability} -- a pure Gaussian Process model to capture
+stellar variability,}
+{\item \modelname{outlier} -- a single outlier to account for a bad data
+point,}
+{\item \modelname{step} -- a step function to describe sudden pixel
+sensitivity dropouts (SPSDs; \dfmtodo{CITE}), and}
+{\item \modelname{box} -- a box to catch signals that are well fit by the
+search scalar but insufficiently transit-like to be convincing.}
 \end{itemize}
 The functional forms of these models are given in Appendix \dfmtodo{SOME APP}.
 
 \dfmfig{model-comp} shows representative events that fall into different
 classes and the corresponding maximum-likelihood model.
+For each candidate event, the BIC of each of these models is computed and the
+event is only passed as a candidate if the \modelname{transit} model is
+preferred to all the other models.
+The \modelname{box} model is the most restrictive comparison, vetoing about
+half of the candidate events in the \kepler\ light curves, followed by the
+\modelname{variability} model.
+To further restrict to non-grazing transits, we also reject events where the
+best fit impact parameter is less than $1 - R_\mathrm{P} / R_\star$.
 
 The reliability of this method of automated vetting is limited by the specific
 models selected in this step.

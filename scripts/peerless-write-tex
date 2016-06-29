@@ -79,11 +79,10 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             # if nd > 5:
             #     u = "{0}".format(minus)[-2:]
             #     rows.append("${0}({1})$".format(mean, u))
-            if plus == minus:
-                rows.append("${0}\pm{1}$".format(mean, minus))
-            else:
-                rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus,
-                                                             plus))
+            # if plus == minus:
+            #     rows.append("${0}\pm{1}$".format(mean, minus))
+            # else:
+            rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
         rows.append(comment)
         f.write(" & ".join(rows) + "\\\\\n")
     f.write("\enddata\n")

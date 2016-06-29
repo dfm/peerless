@@ -259,7 +259,7 @@ remove the substantial fraction of false signals using some combination of
 automated heuristics and expert curation.
 In practice, the fraction of false signals can be substantially reduced by
 requiring that at least three self-consistent transits be observed
-\citep{Petigura:2013, Burke:2014, Rowe:2015, Coughlin:2015}.
+\citep{Petigura:2013, Burke:2014, Rowe:2015, Coughlin:2016}.
 
 Recent work has yielded discoveries of long-period transiting planets with
 only one or two transits identified in archival \kepler\ and \KT\ light curves
@@ -489,7 +489,8 @@ assume that all high signal-to-noise candidates with three or more transits
 have been previously found \citep{Coughlin:2016}.
 To remove these candidates from consideration, we mask the cadences within two
 transit durations of the time when a short-period planet candidate is known to
-transit.
+transit\footnote{We specifically use the \textsf{q1\_q17\_dr24\_koi} from the
+NASA Exoplanet Archive \url{http://exoplanetarchive.ipac.caltech.edu/}.}.
 
 \begin{figure}~\\
 \begin{center}
@@ -499,41 +500,6 @@ transit.
 Blah.
 \dfmfiglabel{targets}}~\\
 \end{figure}
-
-
-We start with the PDC-MAP light curves downloaded from
-MAST\footnote{\url{https://archive.stsci.edu/kepler/}}.
-
-
-
-The \kepler\ Mission measured photometric time series for about 190,000 stars
-at half-hour cadence for a baseline of over four years.
-We aim to search these light curves for single transits of long-period planets
-and single eclipses of binary stars.
-These data are made available on
-MAST\footnote{\url{https://archive.stsci.edu/kepler/}} and, for each target,
-we downloaded the full set of long cadence light curve files provided by Data
-Release 24 \citep{Thompson:2015}.
-From these files, we extracted the PDC time series and split them into
-``sections'' with no more than ten contiguous missing or flagged data points.
-The PDC light curves have been corrected for the instrumental effects caused
-by the spacecraft using a data-driven model of the focal plane
-\citep{Stumpe:2012, Smith:2012}.
-Crucially, an attempt is also made by the PDC procedure to remove sharp
-instrumental artifacts like ``sudden pixel sensitivity dropouts (SPSDs)''.
-The success rate of this correction procedure is much higher than in earlier
-data releases but, as discussed in \sect{demo}, there remain some cases that
-are not properly accounted for.
-
-The goal of this project is to discover the transits of long-period planets
-that have not yet been discovered.
-Therefore, when studying the light curve of an eclipsing binary star or a star
-with known transiting planet candidates~--~on shorter periods~--~we also remove
-all the in-transit data for the candidate using the parameters provided by the
-\project{NASA Exoplanet
-Archive}\footnote{\url{http://exoplanetarchive.ipac.caltech.edu/}; We
-downloaded the \texttt{cumulative} table of \kepler\ Objects of Interest on
-2015-03-25.}.
 
 
 \subsection{Parameter estimation}

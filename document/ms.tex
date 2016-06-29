@@ -484,14 +484,12 @@ KIC~4450472, KIC~5438845, and KIC~10068041).
 The final catalog contains 39,036 targets and the parameter distribution is
 shown in \dfmfig{targets}.
 
-We also restrict the sample to only include targets with a data span of more
-than two years and a duty cycle of better than $0.6$.
-Since the \kepler\ data have been searched for shorter period planets
-\dfmtodo{CITE Coughlin} and eclipsing binaries \dfmtodo{CITE EB catalog} than
-targeted by this project, we censor these previously known targets.
-For the known EBs, we simply remove these targets from the candidate list.
-For the confirmed and candidate KOIs from \dfmtodo{Coughlin}, we remove data
-within 2 transit durations of the known candidates.
+Since these data have already been searched for short-period planets, we
+assume that all high signal-to-noise candidates with three or more transits
+have been previously found \citep{Coughlin:2016}.
+To remove these candidates from consideration, we mask the cadences within two
+transit durations of the time when a short-period planet candidate is known to
+transit.
 
 \begin{figure}~\\
 \begin{center}

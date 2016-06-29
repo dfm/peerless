@@ -478,9 +478,10 @@ by \citet{Burke:2015}:
 \end{itemize}
 We continue by excluding the light curves of known eclipsing
 binaries\footnote{\url{http://keplerebs.villanova.edu/}} \citep{Kirk:2016},
-other known false positives \citep{Coughlin:2016}, and seven extra blacklisted
-stars.
-The final catalog contains 39,518 targets and the parameter distribution is
+other known false positives \citep{Coughlin:2016}, a planet with known transit
+timing variations (Kepler-9), and four especially noisy stars (KIC~4482348,
+KIC~4450472, KIC~5438845, and KIC~10068041).
+The final catalog contains 39,036 targets and the parameter distribution is
 shown in \dfmfig{targets}.
 
 We also restrict the sample to only include targets with a data span of more
@@ -491,21 +492,6 @@ targeted by this project, we censor these previously known targets.
 For the known EBs, we simply remove these targets from the candidate list.
 For the confirmed and candidate KOIs from \dfmtodo{Coughlin}, we remove data
 within 2 transit durations of the known candidates.
-
-\begin{deluxetable}{cl}
-\tabletypesize{\footnotesize}
-\tablecaption{caption\label{tab:blacklist}}
-\tablehead{\colhead{kic id} & \colhead{comments}}
-\startdata
-3323887  & A known system with transit timing variations (Kepler-9) \\
-4482348	 & Crazy crosstalk outliers \\
-4450472	 & noise \\
-4586468	 & EB not in list \\
-5438845	 & noise \\
-8009496	 & ephemeris match \\
-10068041 & AMS \\
-\enddata
-\end{deluxetable}
 
 \begin{figure}~\\
 \begin{center}

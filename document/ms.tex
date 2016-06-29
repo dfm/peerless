@@ -304,35 +304,55 @@ Therefore, in the inexpensive first step~--~the initial candidate search~--~we
 can restrict the candidate list to high signal-to-noise events without a
 substantial loss in detection efficiency.
 
-\subsection{Initial candidate events}
+\subsection{Step 1 -- Initial candidate events}
 
 It is not computationally feasible to run a full model comparison at every
 time in the light curve so we must first find potentially interesting events.
 For our purposes, ``interesting'' means high signal-to-noise and previously
 unknown.
 
-To generate this list, we apply a standard ``box least squares'' (BLS;
-\dfmtodo{CITE}) method with a single (non-periodic) box.
+To generate this list, we use a method much like the standard ``box least
+squares'' (BLS; \dfmtodo{CITE}) procedure with a single (non-periodic) box.
 First, we filter the PDC (\dfmtodo{CITE}) light curves using a running
 windowed median with a half-width of \dfmtodo{how many} to remove stellar
 variability.
-We then compute the signal-to-noise of the depth of a 0.6~day long transit on
-a grid of times spanning the full \kepler\ baseline.
-We only need to use a single transit duration because the following steps in
-this procedure are only sensitive to transits with very high signal-to-noise
-so, in practice, the results of this step are insensitive to the specific
-choice of duration.
+We then compute the signal-to-noise of the depth of a 0.6~day long
+transit on a grid of times spanning the full baseline of observations.
 
-As previously mentioned, the following steps will only detect high
-signal-to-noise transits.
+In detail, at each proposal time $t_0$, we hypothesize a box-shaped transit
+with duration $\tau$
+\begin{eqnarray}
+m(t) &=& \left\{\begin{array}{ll}
+    \mu, & \mbox{\,if $|t - t_0| < \tau/2$} \\
+    \mu - \delta, & \mbox{\,otherwise}
+\end{array}\right. \quad.
+\end{eqnarray}
+Assuming that the uncertainties on the observed fluxes $f(t)$ are Gaussian
+with known variance ${\sigma_f}^2$, the likelihood function for the mean flux
+$\mu$ and transit depth $\delta$ can be analytically computed to be a
+two-dimensional Gaussian with mean and covariance given by linear
+least-squares.
+This likelihood function provides a natural scalar objective: the
+signal-to-noise of the measured depth $\delta / \sigma_\delta$ computed a
+function of time.
+In principle this scalar is also a function of duration but we only use a
+single transit duration because the following steps in this procedure are only
+sensitive to transits with very high signal-to-noise.
+In practice, the final results are insensitive to the specific choice of
+duration.
+
 To avoid edge effects, we apodize this detection scalar near any large gaps in
 the time series using a logistic function with width equal to one transit
 duration.
-Finally, we estimate the noise in the time series using a robust running
-windowed variance estimate of the detection scalar and accepting peaks more
-than 25-times this noise as candidates.
+Finally, we estimate the background noise level in the detection scalar time
+series using a robust running windowed variance estimate of the detection
+scalar and accepting peaks more than 25-times this noise as candidates.
 
-\subsection{Light curve-level vetting}
+For the \kepler\ light curves, this procedure yields at least one candidate
+event in about 10~percent of targets and the three highest signal-to-noise
+events are investigated in the following step.
+
+\subsection{Step 2 -- Light curve vetting}
 
 In this step of the method, the goal is to discard any signals that are not
 sufficiently ``transit-like'' in shape.
@@ -352,7 +372,7 @@ For up to three candidate transit times per light curve, we select a
 contiguous chunk of PDC light curve approximately centered on the proposed
 transit with no more than 500 cadences \dfmtodo{check me} and compute the BIC
 of each model for this data set.
-We will define the BIC for a model $k$ in the set of $K$ models is given by
+The BIC for a model $k$ in the set of $K$ models is given by
 \begin{eqnarray}
 \mathrm{BIC}_k &=& \ln \mathcal{L}^* - \frac{J}{2}\,\log N
 \end{eqnarray}
@@ -364,14 +384,24 @@ For each model, we describe the data using a Gaussian Process (GP;
 \dfmtodo{cite}) with a Mat\'ern-3/2 covariance and mean given by the chosen
 model $m_k(t;\,\meanpars)$ parameterized by the parameter vector \meanpars.
 
-The models are:
+We consider the following mean models and this list provides a qualitative
+justification for each model:
 \begin{itemize}
 {\item a limb-darkened, exposure time integrated transit light curve,}
 {\item a pure Gaussian Process model to capture stellar variability,}
-{\item a single outlier,}
-{\item an step function, and}
-{\item a box.}
+{\item a single outlier to account for a bad data point,}
+{\item a step function to describe sudden pixel sensitivity dropouts (SPSDs;
+\dfmtodo{CITE}), and}
+{\item a box to catch signals that are well fit by the search scalar but
+insufficiently transit-like to be convincing.}
 \end{itemize}
+The functional forms of these models are given in Appendix \dfmtodo{SOME APP}.
+
+This method of automated vetting is clearly limited by the specific models
+selected in this step.
+We find that these are sufficient for the targets discussed below but other
+target lists might require additional models to be included for robust
+selection.
 
 
 \subsection{Pixel-level vetting}

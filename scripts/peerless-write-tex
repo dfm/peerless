@@ -6,7 +6,9 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from peerless.catalogs import LongPeriodEBCatalog, KOICatalog
+from peerless.catalogs import (
+    KOICatalog, UeharaCatalog, WangCatalog
+)
 
 
 parser = argparse.ArgumentParser(
@@ -21,7 +23,8 @@ args = parser.parse_args()
 
 df = pd.read_csv(args.fits)
 kois = KOICatalog().df
-lpebs = LongPeriodEBCatalog().df
+wang = WangCatalog().df
+uehara = UeharaCatalog().df
 
 with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
     for _, row in df.sort_values("radius").iterrows():
@@ -49,13 +52,19 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             comment.append(name)
         elif row.kicid == 8800954:
             comment = ["KOI 1274 / Kepler-421"]
-        lpeb = lpebs[lpebs.kicid == row.kicid]
-        if len(lpeb):
-            comment.append("known EB")
         comment = "; ".join(comment)
 
+        notes = []
+        w = wang[wang.kicid == row.kicid]
+        if len(w):
+            notes.append("a")
+        u = uehara[uehara.kepid == row.kicid]
+        if len(u):
+            notes.append("b")
+
         # And the columns of the table.
-        f.write("{0:d} & ".format(int(row.kicid)))
+        f.write("{0:d}$^{{\mbox{{{1}}}}}$ & ".format(int(row.kicid),
+                                                     ",".join(notes)))
 
         rows = []
         for v in ["period", "t0", "radius", "teq"]:

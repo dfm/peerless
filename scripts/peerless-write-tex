@@ -65,8 +65,8 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             notes.append("b")
 
         # And the columns of the table.
-        f.write("{0:d}$^{{\mbox{{{1}}}}}$ & ".format(int(row.kicid),
-                                                     ",".join(notes)))
+        f.write("{0:d}$^{{\mathrm{{{1}}}}}$ & ".format(int(row.kicid),
+                                                       ",".join(notes)))
 
         rows = []
         for v in ["period", "t0", "radius", "teq"]:

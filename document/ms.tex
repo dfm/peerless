@@ -499,19 +499,37 @@ NASA Exoplanet Archive \url{http://exoplanetarchive.ipac.caltech.edu/}.}.
 \includegraphics{figures/targets.pdf}
 \end{center}
 \caption{%
-Blah.
+The distribution of stellar parameters for \kepler\ targets selected for this
+search (orange) compared to the distribution of the full \kepler\ target
+catalog (black).
 \dfmfiglabel{targets}}~\\
 \end{figure}
 
 
 \subsection{Parameter estimation}
 
+\subsection{Catalog of candidates}
+
+\begin{deluxetable}{cccccl}
+\tabletypesize{\footnotesize}
+\tablecaption{The inferred parameters for the long-period transiting exoplanet
+candidates
+\label{tab:table}}
+\include{paramtab}
+\tablenotetext{\dagger}{Candidate has two observed transits.}
+\tablenotetext{a}{Included in the \citet{Wang:2015} catalog.}
+\tablenotetext{b}{Included in the \citet{Uehara:2016} catalog.}
+\end{deluxetable}
+
 \begin{figure*}[p]~\\
 \begin{center}
 \include{lcfig}
 \end{center}
 \caption{%
-\dfmfiglabel{lightcurves}}
+Sections of PDC light curve centered on each candidate (black) with the
+posterior-median transit model over-plotted (orange).
+Candidates with two transits are folded on the posterior-median period.
+\dfmfiglabel{light-curves}}
 \end{figure*}
 
 \begin{figure*}~\\
@@ -519,20 +537,15 @@ Blah.
 \includegraphics{figures/full_sample_plus_cands.pdf}
 \end{center}
 \caption{%
-Blah.
+The catalog of long-period transiting exoplanet candidates (green) compared to
+the \kepler\ candidates (blue) and confirmed planets (black), and the Solar
+System (orange).
+The vertical dashed line indicates the full lifetime of the \kepler\ Mission;
+planets with orbital periods longer than this will show at most one transit.
+The vertical solid line shows the absolute maximum period accessible to
+transit searches that require at least three transits.
 \dfmfiglabel{full-sample}}~\\
 \end{figure*}
-
-\begin{deluxetable}{cccccl}
-\tabletypesize{\footnotesize}
-\tablecaption{caption\label{tab:table}}
-\include{paramtab}
-% \tablenotetext{a}{Adjusted for inflation}
-% \tablenotetext{b}{Accounts for the change from page charges to digital quanta in April, 2011}
-% \tablecomments{Note that {\tt \string \colnumbers} does not work with the
-% vertical line alignment token. If you want vertical lines in the headers you
-% can not use this command at this time.}
-\end{deluxetable}
 
 
 

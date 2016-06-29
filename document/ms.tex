@@ -316,9 +316,10 @@ For our purposes, ``interesting'' means high signal-to-noise and previously
 unknown.
 
 To generate this list, we use a method much like the standard ``box least
-squares'' (BLS; \dfmtodo{CITE}) procedure with a single (non-periodic) box.
-First, we filter the PDC (\dfmtodo{CITE}) light curves using a running
-windowed median with a half-width of \dfmtodo{how many} to remove stellar
+squares'' \citep[\bls;][]{Kovacs:2002} procedure with a single (non-periodic)
+box.
+First, we filter the \pdc\ light curves \citep{Stumpe:2012, Smith:2012}
+using a running windowed median with a half-width of 2~days to remove stellar
 variability.
 We then compute the signal-to-noise of the depth of a 0.6~day long
 transit on a grid of times spanning the full baseline of observations.
@@ -373,9 +374,9 @@ behavior~--~increasing with the likelihood but flexible models are
 penalized~--~and we find that it performs sufficiently well in practice.
 
 For up to three candidate transit times per light curve, we select a
-contiguous chunk of PDC light curve approximately centered on the proposed
-transit with no more than 500 cadences \dfmtodo{check me} and compute the BIC
-of each model for this data set.
+contiguous chunk of \pdc\ light curve approximately centered on the proposed
+transit with no more than 500 cadences and compute the BIC of each model for
+this data set.
 The BIC for a model $k$ in the set of $K$ models is given by
 \begin{eqnarray}
 \mathrm{BIC}_k &=& \ln \mathcal{L}^* - \frac{J}{2}\,\log N
@@ -384,9 +385,10 @@ where the likelihood function $\mathcal{L}$ is evaluated at its maximum, $J$
 is the number of free parameters in the model, and $N$ is the number of
 data points in the data set.
 
-For each model, we describe the data using a Gaussian Process (GP;
-\dfmtodo{cite}) with a Mat\'ern-3/2 covariance and mean given by the chosen
-model $m_k(t;\,\meanpars)$ parameterized by the parameter vector \meanpars.
+For each model, we describe the data using a Gaussian Process
+\citep[GP;][]{Rasmussen:2006} with a Mat\'ern-3/2 covariance and mean given by
+the chosen model $m_k(t;\,\meanpars)$ parameterized by the parameter vector
+\meanpars.
 
 We consider the following mean models and this list provides a qualitative
 justification for each model:
@@ -499,19 +501,37 @@ NASA Exoplanet Archive \url{http://exoplanetarchive.ipac.caltech.edu/}.}.
 \includegraphics{figures/targets.pdf}
 \end{center}
 \caption{%
-Blah.
+The distribution of stellar parameters for \kepler\ targets selected for this
+search (orange) compared to the distribution of the full \kepler\ target
+catalog (black).
 \dfmfiglabel{targets}}~\\
 \end{figure}
 
 
 \subsection{Parameter estimation}
 
+\subsection{Catalog of candidates}
+
+\begin{deluxetable}{cccccl}
+\tabletypesize{\footnotesize}
+\tablecaption{The inferred parameters for the long-period transiting exoplanet
+candidates
+\label{tab:table}}
+\include{paramtab}
+\tablenotetext{\dagger}{Candidate has two observed transits.}
+\tablenotetext{a}{Included in the \citet{Wang:2015} catalog.}
+\tablenotetext{b}{Included in the \citet{Uehara:2016} catalog.}
+\end{deluxetable}
+
 \begin{figure*}[p]~\\
 \begin{center}
 \include{lcfig}
 \end{center}
 \caption{%
-\dfmfiglabel{lightcurves}}
+Sections of \pdc\ light curve centered on each candidate (black) with the
+posterior-median transit model over-plotted (orange).
+Candidates with two transits are folded on the posterior-median period.
+\dfmfiglabel{light-curves}}
 \end{figure*}
 
 \begin{figure*}~\\
@@ -519,20 +539,15 @@ Blah.
 \includegraphics{figures/full_sample_plus_cands.pdf}
 \end{center}
 \caption{%
-Blah.
+The catalog of long-period transiting exoplanet candidates (green) compared to
+the \kepler\ candidates (blue) and confirmed planets (black), and the Solar
+System (orange).
+The vertical dashed line indicates the full lifetime of the \kepler\ Mission;
+planets with orbital periods longer than this will show at most one transit.
+The vertical solid line shows the absolute maximum period accessible to
+transit searches that require at least three transits.
 \dfmfiglabel{full-sample}}~\\
 \end{figure*}
-
-\begin{deluxetable}{cccccl}
-\tabletypesize{\footnotesize}
-\tablecaption{caption\label{tab:table}}
-\include{paramtab}
-% \tablenotetext{a}{Adjusted for inflation}
-% \tablenotetext{b}{Accounts for the change from page charges to digital quanta in April, 2011}
-% \tablecomments{Note that {\tt \string \colnumbers} does not work with the
-% vertical line alignment token. If you want vertical lines in the headers you
-% can not use this command at this time.}
-\end{deluxetable}
 
 
 
@@ -560,14 +575,14 @@ even so, many simulations per star are required.
 The procedure for measuring the recovery rate of simulated transits is as
 follows:
 \begin{enumerate}
-{\item First, a star is randomly selected from the target list, and the PDC
+{\item First, a star is randomly selected from the target list, and the \pdc\
 light curve and stellar properties for that star are loaded.}
 {\item Planetary properties are sampled from the distributions listed in
 \dfmtodo{some table} with phase uniformly distributed across the baseline of
 observations. These properties are resampled until the transit is visible in
 at least one non-flagged cadence.}
 {\item The transit signal induced by this planet is computed and multiplied
-into the PDC light curve.}
+into the \pdc\ light curve.}
 {\item The transit search method described in section \dfmtodo{some section}
 (including de-trending and all automated vetting) is applied to this light
 curve with the injected transit signal.}
@@ -642,6 +657,12 @@ function of planet radius and orbital period.
 \includegraphics[width=\textwidth]{figures/completeness.pdf}
 \end{center}
 \caption{%
+The completeness of the search procedure described here as a function of
+period and radius.
+In each bin, the completeness (in percent) is given with the associated
+sampling uncertainty.
+The projected histograms show the integrated completeness as independent
+functions of period and radius.
 \dfmfiglabel{completeness}}
 \end{figure*}
 

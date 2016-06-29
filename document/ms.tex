@@ -434,10 +434,25 @@ transit.
 \end{figure*}
 
 
-\subsection{Pixel-level vetting}
+\subsection{Step 3 -- Pixel-level vetting}
+
+To minimize contamination from background eclipsing binary systems, we require
+candidate events to pass a centroid shift test similar to the one used in the
+official \kepler\ transit search pipeline \citep{Bryson:2013}.
+To measure the centroid shift, we model the flux-weighted centroid traces
+independently in each coordinate as a multiple of the best-fit transit model
+and a GP noise model.
+By properly normalizing the transit model, we  measure the in-transit centroid
+shift $\Delta_\mathrm{centroid}$ in pixels.
+We reject any candidate event where the estimated transit location is more
+than half a pixel from the out-of-transit centroid
+\begin{eqnarray}
+\Delta_\mathrm{centroid}\,\left(\frac{1}{\delta} - 1\right) &>& 0.5
+\end{eqnarray}
+where $\delta$ is the observed transit depth \citep{Bryson:2013}.
 
 
-\section{A catalog of exoplanet \& binary candidates}
+\section{Results: a catalog of long-period transiting exoplanet candidates}
 
 
 \subsection{Target selection}\sectlabel{data}

@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function
 
-from plot_setup import COLORS
+from peerless.plot_setup import COLORS
 
 import os
 import pickle
@@ -35,8 +35,12 @@ for a, ax, (disp, name, kicid, peak_id) in zip("abcd", axes.flatten(), models):
 
     peak = results.peaks[peak_id]
     t0 = peak["transit_time"]
-    rng = t0 + np.array([-2, 2])
     gp, y0 = peak["gps"][name]
+    if disp == "step":
+        t0 = gp.mean["t0"]
+    elif disp == "box":
+        t0 = 0.5 * (gp.mean.mn + gp.mean.mx)
+    rng = t0 + np.array([-2, 2])
 
     x, y = peak["data"][:2]
     m = (rng[0] < x) & (x < rng[1])

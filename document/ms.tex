@@ -11,6 +11,7 @@
 \usepackage{url}
 \usepackage{amssymb,amsmath}
 \usepackage{natbib}
+\usepackage{multirow}
 \bibliographystyle{aasjournal}
 
 % ----------------------------------- %
@@ -509,6 +510,64 @@ catalog (black).
 
 
 \subsection{Parameter estimation}
+
+For each transit candidate, we constrain the physical parameters of the system
+by fitting the signal using a Keplerian orbit and a quadratic limb darkening
+law for the central body.
+
+\begin{floattable}
+\begin{deluxetable}{lccc}
+\tabletypesize{\footnotesize}
+\tablecaption{The inferred parameters and priors used in the inference
+\label{tab:parameters}}
+
+\tablehead{%
+    \colhead{name} & \colhead{symbol} & \colhead{units} &
+    \colhead{prior}
+}
+
+\startdata
+mean flux & $\log f_\star$ & \nodata &
+    $\log f_\star \sim \mathcal{U}(-1,\,1)$ \\
+stellar mass\tablenotemark{a} & $M_\star$ & $M_\odot$ &
+    $M_\star \sim \mathcal{N}(M_{\star,\mathrm{cat}},\,
+        \sigma_{M,\star,\mathrm{cat}})$ \\
+stellar radius\tablenotemark{a} & $R_\star$ & $R_\odot$ &
+    $R_\star \sim \mathcal{N}(R_{\star,\mathrm{cat}},\,
+        \sigma_{R,\star,\mathrm{cat}})$ \\
+\multirow{2}{*}{limb darkening} & $q_1$ & \nodata &
+    $q_1 \sim \mathcal{U}(0,\,1)$ \\
+ & $q_2$ & \nodata & $q_2 \sim \mathcal{U}(0,\,1)$ \\
+\hline
+planet radius & $\log R_\mathrm{P}$ & $R_\odot$ &
+    $\log R_\mathrm{P} \sim \mathcal{U}(-10,\,2)$ \\
+reference time & $t_0$ & days &
+    $t_0 \sim \mathcal{U}(t_\mathrm{cand}-0.5,\,t_\mathrm{cand}+0.5)$%
+    \tablenotemark{b} \\
+\multirow{2}{*}{\begin{minipage}{1in}semi-major axis \ \& inclination\end{minipage}}
+    & $\sqrt{a}\sin i$ & ${R_\odot}^{1/2}$ &
+    $\sqrt{a}\sin i \sim \mathcal{U}(-10^3,\,10^3) / \sqrt{a}$ \\
+    & $\sqrt{a}\cos i$ & ${R_\odot}^{1/2}$ &
+    $\sqrt{a}\cos i \sim \mathcal{U}(0,\,10^3) / \sqrt{a}$ \\
+\multirow{2}{*}{eccentricity}
+    & $\sqrt{e}\sin \omega$ & \nodata & $e \sim \beta(1.12,\,3.09)$%
+    \tablenotemark{c} \\
+    & $\sqrt{e}\cos \omega$ & \nodata & $\omega \sim \mathcal{U}(-\pi,\,\pi)$\\
+\enddata
+
+\tablenotetext{a}{Stellar parameters and uncertainties taken from the \kepler\
+catalog \citep{Huber:2014}}
+\tablenotetext{b}{The reference time is constrained to be within half a day of
+the candidate transit time}
+\tablenotetext{c}{\citet{Kipping:2013a}}
+\tablecomments{There is one further constraint that complicates these priors:
+the period of the orbit must be longer than some minimum period
+$P_\mathrm{min}$ set by the transit time and the full baseline of \kepler\
+observations.}
+\end{deluxetable}
+\end{floattable}
+
+
 
 \subsection{Catalog of candidates}
 

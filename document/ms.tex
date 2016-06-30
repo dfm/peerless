@@ -146,9 +146,9 @@ long-period transiting exoplanet candidates in the \kepler\ archive
 }
 
 \newcounter{affilcounter}
-\setcounter{affilcounter}{2}
-\altaffiltext{1}{\url{danfm@uw.edu}; Sagan Fellow}
+\altaffiltext{1}{\textsf{danfm@uw.edu}; Sagan Fellow}
 
+\setcounter{affilcounter}{2}
 \edef \uw {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\uw}       {Astronomy Department, University of Washington,
                           Seattle, WA, 98195, USA}
@@ -521,8 +521,25 @@ catalog (black).
 \subsection{Parameter estimation}
 
 For each transit candidate, we constrain the physical parameters of the system
-by fitting the signal using a Keplerian orbit and a quadratic limb darkening
-law for the central body.
+by fitting a section of light curve around each transit using an exposure time
+integrated  Keplerian orbit with a quadratic limb darkening law for the
+central body\footnote{Implemented at \url{https://github.com/dfm/transit};
+this \paper\ uses git commit \textsf{482d99b} of that repository.}.
+It has previously been established that the orbital period of a transiting
+planet with only one transit can still be constrained given a measurement of
+the stellar density and an assumption about the orbital eccentricity \cite[for
+example][]{Wang:2015, Osborn:2016}.
+Qualitatively this works because the transit of a bound body cannot have an
+arbitrary period for a given duration.
+This is the same argument used to justify the ``photoeccentric effect''
+\citep{Dawson:2012} and the method of ``asterodensity profiling''
+\citep{Kipping:2014b}.
+In particular, this suggests that the periods of single transits in systems
+with multiple inner planets will be especially well constrained
+\citep{Kipping:2012}.
+In this \paper, we do not take advantage of the extra constraints provided by
+the inner planets, instead treating each long-period transiting system in
+isolation, but this would be a good follow-up project.
 
 \begin{floattable}
 \begin{deluxetable}{lccc}

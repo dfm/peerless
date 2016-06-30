@@ -11,6 +11,7 @@
 \usepackage{url}
 \usepackage{amssymb,amsmath}
 \usepackage{natbib}
+\usepackage{multirow}
 \bibliographystyle{aasjournal}
 
 % ----------------------------------- %
@@ -23,6 +24,7 @@
 \setlength{\textheight}{9in}
 \setlength{\headheight}{0ex}
 \setlength{\headsep}{\baselinestretch\baselineskip} % this is 2 lines in ``manuscript''
+\setlength{\footnotesep}{0in}
 \setlength{\topmargin}{-\headsep}
 
 \linespread{0.54} % close to 10/13 spacing in ``manuscript''
@@ -46,7 +48,15 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand\nostarsection[1]{\sectionprelude\origsection{#1}}
 \newcommand\starsection[1]{\sectionprelude\origsection*{#1}}
 \newcommand\sectionprelude{\vspace{1em}}
+\let\origsubsection\subsection
+\renewcommand\subsection{\@ifstar{\starsubsection}{\nostarsubsection}}
+\newcommand\nostarsubsection[1]{\subsectionprelude\origsubsection{#1}}
+\newcommand\starsubsection[1]{\subsectionprelude\origsubsection*{#1}}
+\newcommand\subsectionprelude{\vspace{1em}}
 \makeatother
+
+\widowpenalty=1000
+\clubpenalty=1000
 
 \sloppy\sloppypar
 
@@ -136,9 +146,9 @@ long-period transiting exoplanet candidates in the \kepler\ archive
 }
 
 \newcounter{affilcounter}
-\setcounter{affilcounter}{2}
-\altaffiltext{1}{\url{danfm@uw.edu}; Sagan Fellow}
+\altaffiltext{1}{\textsf{danfm@uw.edu}; Sagan Fellow}
 
+\setcounter{affilcounter}{2}
 \edef \uw {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\uw}       {Astronomy Department, University of Washington,
                           Seattle, WA, 98195, USA}
@@ -509,6 +519,103 @@ catalog (black).
 
 
 \subsection{Parameter estimation}
+
+For each transit candidate, we constrain the physical parameters of the system
+by fitting a section of light curve around each transit using an exposure time
+integrated  Keplerian orbit with a quadratic limb darkening law for the
+central body\footnote{Implemented at \url{https://github.com/dfm/transit};
+this \paper\ uses git commit \textsf{482d99b} of that repository.}.
+It has previously been established that the orbital period of a transiting
+planet with only one transit can still be constrained given a measurement of
+the stellar density and an assumption about the orbital eccentricity \cite[for
+example][]{Wang:2015, Osborn:2016}.
+Qualitatively this works because the transit of a bound body cannot have an
+arbitrary period for a given duration.
+This is the same argument used to justify the ``photoeccentric effect''
+\citep{Dawson:2012} and the method of ``asterodensity profiling''
+\citep{Kipping:2014b}.
+In particular, this suggests that the periods of single transits in systems
+with multiple inner planets will be especially well constrained
+\citep{Kipping:2012}.
+In this \paper, we do not take advantage of the extra constraints provided by
+the inner planets, instead treating each long-period transiting system in
+isolation, but this would be a good follow-up project.
+
+\paragraph{Priors}
+
+For each candidate in our sample, we take the constraints on the stellar
+parameters from the \kepler\ stellar properties catalog\footnote{The
+\textsf{q1\_q17\_dr24\_stellar} table from the NASA Exoplanet Archive
+\citep{Huber:2014}} and assume an empirical beta function prior on the
+eccentricities based on the observed eccentricity distribution of long-period
+planets discovered using radial velocities \citep{Kipping:2013}.
+Table~\ref{tab:parameters} lists all the fit parameters and their prior
+distributions.
+Besides these listed priors, we add the extra constraint that no other
+transits can occur in the baseline of the \kepler\ observations.
+This constraint is overly conservative because there is some probability that
+a second transit could occur in a data gap but we find that, in practice, most
+of the posterior mass is at longer periods and the period inferences are not
+significantly affected.
+
+\paragraph{Likelihood function}
+
+
+
+
+\begin{floattable}
+\begin{deluxetable}{lccc}
+\tabletypesize{\footnotesize}
+\tablecaption{The inferred parameters and priors used in the inference
+\label{tab:parameters}}
+
+\tablehead{%
+    \colhead{name} & \colhead{symbol} & \colhead{units} &
+    \colhead{prior}
+}
+
+\startdata
+mean flux & $\log f_\star$ & \nodata &
+    $\log f_\star \sim \mathcal{U}(-1,\,1)$ \\
+stellar mass\tablenotemark{a} & $M_\star$ & $M_\odot$ &
+    $M_\star \sim \mathcal{N}(M_{\star,\mathrm{cat}},\,
+        \sigma_{M,\star,\mathrm{cat}})$ \\
+stellar radius\tablenotemark{a} & $R_\star$ & $R_\odot$ &
+    $R_\star \sim \mathcal{N}(R_{\star,\mathrm{cat}},\,
+        \sigma_{R,\star,\mathrm{cat}})$ \\
+\multirow{2}{*}{limb darkening} & $q_1$ & \nodata &
+    $q_1 \sim \mathcal{U}(0,\,1)$ \\
+ & $q_2$ & \nodata & $q_2 \sim \mathcal{U}(0,\,1)$ \\
+\hline
+planet radius & $\log R_\mathrm{P}$ & $R_\odot$ &
+    $\log R_\mathrm{P} \sim \mathcal{U}(-10,\,2)$ \\
+reference time & $t_0$ & days &
+    $t_0 \sim \mathcal{U}(t_\mathrm{cand}-0.5,\,t_\mathrm{cand}+0.5)$%
+    \tablenotemark{b} \\
+\multirow{2}{*}{\begin{minipage}{1in}semi-major axis \ \& inclination\end{minipage}}
+    & $\sqrt{a}\sin i$ & ${R_\odot}^{1/2}$ &
+    $\sqrt{a}\sin i \sim \mathcal{U}(-10^3,\,10^3) / \sqrt{a}$ \\
+    & $\sqrt{a}\cos i$ & ${R_\odot}^{1/2}$ &
+    $\sqrt{a}\cos i \sim \mathcal{U}(0,\,10^3) / \sqrt{a}$ \\
+\multirow{2}{*}{eccentricity}
+    & $\sqrt{e}\sin \omega$ & \nodata & $e \sim \beta(1.12,\,3.09)$%
+    \tablenotemark{c} \\
+    & $\sqrt{e}\cos \omega$ & \nodata & $\omega \sim \mathcal{U}(-\pi,\,\pi)$\\
+\enddata
+
+\tablenotetext{a}{Stellar parameters and uncertainties taken from the \kepler\
+catalog \citep{Huber:2014}}
+\tablenotetext{b}{The reference time is constrained to be within half a day of
+the candidate transit time}
+\tablenotetext{c}{\citet{Kipping:2013a}}
+\tablecomments{There is one further constraint that complicates these priors:
+the period of the orbit must be longer than some minimum period
+$P_\mathrm{min}$ set by the transit time and the full baseline of \kepler\
+observations.}
+\end{deluxetable}
+\end{floattable}
+
+
 
 \subsection{Catalog of candidates}
 

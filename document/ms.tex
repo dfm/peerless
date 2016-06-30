@@ -541,6 +541,28 @@ In this \paper, we do not take advantage of the extra constraints provided by
 the inner planets, instead treating each long-period transiting system in
 isolation, but this would be a good follow-up project.
 
+\paragraph{Priors}
+
+For each candidate in our sample, we take the constraints on the stellar
+parameters from the \kepler\ stellar properties catalog\footnote{The
+\textsf{q1\_q17\_dr24\_stellar} table from the NASA Exoplanet Archive
+\citep{Huber:2014}} and assume an empirical beta function prior on the
+eccentricities based on the observed eccentricity distribution of long-period
+planets discovered using radial velocities \citep{Kipping:2013}.
+Table~\ref{tab:parameters} lists all the fit parameters and their prior
+distributions.
+Besides these listed priors, we add the extra constraint that no other
+transits can occur in the baseline of the \kepler\ observations.
+This constraint is overly conservative because there is some probability that
+a second transit could occur in a data gap but we find that, in practice, most
+of the posterior mass is at longer periods and the period inferences are not
+significantly affected.
+
+\paragraph{Likelihood function}
+
+
+
+
 \begin{floattable}
 \begin{deluxetable}{lccc}
 \tabletypesize{\footnotesize}

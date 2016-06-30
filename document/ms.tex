@@ -547,7 +547,9 @@ model.
 To perform parameter estimation under this model, we use the Markov Chain
 Monte Carlo (MCMC) package \emcee\footnote{\url{http://dfm.io/emcee}}
 \citep{Foreman-Mackey:2013} with an ensemble of 40 walkers.
-We run each chain until the.
+We run each chain for at least 750 autocorrelation times\footnote{Estimated
+using a robust iterative method as suggested by Alan Sokal:
+\url{http://www.stat.unc.edu/faculty/cji/Sokal.pdf}.}.
 
 
 \paragraph{Priors}

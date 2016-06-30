@@ -71,6 +71,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\tess}{\project{TESS}}
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\bls}{\project{BLS}}
+\newcommand{\emcee}{\project{emcee}}
 
 \newcommand{\foreign}[1]{\emph{#1}}
 \newcommand{\etal}{\foreign{et\,al.}}
@@ -410,7 +411,7 @@ stellar variability,}
 {\item \modelname{outlier} -- a single outlier to account for a bad data
 point,}
 {\item \modelname{step} -- a step function to describe sudden pixel
-sensitivity dropouts (SPSDs; \dfmtodo{CITE}), and}
+sensitivity dropouts \citep[SPSDs; for example][]{Christiansen:2013}, and}
 {\item \modelname{box} -- a box to catch signals that are well fit by the
 search scalar but insufficiently transit-like to be convincing.}
 \end{itemize}
@@ -541,6 +542,14 @@ In this \paper, we do not take advantage of the extra constraints provided by
 the inner planets, instead treating each long-period transiting system in
 isolation, but this would be a good follow-up project.
 
+In the following paragraphs, we describe the components of the probabilistic
+model.
+To perform parameter estimation under this model, we use the Markov Chain
+Monte Carlo (MCMC) package \emcee\footnote{\url{http://dfm.io/emcee}}
+\citep{Foreman-Mackey:2013} with an ensemble of 40 walkers.
+We run each chain until the.
+
+
 \paragraph{Priors}
 
 For each candidate in our sample, we take the constraints on the stellar
@@ -560,7 +569,13 @@ significantly affected.
 
 \paragraph{Likelihood function}
 
-
+As above, we model the light curve as GP with a physical transit model as the
+mean and a covariance matrix described by a Mat\'ern-3/2 kernel function.
+The full likelihood function and some details of GP regression are given in
+\app{gp-regression}.
+For computational efficiency, we first perform a joint optimization of the
+orbital parameters and GP hyperparameters to find the maximum \foreign{a
+posteriori} model then keep these.
 
 
 \begin{floattable}

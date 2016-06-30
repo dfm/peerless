@@ -24,6 +24,7 @@
 \setlength{\textheight}{9in}
 \setlength{\headheight}{0ex}
 \setlength{\headsep}{\baselinestretch\baselineskip} % this is 2 lines in ``manuscript''
+\setlength{\footnotesep}{0in}
 \setlength{\topmargin}{-\headsep}
 
 \linespread{0.54} % close to 10/13 spacing in ``manuscript''
@@ -47,7 +48,15 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand\nostarsection[1]{\sectionprelude\origsection{#1}}
 \newcommand\starsection[1]{\sectionprelude\origsection*{#1}}
 \newcommand\sectionprelude{\vspace{1em}}
+\let\origsubsection\subsection
+\renewcommand\subsection{\@ifstar{\starsubsection}{\nostarsubsection}}
+\newcommand\nostarsubsection[1]{\subsectionprelude\origsubsection{#1}}
+\newcommand\starsubsection[1]{\subsectionprelude\origsubsection*{#1}}
+\newcommand\subsectionprelude{\vspace{1em}}
 \makeatother
+
+\widowpenalty=1000
+\clubpenalty=1000
 
 \sloppy\sloppypar
 

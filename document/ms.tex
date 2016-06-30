@@ -293,7 +293,7 @@ We apply this method to a subset of the archival data from the \kepler\
 Mission and produce a catalog of discoveries.
 
 
-\section{A fully-automated search method}
+\section{A fully-automated search method}\sectlabel{search}
 
 To find long-period exoplanets in the \kepler\ light curves, we search for
 individual, high signal-to-noise transit signals using a fully-automated
@@ -547,9 +547,12 @@ model.
 To perform parameter estimation under this model, we use the Markov Chain
 Monte Carlo (MCMC) package \emcee\footnote{\url{http://dfm.io/emcee}}
 \citep{Foreman-Mackey:2013} with an ensemble of 40 walkers.
-We run each chain for at least 750 autocorrelation times\footnote{Estimated
-using a robust iterative method as suggested by Alan Sokal:
-\url{http://www.stat.unc.edu/faculty/cji/Sokal.pdf}.}.
+We run each chain until at least 750 independent samples~--~in most cases, we
+actually produce thousands of independent samples~--~are obtained\footnote{The
+integrated autocorrelation time is estimated using a robust iterative method
+as suggested by Alan Sokal:
+\url{http://www.stat.unc.edu/faculty/cji/Sokal.pdf}.} and discard the first
+third of the chain as burn-in.
 
 
 \paragraph{Priors}
@@ -576,8 +579,9 @@ mean and a covariance matrix described by a Mat\'ern-3/2 kernel function.
 The full likelihood function and some details of GP regression are given in
 \app{gp-regression}.
 For computational efficiency, we first perform a joint optimization of the
-orbital parameters and GP hyperparameters to find the maximum \foreign{a
-posteriori} model then keep these.
+physical parameters and GP hyperparameters to find the maximum \foreign{a
+posteriori} model then keep the hyperparameters fixed and run MCMC sampling
+for the 11 physical parameters alone.
 
 
 \begin{floattable}
@@ -634,14 +638,25 @@ observations.}
 
 
 
-\subsection{Catalog of candidates}
+\subsection{Catalog of transit candidates}
+
+Applying the search procedure described in \sect{search} to the \kepler\ light
+curves of the targets selected in \sect{target-selection}, we find 16
+convincing transit candidates.
+Visual inspection of each candidate confirms the reliability of the
+classification and no candidates are manually removed from the catalog.
+Of these, three candidates have two transits in the \kepler\ baseline and the
+remainder have only one observable transit.
+The candidates and their inferred physical parameters are listed in
+Table~\ref{tab:catalog} and the light curves are plotted in
+\fig{light-curves}.
 
 \begin{floattable}
 \begin{deluxetable}{cccccl}
 \tabletypesize{\footnotesize}
 \tablecaption{The inferred parameters for the long-period transiting exoplanet
 candidates
-\label{tab:table}}
+\label{tab:catalog}}
 \include{paramtab}
 \tablenotetext{*}{The equilibrium temperature is computed assuming zero
 albedo.}
@@ -661,6 +676,8 @@ albedo.}
 Sections of \pdc\ light curve centered on each candidate (black) with the
 posterior-median transit model over-plotted (orange).
 Candidates with two transits are folded on the posterior-median period.
+The plots are ordered by increasing planetary radius from the top-left to the
+bottom-right.
 \dfmfiglabel{light-curves}}
 \end{figure*}
 

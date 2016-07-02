@@ -639,7 +639,7 @@ observations.}
 
 
 
-\subsection{Catalog of transit candidates}
+\subsection{Catalog of transit candidates}\sectlabel{catalog}
 
 Applying the search procedure described in \sect{search} to the \kepler\ light
 curves of the \numtargets\ targets selected in \sect{target-selection}, we
@@ -730,7 +730,7 @@ transit searches that require at least three transits.
 
 
 
-\section{Empirical search completeness}
+\section{Empirical search completeness}\sectlabel{completeness}
 
 To measure the completeness of search procedure described in \sect{search}, we
 exploit the fact that transit signals are sparse and rare.
@@ -885,8 +885,8 @@ impact parameter & $b \sim \mathcal{U}(0,\,1+R_\mathrm{P}/R_\star)$ \\
 \caption{%
 An empirical estimate of the search completeness as a function of planet
 radius and orbital period.
-In each bin, the completeness (in percent) is given with the associated
-sampling uncertainty.
+In each bin, the completeness is estimated by the fraction of recovered
+simulations.
 The projected histograms show the integrated completeness as independent
 functions of period and radius.
 \dfmfiglabel{completeness}}
@@ -895,33 +895,18 @@ functions of period and radius.
 
 \section{The occurrence rate of long-period exoplanets}
 
-Using the catalog of exoplanet discoveries (\dfmtodo{some section}) and the
-measurement of the search completeness (\dfmtodo{some section}), we can now
+Using the catalog of exoplanet discoveries (\sect{catalog}) and the
+measurement of the search completeness (\sect{completeness}), we can now
 estimate the occurrence rate of long-period exoplanets.
-This inference can be simplified by making a few strong assumptions that are
-only weakly justified.
-First, we make the strong assumption that none of the candidates are
-astrophysical false positives (background eclipsing binaries, the secondary
-eclipse of a long-period binary system, \etc).
-We revisit this assumption and discuss its validity in \dfmtodo{some section}.
-Next, we model the occurrence of exoplanets as a Poisson process
-(\dfmtodo{CITE}) with a rate function $\rate_{\poppars} (R,\,P)$ parameterized
-by some parameters \poppars.
-This assumption leads to the commonly used likelihood function
-(\dfmtodo{CITE})
-\begin{eqnarray}
-\ln p (\{w_j\}_{j=1}^J\,|\,\poppars) =
-    \sum_{j=1}^J \ln \rate_{\poppars} (R_j,\,P_j)
-    - \int \rate_{\poppars} (R,\,P)\,Q(R,\,P)\dd R\dd P
-    + \mathrm{constant} \quad.
-\end{eqnarray}
-Since our catalog of discoveries is small, we will only make limited
-inferences about the population.
-For the purposes of this paper, we will simply estimate the period of
-long-period planets ($2\,\mathrm{yr} \le P < 15\,\mathrm{yr}$) in two radius
-bins $0.1\,R_\mathrm{J} \le R < 0.5\,R_\mathrm{J}$ and $0.5\,R_\mathrm{J} \le
-R < R_\mathrm{J}$.
-
+To simplify the analysis, we will make the strong assumption that none of the
+candidates are astrophysical false positives (the eclipse of a stellar mass
+companion, a background eclipsing binary, or the secondary eclipse of a
+long-period binary system).
+We revisit this assumption and discuss its validity in the following section.
+As a further simplification, we also neglect the measurement uncertainties on
+the planet parameters (including orbital period).
+This assumption is only justified because we are only making high-level
+measurements of the mean occurrence rate in large bins.
 
 
 

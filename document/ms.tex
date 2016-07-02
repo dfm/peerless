@@ -641,7 +641,7 @@ observations.}
 \subsection{Catalog of transit candidates}
 
 Applying the search procedure described in \sect{search} to the \kepler\ light
-curves of the targets selected in \sect{target-selection}, we find 16
+curves of the 39,036 targets selected in \sect{target-selection}, we find 16
 convincing transit candidates.
 Visual inspection of each candidate confirms the reliability of the
 classification and no candidates are manually removed from the catalog.
@@ -650,6 +650,36 @@ remainder have only one observable transit.
 The candidates and their inferred physical parameters are listed in
 Table~\ref{tab:catalog} and the light curves are plotted in
 \dfmfig{light-curves}.
+
+Two of the shortest period candidates~--~both with two observed
+transits~--~have previously been studied in detail \citep[KIC~8800954 and
+KIC~3239945;][]{Kipping:2014a, Kipping:2016}.
+Table~\ref{tab:catalog} indicates the candidates that were also discovered by
+earlier searches for long-period transiting systems using visual inspection
+\citep{Wang:2015, Uehara:2016}.
+The consistency between our results and the earlier catalogs is reassuring.
+Our automated search did not find any more candidates than visual inspection
+of the light curves of known KOIs \citep{Uehara:2016} and one candidate
+(KIC~3230491) reported by the human analysis was discarded as grazing by our
+search.
+The PH citizen science project reported five long-period candidates with one
+or two observed transits in our target list \citep{Wang:2015}.
+Of these, we also find two (KIC~8410697 and KIC~10842718) although we find a
+second transit in the KIC~8410697 system that was not previously reported.
+The three other candidates reported by \citet{Wang:2015} that we miss
+(KIC~5536555, KIC~9662267, and KIC~12454613) are have low signal-to-noise
+transits that do not pass our initial signal-to-noise threshold.
+Six of the candidates in Table~\ref{tab:catalog} have not been previously
+published.
+
+The candidate in the light curve of KIC~4754460 as an individual transit
+candidate but another deeper eclipse can be found at a KBJD of 1587.13; right
+at the beginning of Quarter 17.
+This eclipse was missed by the automated search because only the second half
+of the eclipse is observed.
+The most likely explanation of this system is that the listed candidate is the
+secondary eclipse of a binary system but we will keep the candidate is the
+list and treat this effect statistically in \sect{false-positives}.
 
 \begin{floattable}
 \begin{deluxetable}{cccccl}
@@ -846,7 +876,7 @@ R < R_\mathrm{J}$.
 
 
 
-\section{Astrophysical false positives}
+\section{Astrophysical false positives}\sectlabel{false-positives}
 
 Tim to write some words here.
 

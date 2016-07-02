@@ -650,6 +650,8 @@ remainder have only one observable transit.
 The candidates and their inferred physical parameters are listed in
 Table~\ref{tab:catalog} and the light curves are plotted in
 \dfmfig{light-curves}.
+The inferred radius and orbital periods of the candidates are compared to the
+short-period \kepler\ sample and the Solar System in \dfmfig{full-sample}.
 
 Two of the shortest period candidates~--~both with two observed
 transits~--~have previously been studied in detail \citep[KIC~8800954 and
@@ -729,14 +731,15 @@ transit searches that require at least three transits.
 
 \section{Empirical search completeness}
 
-To measure the completeness of our long-period transit search method, we
+To measure the completeness of search procedure described in \sect{search}, we
 exploit the fact that transit signals are sparse and rare.
 Therefore, most light curves contain no transits and we can reliably measure
 the recovery rate of our method on synthetic transit signals~--~with known
 properties~--~injected into real light curves.
 This procedure is standard practice in the transit literature and it has been
-used to determine the completeness of the KOI catalog (\dfmtodo{cite}) and
-other independent transit searches (\dfmtodo{cite}).
+used to determine the completeness of the KOI catalog
+\citep{Christiansen:2013, Christiansen:2015} and other independent transit
+searches \citep{Petigura:2013, Dressing:2015, Foreman-Mackey:2015}.
 
 To reliably capture the full structure of the search completeness function,
 the simulations must sample the (high-dimensional) space of all properties
@@ -754,17 +757,16 @@ follows:
 {\item First, a star is randomly selected from the target list, and the \pdc\
 light curve and stellar properties for that star are loaded.}
 {\item Planetary properties are sampled from the distributions listed in
-\dfmtodo{some table} with phase uniformly distributed across the baseline of
-observations. These properties are resampled until the transit is visible in
-at least one non-flagged cadence.}
+Table~\ref{tab:simulations} with phase uniformly distributed across the
+baseline of observations. These properties are re-sampled until the transit is
+visible in at least one non-flagged cadence.}
 {\item The transit signal induced by this planet is computed and multiplied
 into the \pdc\ light curve.}
-{\item The transit search method described in section \dfmtodo{some section}
-(including de-trending and all automated vetting) is applied to this light
+{\item The transit search method described in \sect{search}~--~including
+de-trending and all automated vetting~--~is applied to this light
 curve with the injected transit signal.}
-{\item This candidate is flagged as recovered if at least one transit (within
-\dfmtodo{some tolerance}) passes all the cuts imposed by the automated
-vetting.}
+{\item This candidate is flagged as recovered if at least one transit within
+one transit duration passes all the cuts imposed by the automated vetting.}
 \end{enumerate}
 
 The fraction of recovered simulations as a function of the relevant parameters
@@ -827,6 +829,30 @@ the parameters of the simulation.
 function of planet radius and orbital period.
 
 \dfmtodo{Analytic fit?}
+
+\begin{floattable}
+\begin{deluxetable}{lc}
+\tabletypesize{\footnotesize}
+\caption{Distributions of physical parameters for transit simulations
+\label{tab:simulations}}
+
+\tablehead{%
+    \colhead{name} & \colhead{distribution}
+}
+\startdata
+period & $\log P \sim \mathcal{U}(\log 2\unit{yr},\,\log 25\unit{yr})$ \\
+radius ratio & $\log R_\mathrm{P}/R_\star \sim
+    \mathcal{U}(\log 0.02,\,\log 0.2)$ \\
+impact parameter & $b \sim \mathcal{U}(0,\,1+R_\mathrm{P}/R_\star)$ \\
+\multirow{2}{*}{eccentricity} & $e \sim \beta(1.12,\,3.09)$\tablenotemark{a} \\
+    & $\omega \sim \mathcal{U}(-\pi,\,\pi)$\\
+\multirow{2}{*}{limb darkening} & $q_1 \sim \mathcal{U}(0,\,1)$ \\
+                                & $q_2 \sim \mathcal{U}(0,\,1)$ \\
+\enddata
+
+\tablenotetext{a}{\citet{Kipping:2013a}}
+\end{deluxetable}
+\end{floattable}
 
 \begin{figure*}[p]~\\
 \begin{center}

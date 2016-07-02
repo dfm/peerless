@@ -13,8 +13,11 @@ inj = pd.read_hdf("../../results/injections.h5", "injections")
 inj = inj[inj.ncadences > 0]
 rec = inj[inj.recovered]
 
+# Histograms.
+ln_radius_bins = np.linspace(np.log(0.15), np.log(2.2), 8) + np.log(0.0995)
+ln_period_bins = np.linspace(np.log(2), np.log(25), 5) + np.log(365.25)
 n_all, ln_radius_bins, ln_period_bins = np.histogram2d(
-    np.log(inj.radius), np.log(inj.period), (8, 4),
+    np.log(inj.radius), np.log(inj.period), (ln_radius_bins, ln_period_bins),
 )
 n_rec, _, _ = np.histogram2d(
     np.log(rec.radius), np.log(rec.period), (ln_radius_bins, ln_period_bins),
@@ -26,6 +29,29 @@ X, Y = np.meshgrid(np.exp(ln_period_bins) / 365.25,
                    np.exp(ln_radius_bins) / 0.0995,
                    indexing="ij")
 
+# Plot 1
+fig, ax = pl.subplots(1, 1, figsize=2*np.array(SQUARE_FIGSIZE))
+
+ax.plot(inj[~inj.recovered].period/365.25, inj[~inj.recovered].radius/0.0995,
+        ".", color=COLORS["DATA"], alpha=0.3, rasterized=True)
+ax.plot(rec.period / 365.25, rec.radius / 0.0995, ".", color=COLORS["MODEL_1"],
+        alpha=0.3, rasterized=True)
+
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlim(X.min(), X.max())
+ax.set_ylim(Y.min(), Y.max())
+ax.set_xlabel("period [years]")
+ax.set_ylabel("$R_\mathrm{P} / R_\mathrm{J}$")
+ax.set_xticks([3, 5, 10, 20])
+ax.get_xaxis().set_major_formatter(pl.ScalarFormatter())
+ax.set_yticks([0.2, 0.5, 1, 2])
+ax.get_yaxis().set_major_formatter(pl.ScalarFormatter())
+
+fig.savefig("completeness0.pdf", bbox_inches="tight")
+pl.close(fig)
+
+# Plot 2
 fig = pl.figure(figsize=2*np.array(SQUARE_FIGSIZE))
 
 ax = pl.axes([0.1, 0.1, 0.6, 0.6])
@@ -36,7 +62,7 @@ for i, j in product(range(len(ln_period_bins)-1),
                     range(len(ln_radius_bins)-1)):
     x = np.exp(0.5 * (ln_period_bins[i] + ln_period_bins[i+1])) / 365.25
     y = np.exp(0.5 * (ln_radius_bins[j] + ln_radius_bins[j+1])) / 0.0995
-    ax.annotate(r"${0:.1f} \pm {1:.1f}$".format(100*n[j, i], 100*n_err[j, i]),
+    ax.annotate(r"${0:.3f}$".format(n[j, i]),
                 (x, y), ha="center", va="center", alpha=1.0, fontsize=12,
                 color="white")
 
@@ -48,7 +74,7 @@ ax.set_xlabel("period [years]")
 ax.set_ylabel("$R_\mathrm{P} / R_\mathrm{J}$")
 ax.set_xticks([3, 5, 10, 20])
 ax.get_xaxis().set_major_formatter(pl.ScalarFormatter())
-ax.set_yticks([0.1, 0.2, 0.5, 1, 2])
+ax.set_yticks([0.2, 0.5, 1, 2])
 ax.get_yaxis().set_major_formatter(pl.ScalarFormatter())
 
 # Histograms.
@@ -56,7 +82,7 @@ ax.get_yaxis().set_major_formatter(pl.ScalarFormatter())
 # Top:
 ax = pl.axes([0.1, 0.71, 0.6, 0.15])
 x = np.exp(ln_period_bins) / 365.25
-y = 100*(
+y = (
     np.histogram(np.log(rec.period), ln_period_bins)[0] /
     np.histogram(np.log(inj.period), ln_period_bins)[0]
 )
@@ -65,7 +91,7 @@ y = np.array(list(zip(y, y))).flatten()
 ax.plot(x, y, lw=1, color=COLORS["DATA"])
 ax.fill_between(x, y, np.zeros_like(y), color=COLORS["DATA"], alpha=0.2)
 ax.set_xlim(X.min(), X.max())
-ax.set_ylim(0, 80)
+ax.set_ylim(0, 0.8)
 ax.set_xscale("log")
 ax.set_xticks([3, 5, 10, 20])
 ax.set_xticklabels([])
@@ -74,7 +100,7 @@ ax.yaxis.set_major_locator(pl.MaxNLocator(3))
 # Right:
 ax = pl.axes([0.71, 0.1, 0.15, 0.6])
 x = np.exp(ln_radius_bins) / 0.0995
-y = 100*(
+y = (
     np.histogram(np.log(rec.radius), ln_radius_bins)[0] /
     np.histogram(np.log(inj.radius), ln_radius_bins)[0]
 )
@@ -83,9 +109,9 @@ y = np.array(list(zip(y, y))).flatten()
 ax.plot(y, x, lw=1, color=COLORS["DATA"])
 ax.fill_betweenx(x, y, np.zeros_like(y), color=COLORS["DATA"], alpha=0.2)
 ax.set_ylim(Y.min(), Y.max())
-ax.set_xlim(0, 80)
+ax.set_xlim(0, 0.8)
 ax.set_yscale("log")
-ax.set_yticks([0.1, 0.2, 0.5, 1, 2])
+ax.set_yticks([0.2, 0.5, 1, 2])
 ax.set_yticklabels([])
 ax.xaxis.set_major_locator(pl.MaxNLocator(3))
 

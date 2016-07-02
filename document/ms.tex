@@ -796,17 +796,22 @@ in the conservative light curve vetting step (\sect{light-curve-vetting}).
 
 This detection efficiency must then be combined with the geometric transit
 probability function and the window function.
-For the star $k$, the geometric transit probability is given by \dfmtodo{cite}
+For the star $k$, the geometric transit probability is given by
+\citep{Winn:2010}
 \begin{eqnarray}
-Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k}
+Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k} + R}{a_k}
     \, \frac{1 + e\,\sin\omega}{1-e^2} \\
-&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,R_{\star,k}
+&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,(R_{\star,k}+R)
     \, \left[\frac{1 + e\,\sin \omega}{1-e^2}\right]
     \, P^{-2/3}
 \end{eqnarray}
-where the parameters $e$, $\omega$, and $P$ are included in \params.
-Approximating the window function using the binomial probability of observing
-at least one transit \citep{Burke:2014a} we find
+where $R$ is the planet radius, $P$ is the orbital period, $e$ is the orbital
+eccentricity, $\omega$ is the argument of periastron, $R_{\star,k}$ is
+the radius of star $k$, and $M_{\star,k}$ is the star's mass.
+All of these parameters are included in \params.
+
+Approximating the window function using a binomial probability of observing
+at least one transit, we find \citep[following][]{Burke:2014a}
 \begin{eqnarray}
 Q_{\mathrm{win},k} (\params) &=& 1 - (1 - f_{\mathrm{duty},k})^{T_k/P}
 \end{eqnarray}
@@ -819,33 +824,35 @@ Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
                  Q_{\mathrm{win},k} (\params) \,
                  Q_{\mathrm{geom},k} (\params) \quad.
 \end{eqnarray}
-For the purposes of this \paper, we are not considering the occurrence rate of
-exoplanets as a function of stellar properties; we will only measure an
-average rate across the target sample that we previously selected.
-Therefore, it is sufficient to estimate the marginalized detection efficiency
-integrated with respect to our prior distributions on the nuisance parameters.
-In this case, the only parameters that we will consider are planet radius and
-orbital period.
-Under this model, the relevant detection efficiency function for long-period
-transiting planets is
-\begin{eqnarray}\eqlabel{full-comp}
-Q(R,\,P) &=& \frac{1}{K} \sum_{k=1}^{K} \int Q_k(\params) \,
-    p(\params_{\{R,\,P\}}) \dd\params_{\{R,\,P\}}
-\end{eqnarray}
-where $\params_{\{R,\,P\}}$ indicates the set of all parameters except radius
-and period.
+\dfmtodo{Talk about doing integrals with this.}
 
-Since the simulated parameters in the injection and recovery tests described
-above were sampled from the prior distribution $p(\params_{\{R,\,P\}})$, the
-easiest way to estimate \eq{full-comp} is to take the ratio of the weighted
-histogram of the recovered injections to the weighted histogram of all
-simulations where each simulation is weighted by
-$Q_{\mathrm{win},k} (\params) \, Q_{\mathrm{geom},k} (\params)$ evaluated at
-the parameters of the simulation.
-\dfmtodo{Some figure} shows the measured completeness (\eq{full-comp}) as a
-function of planet radius and orbital period.
+% For the purposes of this \paper, we are not considering the occurrence rate of
+% exoplanets as a function of stellar properties; we will only measure an
+% average rate across the target sample that we previously selected.
+% Therefore, it is sufficient to estimate the marginalized detection efficiency
+% integrated with respect to our prior distributions on the nuisance parameters.
+% In this case, the only parameters that we will consider are planet radius and
+% orbital period.
+% Under this model, the relevant detection efficiency function for long-period
+% transiting planets is
+% \begin{eqnarray}\eqlabel{full-comp}
+% Q(R,\,P) &=& \frac{1}{K} \sum_{k=1}^{K} \int Q_k(\params) \,
+%     p(\params_{\{R,\,P\}}) \dd\params_{\{R,\,P\}}
+% \end{eqnarray}
+% where $\params_{\{R,\,P\}}$ indicates the set of all parameters except radius
+% and period.
 
-\dfmtodo{Analytic fit?}
+% Since the simulated parameters in the injection and recovery tests described
+% above were sampled from the prior distribution $p(\params_{\{R,\,P\}})$, the
+% easiest way to estimate \eq{full-comp} is to take the ratio of the weighted
+% histogram of the recovered injections to the weighted histogram of all
+% simulations where each simulation is weighted by
+% $Q_{\mathrm{win},k} (\params) \, Q_{\mathrm{geom},k} (\params)$ evaluated at
+% the parameters of the simulation.
+% \dfmtodo{Some figure} shows the measured completeness (\eq{full-comp}) as a
+% function of planet radius and orbital period.
+
+% \dfmtodo{Analytic fit?}
 
 \begin{floattable}
 \begin{deluxetable}{lc}

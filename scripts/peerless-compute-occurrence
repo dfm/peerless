@@ -71,7 +71,7 @@ for (rmin, rmax), (pmin, pmax) in product(rbins, pbins):
     Tk = inj.dataspan
     Mk = inj.mass
     Rk = inj.radius_stlr
-    Qk = (4*np.pi/(_G * Mk))**(1./3) * Rk
+    Qk = (4*np.pi/(_G * Mk))**(1./3) * (Rk + inj.radius * 0.0995)
     period = inj.period
 
     # Eccentric contribution to geometric transit probability.

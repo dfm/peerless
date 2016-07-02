@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from peerless.catalogs import (
-    CumulativeCatalog, UeharaCatalog, WangCatalog
+    CumulativeCatalog, UeharaCatalog, WangCatalog, TargetCatalog
 )
 
 
@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(
     description="write TeX tables for the paper"
 )
 parser.add_argument("fits", help="the csv of fit results")
+parser.add_argument("injections", help="the hdf5 file of injections")
 parser.add_argument("-f", "--fig-output", default="figures",
                     help="the root directory for the figure output")
 parser.add_argument("-t", "--tex-output", default="document",
@@ -22,9 +23,17 @@ parser.add_argument("-t", "--tex-output", default="document",
 args = parser.parse_args()
 
 df = pd.read_csv(args.fits)
+inj = pd.read_hdf(args.injections, "injections")
 kois = CumulativeCatalog().df
 wang = WangCatalog().df
 uehara = UeharaCatalog().df
+targets = TargetCatalog().df
+
+with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
+    f.write("% Automatically generated\n")
+    f.write("\\newcommand{{\\numtargets}}{{{0:,}}}\n".format(len(targets)))
+    f.write("\\newcommand{{\\numinjs}}{{{0:,}}}\n".format(len(inj)))
+    f.write("\\newcommand{{\\numcands}}{{{0:,}}}\n".format(len(df)))
 
 with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
     for _, row in df.sort_values("radius").iterrows():

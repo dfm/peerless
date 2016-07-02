@@ -71,6 +71,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\tess}{\project{TESS}}
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\bls}{\project{BLS}}
+\newcommand{\emcee}{\project{emcee}}
 
 \newcommand{\foreign}[1]{\emph{#1}}
 \newcommand{\etal}{\foreign{et\,al.}}
@@ -292,7 +293,7 @@ We apply this method to a subset of the archival data from the \kepler\
 Mission and produce a catalog of discoveries.
 
 
-\section{A fully-automated search method}
+\section{A fully-automated search method}\sectlabel{search}
 
 To find long-period exoplanets in the \kepler\ light curves, we search for
 individual, high signal-to-noise transit signals using a fully-automated
@@ -410,7 +411,7 @@ stellar variability,}
 {\item \modelname{outlier} -- a single outlier to account for a bad data
 point,}
 {\item \modelname{step} -- a step function to describe sudden pixel
-sensitivity dropouts (SPSDs; \dfmtodo{CITE}), and}
+sensitivity dropouts \citep[SPSDs; for example][]{Christiansen:2013}, and}
 {\item \modelname{box} -- a box to catch signals that are well fit by the
 search scalar but insufficiently transit-like to be convincing.}
 \end{itemize}
@@ -541,6 +542,19 @@ In this \paper, we do not take advantage of the extra constraints provided by
 the inner planets, instead treating each long-period transiting system in
 isolation, but this would be a good follow-up project.
 
+In the following paragraphs, we describe the components of the probabilistic
+model.
+To perform parameter estimation under this model, we use the Markov Chain
+Monte Carlo (MCMC) package \emcee\footnote{\url{http://dfm.io/emcee}}
+\citep{Foreman-Mackey:2013} with an ensemble of 40 walkers.
+We run each chain until at least 750 independent samples~--~in most cases, we
+actually produce thousands of independent samples~--~are obtained\footnote{The
+integrated autocorrelation time is estimated using a robust iterative method
+as suggested by Alan Sokal:
+\url{http://www.stat.unc.edu/faculty/cji/Sokal.pdf}.} and discard the first
+third of the chain as burn-in.
+
+
 \paragraph{Priors}
 
 For each candidate in our sample, we take the constraints on the stellar
@@ -560,13 +574,20 @@ significantly affected.
 
 \paragraph{Likelihood function}
 
-
+As above, we model the light curve as GP with a physical transit model as the
+mean and a covariance matrix described by a Mat\'ern-3/2 kernel function.
+The full likelihood function and some details of GP regression are given in
+\app{gp-regression}.
+For computational efficiency, we first perform a joint optimization of the
+physical parameters and GP hyperparameters to find the maximum \foreign{a
+posteriori} model then keep the hyperparameters fixed and run MCMC sampling
+for the 11 physical parameters alone.
 
 
 \begin{floattable}
 \begin{deluxetable}{lccc}
 \tabletypesize{\footnotesize}
-\tablecaption{The inferred parameters and priors used in the inference
+\caption{The inferred parameters and priors used in the inference
 \label{tab:parameters}}
 
 \tablehead{%
@@ -617,14 +638,56 @@ observations.}
 
 
 
-\subsection{Catalog of candidates}
+\subsection{Catalog of transit candidates}
+
+Applying the search procedure described in \sect{search} to the \kepler\ light
+curves of the 39,036 targets selected in \sect{target-selection}, we find 16
+convincing transit candidates.
+Visual inspection of each candidate confirms the reliability of the
+classification and no candidates are manually removed from the catalog.
+Of these, three candidates have two transits in the \kepler\ baseline and the
+remainder have only one observable transit.
+The candidates and their inferred physical parameters are listed in
+Table~\ref{tab:catalog} and the light curves are plotted in
+\dfmfig{light-curves}.
+The inferred radius and orbital periods of the candidates are compared to the
+short-period \kepler\ sample and the Solar System in \dfmfig{full-sample}.
+
+Two of the shortest period candidates~--~both with two observed
+transits~--~have previously been studied in detail \citep[KIC~8800954 and
+KIC~3239945;][]{Kipping:2014a, Kipping:2016}.
+Table~\ref{tab:catalog} indicates the candidates that were also discovered by
+earlier searches for long-period transiting systems using visual inspection
+\citep{Wang:2015, Uehara:2016}.
+The consistency between our results and the earlier catalogs is reassuring.
+Our automated search did not find any more candidates than visual inspection
+of the light curves of known KOIs \citep{Uehara:2016} and one candidate
+(KIC~3230491) reported by the human analysis was discarded as grazing by our
+search.
+The PH citizen science project reported five long-period candidates with one
+or two observed transits in our target list \citep{Wang:2015}.
+Of these, we also find two (KIC~8410697 and KIC~10842718) although we find a
+second transit in the KIC~8410697 system that was not previously reported.
+The three other candidates reported by \citet{Wang:2015} that we miss
+(KIC~5536555, KIC~9662267, and KIC~12454613) are have low signal-to-noise
+transits that do not pass our initial signal-to-noise threshold.
+Six of the candidates in Table~\ref{tab:catalog} have not been previously
+published.
+
+The candidate in the light curve of KIC~4754460 as an individual transit
+candidate but another deeper eclipse can be found at a KBJD of 1587.13; right
+at the beginning of Quarter 17.
+This eclipse was missed by the automated search because only the second half
+of the eclipse is observed.
+The most likely explanation of this system is that the listed candidate is the
+secondary eclipse of a binary system but we will keep the candidate is the
+list and treat this effect statistically in \sect{false-positives}.
 
 \begin{floattable}
 \begin{deluxetable}{cccccl}
 \tabletypesize{\footnotesize}
-\tablecaption{The inferred parameters for the long-period transiting exoplanet
-candidates
-\label{tab:table}}
+\caption{The inferred parameters for the long-period transiting exoplanet
+candidates \label{tab:catalog}}
 \include{paramtab}
 \tablenotetext{*}{The equilibrium temperature is computed assuming zero
 albedo.}
@@ -644,6 +707,8 @@ albedo.}
 Sections of \pdc\ light curve centered on each candidate (black) with the
 posterior-median transit model over-plotted (orange).
 Candidates with two transits are folded on the posterior-median period.
+The plots are ordered by increasing planetary radius from the top-left to the
+bottom-right.
 \dfmfiglabel{light-curves}}
 \end{figure*}
 
@@ -666,14 +731,15 @@ transit searches that require at least three transits.
 
 \section{Empirical search completeness}
 
-To measure the completeness of our long-period transit search method, we
+To measure the completeness of search procedure described in \sect{search}, we
 exploit the fact that transit signals are sparse and rare.
 Therefore, most light curves contain no transits and we can reliably measure
 the recovery rate of our method on synthetic transit signals~--~with known
 properties~--~injected into real light curves.
 This procedure is standard practice in the transit literature and it has been
-used to determine the completeness of the KOI catalog (\dfmtodo{cite}) and
-other independent transit searches (\dfmtodo{cite}).
+used to determine the completeness of the KOI catalog
+\citep{Christiansen:2013, Christiansen:2015} and other independent transit
+searches \citep{Petigura:2013, Dressing:2015, Foreman-Mackey:2015}.
 
 To reliably capture the full structure of the search completeness function,
 the simulations must sample the (high-dimensional) space of all properties
@@ -691,17 +757,16 @@ follows:
 {\item First, a star is randomly selected from the target list, and the \pdc\
 light curve and stellar properties for that star are loaded.}
 {\item Planetary properties are sampled from the distributions listed in
-\dfmtodo{some table} with phase uniformly distributed across the baseline of
-observations. These properties are resampled until the transit is visible in
-at least one non-flagged cadence.}
+Table~\ref{tab:simulations} with phase uniformly distributed across the
+baseline of observations. These properties are re-sampled until the transit is
+visible in at least one non-flagged cadence.}
 {\item The transit signal induced by this planet is computed and multiplied
 into the \pdc\ light curve.}
-{\item The transit search method described in section \dfmtodo{some section}
-(including de-trending and all automated vetting) is applied to this light
+{\item The transit search method described in \sect{search}~--~including
+de-trending and all automated vetting~--~is applied to this light
 curve with the injected transit signal.}
-{\item This candidate is flagged as recovered if at least one transit (within
-\dfmtodo{some tolerance}) passes all the cuts imposed by the automated
-vetting.}
+{\item This candidate is flagged as recovered if at least one transit within
+one transit duration passes all the cuts imposed by the automated vetting.}
 \end{enumerate}
 
 The fraction of recovered simulations as a function of the relevant parameters
@@ -765,6 +830,30 @@ function of planet radius and orbital period.
 
 \dfmtodo{Analytic fit?}
 
+\begin{floattable}
+\begin{deluxetable}{lc}
+\tabletypesize{\footnotesize}
+\caption{Distributions of physical parameters for transit simulations
+\label{tab:simulations}}
+
+\tablehead{%
+    \colhead{name} & \colhead{distribution}
+}
+\startdata
+period & $\log P \sim \mathcal{U}(\log 2\unit{yr},\,\log 25\unit{yr})$ \\
+radius ratio & $\log R_\mathrm{P}/R_\star \sim
+    \mathcal{U}(\log 0.02,\,\log 0.2)$ \\
+impact parameter & $b \sim \mathcal{U}(0,\,1+R_\mathrm{P}/R_\star)$ \\
+\multirow{2}{*}{eccentricity} & $e \sim \beta(1.12,\,3.09)$\tablenotemark{a} \\
+    & $\omega \sim \mathcal{U}(-\pi,\,\pi)$\\
+\multirow{2}{*}{limb darkening} & $q_1 \sim \mathcal{U}(0,\,1)$ \\
+                                & $q_2 \sim \mathcal{U}(0,\,1)$ \\
+\enddata
+
+\tablenotetext{a}{\citet{Kipping:2013a}}
+\end{deluxetable}
+\end{floattable}
+
 \begin{figure*}[p]~\\
 \begin{center}
 \includegraphics[width=\textwidth]{figures/completeness.pdf}
@@ -813,7 +902,7 @@ R < R_\mathrm{J}$.
 
 
 
-\section{Astrophysical false positives}
+\section{Astrophysical false positives}\sectlabel{false-positives}
 
 Tim to write some words here.
 

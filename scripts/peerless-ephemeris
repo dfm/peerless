@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import numpy as np
+import pandas as pd
+
+from peerless.catalogs import EBCatalog
+
+
+parser = argparse.ArgumentParser(
+    description="Check the ephemerides of candidates against the EB catalog"
+)
+parser.add_argument("fits", help="the csv of fit results")
+args = parser.parse_args()
+
+cands = pd.read_csv(args.fits)
+ebs = EBCatalog().df
+
+time_ref = 2454833.0 - 2400000.0
+t0_ref = np.array((ebs.bjd0 - time_ref) % ebs.period)
+per_ref = np.array(ebs.period)
+ids_ref = np.array(ebs["#KIC"], dtype=int)
+m = np.isfinite(t0_ref) & (t0_ref > 0.0)
+m &= np.isfinite(per_ref) & (per_ref > 0.0)
+t0_ref = t0_ref[m]
+per_ref = per_ref[m]
+ids_ref = ids_ref[m]
+
+delta = np.abs(cands.t0[:, None] - t0_ref[None, :])
+inds = np.argmin(delta, axis=1)
+scalar = delta[(range(len(inds)), inds)]
+mask = scalar < 1.0
+print(scalar[mask])
+print(per_ref[inds][mask])
+print(list(zip(cands.kicid[mask], ids_ref[inds][mask])))

@@ -5,6 +5,7 @@
 \pdfoutput=1
 
 \include{vc}
+\include{numbers}
 
 \usepackage{microtype}
 
@@ -319,7 +320,7 @@ Therefore, in the inexpensive first step~--~the initial candidate search~--~we
 can restrict the candidate list to high signal-to-noise events without a
 substantial loss in detection efficiency.
 
-\subsection{Step 1 -- Initial candidate events}
+\subsection{Step 1 -- Initial candidate events}\sectlabel{stepone}
 
 It is not computationally feasible to run a full model comparison at every
 time in the light curve so we must first find potentially interesting events.
@@ -496,8 +497,8 @@ binaries\footnote{\url{http://keplerebs.villanova.edu/}} \citep{Kirk:2016},
 other known false positives \citep{Coughlin:2016}, a planet with known transit
 timing variations (Kepler-9), and four especially noisy stars (KIC~4482348,
 KIC~4450472, KIC~5438845, and KIC~10068041).
-The final catalog contains 39,036 targets and the parameter distribution is
-shown in \dfmfig{targets}.
+The final catalog contains \numtargets\ targets and the parameter distribution
+is shown in \dfmfig{targets}.
 
 Since these data have already been searched for short-period planets, we
 assume that all high signal-to-noise candidates with three or more transits
@@ -641,8 +642,8 @@ observations.}
 \subsection{Catalog of transit candidates}
 
 Applying the search procedure described in \sect{search} to the \kepler\ light
-curves of the 39,036 targets selected in \sect{target-selection}, we find 16
-convincing transit candidates.
+curves of the \numtargets\ targets selected in \sect{target-selection}, we
+find \numcands\ convincing transit candidates.
 Visual inspection of each candidate confirms the reliability of the
 classification and no candidates are manually removed from the catalog.
 Of these, three candidates have two transits in the \kepler\ baseline and the
@@ -777,6 +778,22 @@ We will call this function $Q_{\mathrm{det},k}(\params)$ where \params\ is the
 set of all parameters affecting the transit detectability and $k$ is an index
 running over target stars.
 
+\dfmfig{completeness} shows the fraction of recovered simulations as a
+function of planet radius and orbital period based on \numinjs\ injected
+signals.
+This figure shows the transit detection efficiency falling with decreasing
+planet radius.
+This is the expected behavior because the depth (and signal strength) of a
+transit scales with the area ratio between the planet and the star.
+The decreasing completeness with orbital period is less intuitive because, on
+average, the signal strength should increase as the duration of the transit
+increases.
+In this case, this simplistic treatment misses two important factors.
+First, in step 1 of the search procedure (\sect{stepone}) only a single
+transit duration is used and second, longer transits are less easily
+distinguished from stellar variability and they will, therefore, be discarded
+in the conservative light curve vetting step (\sect{light-curve-vetting}).
+
 This detection efficiency must then be combined with the geometric transit
 probability function and the window function.
 For the star $k$, the geometric transit probability is given by \dfmtodo{cite}
@@ -789,7 +806,7 @@ Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k}}{a_k}
 \end{eqnarray}
 where the parameters $e$, $\omega$, and $P$ are included in \params.
 Approximating the window function using the binomial probability of observing
-at least one transit \dfmtodo{cite bm14} we find
+at least one transit \citep{Burke:2014a} we find
 \begin{eqnarray}
 Q_{\mathrm{win},k} (\params) &=& 1 - (1 - f_{\mathrm{duty},k})^{T_k/P}
 \end{eqnarray}
@@ -859,8 +876,8 @@ impact parameter & $b \sim \mathcal{U}(0,\,1+R_\mathrm{P}/R_\star)$ \\
 \includegraphics[width=\textwidth]{figures/completeness.pdf}
 \end{center}
 \caption{%
-The completeness of the search procedure described here as a function of
-period and radius.
+An empirical estimate of the search completeness as a function of planet
+radius and orbital period.
 In each bin, the completeness (in percent) is given with the associated
 sampling uncertainty.
 The projected histograms show the integrated completeness as independent

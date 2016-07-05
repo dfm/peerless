@@ -906,6 +906,28 @@ the planet parameters (including orbital period).
 This assumption is only justified because we are only making high-level
 measurements of the mean occurrence rate in large bins.
 
+Assuming a Poisson likelihood, the occurrence rate density in a volume
+$V$~--~defined as $P_\mathrm{min} \le P < P_\mathrm{max}$ and
+$R_\mathrm{min} \le R < R_\mathrm{max}$~--~is
+\begin{eqnarray}
+\frac{\dd N}{\dd\ln P\dd\ln R} &=&
+    \frac{N(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})}
+         {Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})}
+\end{eqnarray}
+where $N(\cdots)$ is the number of planets in the volume and
+\begin{eqnarray}
+Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &=&
+    \sum_{k=1}^{K} \int p(w_{P,\,R})\,Q_k(w)\,\bvec{1}[P,\,R\in V]\dd w
+\end{eqnarray}
+where $p(w_{P,\,R})$ is the prior distribution of all the parameters except
+the period and radius.
+Using the $J$ injections sampled uniformly in period and radius and other
+parameters from $p(w_{P,\,R})$,
+\begin{eqnarray}
+Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &\approx&
+    \frac{K}{J}\,\sum_{j=1}^{J} Q_k(w^{(j)})
+\end{eqnarray}
+where the sum is over all injections in the volume $V$.
 
 
 

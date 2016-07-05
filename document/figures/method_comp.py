@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as pl
 
-from peerless.plot_setup import COLORS
+from peerless import plot_setup  # NOQA
 
 names = ["id", "binary", "mass", "radius", "period", "a", "e", "per", "long",
          "asc", "incl", "teq", "age", "method", "year", "updated", "ra", "dec",

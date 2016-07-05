@@ -13,11 +13,14 @@ __all__ = ["compute_occurrence"]
 _G = 2945.4625385377644
 
 
-def compute_occurrence(inj, fits0, rbins, pbins):
+def compute_occurrence(inj, fits0, rgrid, pgrid):
     """
     Compute the occurrence rate density in a grid of period
 
     """
+    rbins = [(float(rgrid[i]), float(rgrid[i+1])) for i in range(len(rgrid)-1)]
+    pbins = [(float(pgrid[i]), float(pgrid[i+1])) for i in range(len(pgrid)-1)]
+
     # Only select injections from the corresponding target list.
     targets = TargetCatalog().df
     targets = targets[np.isfinite(targets.mass)]

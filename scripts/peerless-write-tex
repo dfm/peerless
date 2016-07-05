@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from peerless.occurrence import compute_occurrence
 from peerless.catalogs import (
     CumulativeCatalog, UeharaCatalog, WangCatalog, TargetCatalog
 )
@@ -44,7 +45,8 @@ with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
 with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{kic id} & \colhead{period [years]} & \colhead{$t_0$ [KBJD]} &
-    \colhead{radius [$R_\mathrm{J}$]} & \colhead{$T_\mathrm{eq}$\\tablenotemark{*} [K]} &
+    \colhead{radius [$R_\mathrm{J}$]} &
+    \colhead{$T_\mathrm{eq}$\\tablenotemark{*} [K]} &
     \colhead{comments}
 }
 \\rotate
@@ -85,13 +87,23 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             minus = ("{{0:.{0:d}f}}".format(nd)).format(u[0])
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
-            # if nd > 5:
-            #     u = "{0}".format(minus)[-2:]
-            #     rows.append("${0}({1})$".format(mean, u))
-            # if plus == minus:
-            #     rows.append("${0}\pm{1}$".format(mean, minus))
-            # else:
             rows.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
         rows.append(comment)
         f.write(" & ".join(rows) + "\\\\\n")
+    f.write("\enddata\n")
+
+
+occ = compute_occurrence(inj, df, [0.1, 0.4, 1.0], [2.0, 25.0])
+print(occ)
+with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
+    f.write("""\\tablehead{
+    \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &
+    \colhead{$R_\mathrm{max}\,[R_\mathrm{J}]$} &
+    \colhead{occurrence rate}
+}
+\startdata\n""")
+    for _, row in occ.iterrows():
+        f.write("{0:.1f} & {1:.1f} & {2:.2f}\pm{3:.2f} \\\\\n"
+                .format(row.radius_min, row.radius_max,
+                        row.rate_density, row.rate_density_uncert))
     f.write("\enddata\n")

@@ -45,9 +45,7 @@ fits = pd.read_csv(args.fits)
 
 # Define the grids.
 rgrid = np.exp(np.linspace(np.log(args.rmin), np.log(args.rmax), args.rbins+1))
-rbins = [(float(rgrid[i]), float(rgrid[i+1])) for i in range(args.rbins)]
 pgrid = np.exp(np.linspace(np.log(args.pmin), np.log(args.pmax), args.pbins+1))
-pbins = [(float(pgrid[i]), float(pgrid[i+1])) for i in range(args.pbins)]
 
-df = compute_occurrence(inj, fits, rbins, pbins)
+df = compute_occurrence(inj, fits, rgrid, pgrid)
 df.to_csv(os.path.join(args.output, "rate.csv"), index=False)

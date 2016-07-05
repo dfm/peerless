@@ -94,7 +94,6 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
 
 
 occ = compute_occurrence(inj, df, [0.1, 0.4, 1.0], [2.0, 25.0])
-print(occ)
 with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &
@@ -103,7 +102,7 @@ with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
 }
 \startdata\n""")
     for _, row in occ.iterrows():
-        f.write("{0:.1f} & {1:.1f} & {2:.2f}\pm{3:.2f} \\\\\n"
+        f.write("${0:.1f}$ & ${1:.1f}$ & ${2:.2f}\pm{3:.2f}$ \\\\\n"
                 .format(row.radius_min, row.radius_max,
                         row.rate_density, row.rate_density_uncert))
     f.write("\enddata\n")

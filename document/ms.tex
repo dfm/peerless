@@ -134,7 +134,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\modelname}[1]{{\textsf{#1}}}
 
 
-\shorttitle{The population of long-period exoplanets}
+\shorttitle{The population of long-period transiting exoplanets}
 \shortauthors{Foreman-Mackey, Hogg, Morton, \etal}
 % \submitted{Submitted to \textit{The Astrophysical Journal}}
 
@@ -277,11 +277,11 @@ Recent work has yielded discoveries of long-period transiting planets with
 only one or two transits identified in archival \kepler\ and \KT\ light curves
 by visual inspection \citep{Wang:2013, Kipping:2014a, Osborn:2016,
 Kipping:2016, Uehara:2016, Wang:2015}.
-Since all of these discoveries rely on human interaction, it is intractable to
-reliably constrain the completeness of these catalogs and they cannot be used
-to measure the occurrence rate of long-period planets.
+Since all of these discoveries rely on human interaction, it is prohibitively
+expensive to reliably measure the completeness of these catalogs and they
+cannot be used to constrain the occurrence rate of long-period planets.
 
-In this \paper, we develop a systematic method of reliably discovering the
+In this \paper, we develop a systematic method for reliably discovering the
 transits of large long-period companions in photometric time series
 \emph{without human intervention}.
 Since the search methodology is fully automated, we can robustly measure the
@@ -307,9 +307,9 @@ The following sections describe each of these steps in more detail.
 
 The model comparison step (step 2) is the key component of our method that
 enables robust automation but it is also computationally expensive because we
-must estimate the marginalized likelihoods for the light curve under several
-different models describing a transit and many other processes that ``look''
-like transits but are actually caused by noise.
+must estimate the marginalized likelihoods of several different models
+describing a transit and many other processes that ``look'' like transits but
+are actually caused by noise.
 This step is also conservative; unless a signal is a very convincing transit,
 it won't pass the test.
 In practice, this means that all but the highest signal-to-noise events will
@@ -321,16 +321,17 @@ substantial loss in detection efficiency.
 \subsection{Step 1 -- Initial candidate events}\sectlabel{stepone}
 
 It is not computationally feasible to run a full model comparison at every
-time in the light curve so we must first find potentially interesting events.
+conceivable transit time possible in the light curve so we must first find
+potentially interesting events.
 For our purposes, ``interesting'' means high signal-to-noise and previously
 unknown.
 
 To generate this list, we use a method much like the standard ``box least
 squares'' \citep[\bls;][]{Kovacs:2002} procedure with a single (non-periodic)
 box.
-First, we filter the \pdc\ light curves \citep{Stumpe:2012, Smith:2012}
-using a running windowed median with a half-width of 2~days to remove stellar
-variability.
+After masking any known transits, we filter the \pdc\ light curves
+\citep{Stumpe:2012, Smith:2012} using a running windowed median with a
+half-width of 2~days to remove stellar variability.
 We then compute the signal-to-noise of the depth of a 0.6~day long
 transit on a grid of times spanning the full baseline of observations.
 
@@ -348,8 +349,7 @@ $\mu$ and transit depth $\delta$ can be analytically computed to be a
 two-dimensional Gaussian with mean and covariance given by linear
 least-squares.
 This likelihood function provides a natural scalar objective: the
-signal-to-noise of the measured depth $\delta / \sigma_\delta$ computed a
-function of time.
+signal-to-noise of the measured depth computed a function of time.
 In principle this scalar is also a function of duration but we only use a
 single transit duration because the following steps in this procedure are only
 sensitive to transits with very high signal-to-noise.
@@ -380,16 +380,16 @@ The BIC is not the optimal choice for this model comparison but it is
 computationally intractable to compute thousands of precise marginalized
 likelihoods for each model.
 The BIC can be efficiently computed and it exhibits the desired
-behavior~--~increasing with the likelihood but flexible models are
+behavior~--~decreasing with increasing likelihood but flexible models are
 penalized~--~and we find that it performs sufficiently well in practice.
 
 For up to three candidate transit times per light curve, we select a
 contiguous chunk of \pdc\ light curve approximately centered on the proposed
-transit with no more than 500 cadences and compute the BIC of each model for
-this data set.
+transit with no more than 500 cadences (about 10 days) and compute the BIC of
+each model for this data set.
 The BIC for a model $k$ in the set of $K$ models is given by
 \begin{eqnarray}
-\mathrm{BIC}_k &=& \ln \mathcal{L}^* - \frac{J}{2}\,\log N
+\mathrm{BIC}_k &=& -2\,\ln \mathcal{L}^* + J\,\ln N
 \end{eqnarray}
 where the likelihood function $\mathcal{L}$ is evaluated at its maximum, $J$
 is the number of free parameters in the model, and $N$ is the number of

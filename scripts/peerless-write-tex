@@ -98,7 +98,7 @@ with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &
     \colhead{$R_\mathrm{max}\,[R_\mathrm{J}]$} &
-    \colhead{occurrence rate}
+    \colhead{$\Gamma$\\tablenotemark{a}}
 }
 \startdata\n""")
     for _, row in occ.iterrows():

@@ -1015,6 +1015,7 @@ This research made use of the NASA \project{Astrophysics Data System} and the
 NASA Exoplanet Archive.
 The Exoplanet Archive is operated by the California Institute of Technology,
 under contract with NASA under the Exoplanet Exploration Program.
+
 This \paper\ includes data collected by the \kepler\ mission. Funding for the
 \kepler\ mission is provided by the NASA Science Mission directorate.
 We are grateful to the entire \kepler\ team, past and present.
@@ -1138,7 +1139,7 @@ In this \paper, we use a GP model for two steps: light curve--level transit
 shape vetting and parameter estimation.
 A full discussion of GPs is beyond the scope of this \paper, so we will only
 summarize the most relevant points here and direct an interested reader to
-\dfmtodo{cite RW} for more details.
+\citet{Rasmussen:2006} for more details.
 
 A GP model is specified by the following likelihood function
 \begin{eqnarray}\eqlabel{gplike}
@@ -1194,11 +1195,10 @@ where
 \bvec{\phi} &=& K(\kernpars)^{-1}\,\bvec{r}(\meanpars) \quad.
 \end{eqnarray}
 
-To evaluate \eq{gpmeangrad}, we must also evaluate the derivative of the mean
-model with respect to its parameters.
+% To evaluate \eq{gpmeangrad}, we must also evaluate the derivative of the mean
+% model with respect to its parameters.
 
 
-\clearpage
 \bibliography{peerless}
 
 \end{document}

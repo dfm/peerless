@@ -4,14 +4,82 @@ from __future__ import division, print_function
 
 from peerless.plot_setup import SQUARE_FIGSIZE, COLORS
 
-import numpy as np
+# import numpy as np
 import pandas as pd
 from itertools import product
 import matplotlib.pyplot as pl
+from scipy.optimize import minimize
+
+from autograd import grad
+import autograd.numpy as np
+
 
 inj = pd.read_hdf("../../results/injections.h5", "injections")
 inj = inj[inj.ncadences > 0]
 rec = inj[inj.recovered]
+
+
+def analytic_model(params, ln_radius, ln_period):
+    b1, b2, a1, a2, k1, k2, x1, x2 = params
+    a = (a1 * ln_period + a2) * (b1 * ln_radius + b2)
+    a = a * (a > 0.0) * (a < 1.0) + 1.0 * (a > 1.0)
+    k = k1 * ln_period + k2
+    x = x1 * ln_period + x2
+    return a / (1.0 + np.exp(-k * (ln_radius - x)))
+
+
+def nll(params, ln_radius, ln_period, flag):
+    m = analytic_model(params, ln_radius, ln_period)
+    return np.mean((flag - m)**2)
+
+
+def error(params, ln_radius, ln_period, flag):
+    m = analytic_model(params, ln_radius, ln_period)
+    pred = m > 0.5
+    return np.sum(pred != flag)
+
+
+x, y = np.log(np.array(inj.radius)), np.log(np.array(inj.period))
+flag = np.array(inj.recovered, dtype=int)
+params = np.array([0.0, 1.0, 0.0, 0.6, 0.0, 10.0, 0.0, -3.0])
+r = minimize(nll, params, jac=grad(nll), args=(x, y, flag))
+with open("../completenessfit.tex", "w") as f:
+    f.write(r"""\newcommand{{\parama}}{{{0[0]:.2f}}}
+\newcommand{{\paramb}}{{{0[1]:.2f}}}
+\newcommand{{\paramc}}{{{0[2]:.2f}}}
+\newcommand{{\paramd}}{{{0[3]:.2f}}}
+\newcommand{{\parame}}{{{0[4]:.2f}}}
+\newcommand{{\paramf}}{{{0[5]:.2f}}}
+\newcommand{{\paramg}}{{{0[6]:.2f}}}
+\newcommand{{\paramh}}{{{0[7]:.2f}}}
+""".format(r.x))
+
+# Plot - analytic
+s = np.array(SQUARE_FIGSIZE)
+s[0] *= 1.25
+fig, ax = pl.subplots(1, 1, figsize=s)
+
+ln_radius_bins = np.linspace(np.log(0.15), np.log(2.2), 100)
+ln_period_bins = np.linspace(np.log(2), np.log(25), 101)
+Y, X = np.meshgrid(ln_period_bins, ln_radius_bins, indexing="ij")
+Z = analytic_model(r.x, X + np.log(0.0995), Y + np.log(365.25))
+c = ax.pcolor(np.exp(ln_period_bins), np.exp(ln_radius_bins), Z.T,
+              cmap="viridis", vmin=0, vmax=1)
+cbar = fig.colorbar(c)
+cbar.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+ax.contour(np.exp(Y), np.exp(X), Z, [0.1, 0.3, 0.5, 0.7], colors="w")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_ylim(np.exp([X.min(), X.max()]))
+ax.set_xlim(np.exp([Y.min(), Y.max()]))
+ax.set_xlabel("period [years]")
+ax.set_ylabel("$R_\mathrm{P} / R_\mathrm{J}$")
+ax.set_xticks([3, 5, 10, 20])
+ax.get_xaxis().set_major_formatter(pl.ScalarFormatter())
+ax.set_yticks([0.2, 0.5, 1, 2])
+ax.get_yaxis().set_major_formatter(pl.ScalarFormatter())
+fig.savefig("completeness_analytic.pdf", bbox_inches="tight")
+
 
 # Histograms.
 ln_radius_bins = np.linspace(np.log(0.15), np.log(2.2), 8) + np.log(0.0995)
@@ -29,27 +97,6 @@ X, Y = np.meshgrid(np.exp(ln_period_bins) / 365.25,
                    np.exp(ln_radius_bins) / 0.0995,
                    indexing="ij")
 
-# Plot 1
-fig, ax = pl.subplots(1, 1, figsize=2*np.array(SQUARE_FIGSIZE))
-
-ax.plot(inj[~inj.recovered].period/365.25, inj[~inj.recovered].radius/0.0995,
-        ".", color=COLORS["DATA"], alpha=0.3, rasterized=True)
-ax.plot(rec.period / 365.25, rec.radius / 0.0995, ".", color=COLORS["MODEL_1"],
-        alpha=0.3, rasterized=True)
-
-ax.set_xscale("log")
-ax.set_yscale("log")
-ax.set_xlim(X.min(), X.max())
-ax.set_ylim(Y.min(), Y.max())
-ax.set_xlabel("period [years]")
-ax.set_ylabel("$R_\mathrm{P} / R_\mathrm{J}$")
-ax.set_xticks([3, 5, 10, 20])
-ax.get_xaxis().set_major_formatter(pl.ScalarFormatter())
-ax.set_yticks([0.2, 0.5, 1, 2])
-ax.get_yaxis().set_major_formatter(pl.ScalarFormatter())
-
-fig.savefig("completeness0.pdf", bbox_inches="tight")
-pl.close(fig)
 
 # Plot 2
 fig = pl.figure(figsize=2*np.array(SQUARE_FIGSIZE))

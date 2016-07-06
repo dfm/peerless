@@ -6,6 +6,7 @@
 
 \include{vc}
 \include{numbers}
+\include{completenessfit}
 
 \usepackage{microtype}
 
@@ -823,6 +824,35 @@ Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
                  Q_{\mathrm{geom},k} (\params) \quad.
 \end{eqnarray}
 
+So that our planet candidate catalog can be easily used for other projects, we
+also provide an analytic approximation to the relevant integrated detection
+efficiency function
+\begin{eqnarray}
+Q_\mathrm{det}(P,\,R) &=& \sum_{k=1}^{K} \int Q_\mathrm{det,k}(\params)\,
+    p(\params_{\{P,\,R\}}) \dd\params_{\{P,\,R\}}
+\end{eqnarray}
+where $p(\params_{\{P,\,R\}})$ is the prior distribution of all the parameters
+except the period and radius.
+We find that a good fit to this integrated completeness is given by the
+function
+\begin{eqnarray}
+Q_\mathrm{det}(P,\,R) &\approx&
+    \frac{a(P)\,b(R)}{1+\exp\left[-k(P)\,(\ln R-x(P))\right]}
+\end{eqnarray}
+where
+\begin{eqnarray}
+a(P) = a_1\,\ln P + a_2 \,,\quad
+b(R) = b_1\,\ln R + b_2 \,,\quad \\
+k(P) = k_1\,\ln P + k_2 \,,\,\mathrm{and}\quad
+x(P) = x_1\,\ln P + x_2 \,.
+\end{eqnarray}
+When fit to the set of \numinjs\ injected transits, the best fit parameters
+are given in Table~\ref{tab:completeness} and the approximation is plotted
+in \dfmfig{completeness-analytic}.
+Note that we do not use this approximation in the following analysis but
+instead compute the relevant integrals using the injection catalog directly.
+
+
 \begin{floattable}
 \begin{deluxetable}{lc}
 \tabletypesize{\footnotesize}
@@ -861,6 +891,35 @@ functions of period and radius.
 \dfmfiglabel{completeness}}
 \end{figure*}
 
+\begin{figure*}[htbp]~\\
+\begin{center}
+\includegraphics[width=0.6\textwidth]{figures/completeness_analytic.pdf}
+\end{center}
+\caption{%
+An analytic approximation to \dfmfig{completeness} with the same color scale.
+The contours indicate the 0.1, 0.3, 0.5, and 0.7 levels.
+\dfmfiglabel{completeness-analytic}}
+\end{figure*}
+
+\begin{floattable}
+\begin{deluxetable}{cc|cc}
+\tabletypesize{\footnotesize}
+\caption{The fit parameters for the analytic approximation to the completeness
+function
+\label{tab:completeness}}
+\tablehead{%
+    \colhead{parameter} & \colhead{value} &
+    \colhead{parameter} & \colhead{value}
+}
+\startdata
+$a_1$ & $\paramc$ & $k_1$ & $\parame$ \\
+$a_2$ & $\paramd$ & $k_2$ & $\paramf$ \\
+$b_1$ & $\parama$ & $x_1$ & $\paramg$ \\
+$b_2$ & $\paramb$ & $x_2$ & $\paramh$ \\
+\enddata
+\end{deluxetable}
+\end{floattable}
+
 
 \section{The occurrence rate of long-period exoplanets}
 
@@ -890,11 +949,12 @@ where $N$ is the expected number of planets per G/K dwarf, $C(\cdots)$ is the
 number of planets in the volume, and
 \begin{eqnarray}
 Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &=&
-    \sum_{k=1}^{K} \int p(w_{\{P,\,R\}})\,Q_k(w)\,\bvec{1}[P,\,R\in V]\dd w
+    \sum_{k=1}^{K} \int p(\params_{\{P,\,R\}})\,
+    Q_k(\params)\,\bvec{1}[P,\,R\in V]\dd \params
 \end{eqnarray}
-where $p(w_{\{P,\,R\}})$ is the prior distribution of all the parameters except
-the period and radius and $\bvec{1}[\cdot]$ is 1 if the argument is satisfied
-and 0 otherwise.
+where $p(\params_{\{P,\,R\}})$ is the prior distribution of all the parameters
+except the period and radius and $\bvec{1}[\cdot]$ is 1 if the argument is
+satisfied and 0 otherwise.
 Using the $J$ injections sampled uniformly in period and radius and other
 parameters from $p(w_{\{P,\,R\}})$,
 \begin{eqnarray}

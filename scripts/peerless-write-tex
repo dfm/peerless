@@ -98,7 +98,8 @@ with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &
     \colhead{$R_\mathrm{max}\,[R_\mathrm{J}]$} &
-    \colhead{$\Gamma$\\tablenotemark{a}}
+    \colhead{$\Gamma_{R\in[R_\mathrm{min},\,R_\mathrm{max}],\,
+              P\in[2\,\mathrm{yr},\,25\,\mathrm{yr}]}$\\tablenotemark{a}}
 }
 \startdata\n""")
     for _, row in occ.iterrows():

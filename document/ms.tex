@@ -822,35 +822,6 @@ Q_k(\params) &=& Q_{\mathrm{det},k}(\params) \,
                  Q_{\mathrm{win},k} (\params) \,
                  Q_{\mathrm{geom},k} (\params) \quad.
 \end{eqnarray}
-\dfmtodo{Talk about doing integrals with this.}
-
-% For the purposes of this \paper, we are not considering the occurrence rate of
-% exoplanets as a function of stellar properties; we will only measure an
-% average rate across the target sample that we previously selected.
-% Therefore, it is sufficient to estimate the marginalized detection efficiency
-% integrated with respect to our prior distributions on the nuisance parameters.
-% In this case, the only parameters that we will consider are planet radius and
-% orbital period.
-% Under this model, the relevant detection efficiency function for long-period
-% transiting planets is
-% \begin{eqnarray}\eqlabel{full-comp}
-% Q(R,\,P) &=& \frac{1}{K} \sum_{k=1}^{K} \int Q_k(\params) \,
-%     p(\params_{\{R,\,P\}}) \dd\params_{\{R,\,P\}}
-% \end{eqnarray}
-% where $\params_{\{R,\,P\}}$ indicates the set of all parameters except radius
-% and period.
-
-% Since the simulated parameters in the injection and recovery tests described
-% above were sampled from the prior distribution $p(\params_{\{R,\,P\}})$, the
-% easiest way to estimate \eq{full-comp} is to take the ratio of the weighted
-% histogram of the recovered injections to the weighted histogram of all
-% simulations where each simulation is weighted by
-% $Q_{\mathrm{win},k} (\params) \, Q_{\mathrm{geom},k} (\params)$ evaluated at
-% the parameters of the simulation.
-% \dfmtodo{Some figure} shows the measured completeness (\eq{full-comp}) as a
-% function of planet radius and orbital period.
-
-% \dfmtodo{Analytic fit?}
 
 \begin{floattable}
 \begin{deluxetable}{lc}
@@ -909,6 +880,7 @@ measurements of the mean occurrence rate in large bins.
 Assuming a Poisson likelihood, the occurrence rate density in a volume
 $V$~--~defined as $P_\mathrm{min} \le P < P_\mathrm{max}$ and
 $R_\mathrm{min} \le R < R_\mathrm{max}$~--~is
+\citep[see, for example, the Appendix of][]{Foreman-Mackey:2014}
 \begin{eqnarray}\eqlabel{rate-density}
 \Gamma_V \equiv \frac{\dd N}{\dd\ln P\dd\ln R} &=&
     \frac{C(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})}
@@ -918,12 +890,13 @@ where $N$ is the expected number of planets per G/K dwarf, $C(\cdots)$ is the
 number of planets in the volume, and
 \begin{eqnarray}
 Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &=&
-    \sum_{k=1}^{K} \int p(w_{P,\,R})\,Q_k(w)\,\bvec{1}[P,\,R\in V]\dd w
+    \sum_{k=1}^{K} \int p(w_{\{P,\,R\}})\,Q_k(w)\,\bvec{1}[P,\,R\in V]\dd w
 \end{eqnarray}
-where $p(w_{P,\,R})$ is the prior distribution of all the parameters except
-the period and radius.
+where $p(w_{\{P,\,R\}})$ is the prior distribution of all the parameters except
+the period and radius and $\bvec{1}[\cdot]$ is 1 if the argument is satisfied
+and 0 otherwise.
 Using the $J$ injections sampled uniformly in period and radius and other
-parameters from $p(w_{P,\,R})$,
+parameters from $p(w_{\{P,\,R\}})$,
 \begin{eqnarray}
 Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &\approx&
     \frac{K}{J}\,\sum_{j=1}^{J} Q_k(w^{(j)})

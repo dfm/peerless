@@ -202,8 +202,8 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
         ("impact_uncert_plus", impact[2]-impact[1]),
         ("impact_uncert_minus", impact[1]-impact[0]),
         ("eccen", eccen[1]),
-        ("eccen_uncert_plus", eccen[2]-impact[1]),
-        ("eccen_uncert_minus", eccen[1]-impact[0]),
+        ("eccen_uncert_plus", eccen[2]-eccen[1]),
+        ("eccen_uncert_minus", eccen[1]-eccen[0]),
     ])
 
 parser = argparse.ArgumentParser(

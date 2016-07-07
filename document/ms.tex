@@ -837,7 +837,8 @@ We find that a good fit to this integrated completeness is given by the
 function
 \begin{eqnarray}
 Q_\mathrm{det}(P,\,R) &\approx&
-    \frac{a(P)\,b(R)}{1+\exp\left[-k(P)\,(\ln R-x(P))\right]}
+    \frac{\mathrm{min}[\mathrm{max}[a(P)\,b(R),\,0],\,1]}
+         {1+\exp\left[-k(P)\,(\ln R-x(P))\right]}
 \end{eqnarray}
 where
 \begin{eqnarray}

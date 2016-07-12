@@ -16,3 +16,4 @@ dist
 *.pkl
 peerless/data/targets.csv
 remote-results
+MRrelation

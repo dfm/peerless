@@ -25,6 +25,7 @@ args = parser.parse_args()
 
 df = pd.read_csv(args.fits)
 inj = pd.read_hdf(args.injections, "injections")
+inj["mass"] = 10 ** inj.log10_mass  # Earth masses
 kois = CumulativeCatalog().df
 wang = WangCatalog().df
 uehara = UeharaCatalog().df
@@ -33,11 +34,17 @@ targets = TargetCatalog().df
 df = pd.merge(df, targets, left_on="kicid", right_on="kepid",
               suffixes=["", "_stlr"])
 
+mass_occ = compute_occurrence(inj, df, [1.5, 9.0], [0.01, 100.0],
+                              x_name="semimajor", x_factor=215.1,
+                              y_name="mass", y_factor=317.828)
 with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
     f.write("% Automatically generated\n")
     f.write("\\newcommand{{\\numtargets}}{{{0:,}}}\n".format(len(targets)))
     f.write("\\newcommand{{\\numinjs}}{{{0:,}}}\n".format(len(inj)))
     f.write("\\newcommand{{\\numcands}}{{{0:,}}}\n".format(len(df)))
+    f.write("\\newcommand{{\\massocc}}{{${0:.2f}\\pm{1:.2f}$}}\n"
+            .format(float(mass_occ.rate_density),
+                    float(mass_occ.rate_density_uncert)))
 
 with open(os.path.join(args.tex_output, "lcfig.tex"), "w") as f:
     for _, row in df.sort_values("radius").iterrows():
@@ -145,7 +152,7 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
     f.write("\enddata\n")
 
 
-occ = compute_occurrence(inj, df, [0.1, 0.4, 1.0], [2.0, 25.0])
+occ = compute_occurrence(inj, df, [2.0, 25.0], [0.1, 0.4, 1.0])
 with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &

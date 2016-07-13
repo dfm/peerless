@@ -111,8 +111,9 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
 with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{kic id} &
+    \colhead{Kp} &
     \colhead{radius} &
-    \colhead{mass\\tablenotemark{*}} &
+    \colhead{mass} &
     \colhead{period} &
     \colhead{semi-major axis} &
     \colhead{semi-amplitude} &
@@ -120,6 +121,7 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
     & \colhead{$R_\mathrm{J}$} & \colhead{$M_\mathrm{J}$} & \colhead{year} &
     \colhead{AU} & \colhead{m s$^{-1}$} & \colhead{m s$^{-1}$ yr$^{-1}$}
 }
+\\rotate
 \startdata\n""")
     for _, row in df.sort_values("kicid").iterrows():
         # Compute the comment.
@@ -129,6 +131,7 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
         f.write("{0:d} & ".format(int(row.kicid)))
 
         cols = []
+        cols.append("${0:.1f}$".format(row.kepmag))
         for v in ["radius", "mass", "period", "semimajor", "semiamp",
                   "rvaccel"]:
             u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]],

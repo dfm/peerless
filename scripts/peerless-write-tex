@@ -133,7 +133,6 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
             cols.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
-        cols.append(comment)
         f.write(" & ".join(cols) + "\\\\\n")
     f.write("\enddata\n")
 

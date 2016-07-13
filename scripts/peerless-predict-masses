@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import argparse
+import numpy as np
+import pandas as pd
+
+from peerless.catalogs import TargetCatalog
+from peerless.mr import ChenMRRelation, WolfgangMRRelation
+
+G = 2945.4625385377644
+
+parser = argparse.ArgumentParser(
+    description="predict the masses of the injections and candidates"
+)
+parser.add_argument("fits", help="the csv of fit results")
+parser.add_argument("injections", help="the hdf5 file of injections")
+parser.add_argument("-r", "--relation", choices=["chen", "wolfgang"],
+                    default="chen", help="which MR relation")
+args = parser.parse_args()
+
+fits = pd.read_csv(args.fits)
+inj = pd.read_hdf(args.injections, "injections")
+targets = TargetCatalog().df
+
+fits = pd.merge(fits, targets, left_on="kicid", right_on="kepid",
+                suffixes=["", "_stlr"])
+inj = pd.merge(inj, targets[["kepid", "mass"]],
+               suffixes=["", "_stlr"])
+inj["stlr_mass"] = inj["mass"]
+del inj["mass"]
+inj["stlr_mass"] = inj["stlr_mass"].fillna(inj["stlr_radius"])
+
+P = inj.period
+inj["semimajor"] = (G*P*P*inj.stlr_mass/(4*np.pi*np.pi)) ** (1./3)
+
+if args.relation == "chen":
+    relation = ChenMRRelation()
+else:
+    relation = WolfgangMRRelation()
+
+radii = inj.radius * 109.2
+log10_masses = np.log10(relation.predict_mass(radii, 12))
+inj["log10_mass"] = np.mean(log10_masses, axis=0)
+inj["log10_mass_uncert"] = np.std(log10_masses, axis=0)
+
+fn, ext = os.path.splitext(args.injections)
+inj.to_hdf(fn + "-with-mass" + ext, "injections")

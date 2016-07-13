@@ -13,6 +13,7 @@ from multiprocessing import Pool
 from collections import OrderedDict
 
 from peerless.plot_setup import COLORS
+from peerless.mr import ChenMRRelation
 from peerless.catalogs import TargetCatalog
 from peerless.autocorr import integrated_time
 
@@ -136,7 +137,7 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     # Equilibrium temperature (K):
     a = chain["bodies[0]:sqrt_a_cos_i"]**2 + chain["bodies[0]:sqrt_a_sin_i"]**2
     factor = np.sqrt(0.5 * np.exp(chain["central:ln_radius"]) / a)
-    albedo = 0.0  # np.random.uniform(0, 0.34, len(factor))
+    albedo = 0.0
     factor *= (1.0 - albedo) ** 0.25
     teq_samps = (teff + teff_err * np.random.randn(len(factor))) * factor
     teq = np.percentile(teq_samps, [16, 50, 84])
@@ -170,9 +171,16 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     depth_samps = params["depth"] * 1e3
     depth = np.percentile(depth_samps, [16, 50, 84])
 
-    # Impact / eccentricity:
+    # Other parameters:
     impact = np.percentile(b, [16, 50, 84])
     eccen = np.percentile(e, [16, 50, 84])
+    semimajor = np.percentile(a / 215.1, [16, 50, 84])
+
+    # Predict the masses:
+    mrrel = ChenMRRelation()
+    mass_samps = mrrel.predict_mass(radius_samps*10.864, 1)  # Earths
+    mass_samps = mass_samps[0, :] / 317.828  # Jupiters
+    mass = np.percentile(mass_samps, [16, 50, 84])
 
     print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1],
           duration[1])
@@ -204,6 +212,12 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
         ("eccen", eccen[1]),
         ("eccen_uncert_plus", eccen[2]-eccen[1]),
         ("eccen_uncert_minus", eccen[1]-eccen[0]),
+        ("semimajor", semimajor[1]),
+        ("semimajor_uncert_plus", semimajor[2]-semimajor[1]),
+        ("semimajor_uncert_minus", semimajor[1]-semimajor[0]),
+        ("mass", mass[1]),
+        ("mass_uncert_plus", mass[2]-mass[1]),
+        ("mass_uncert_minus", mass[1]-mass[0]),
     ])
 
 parser = argparse.ArgumentParser(

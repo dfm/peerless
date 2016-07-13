@@ -133,7 +133,7 @@ class ChenMRRelation(Catalog):
                 )
         return self._grid
 
-    def predict_mass(self, radius_samples, num_mass=1000):
+    def predict_mass(self, radius_samples, num_mass=10000):
         radius_samples = np.atleast_1d(radius_samples)
         shape = radius_samples.shape
         flat_log_r = np.log10(radius_samples.flatten())

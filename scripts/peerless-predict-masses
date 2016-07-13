@@ -29,6 +29,11 @@ fits = pd.merge(fits, targets, left_on="kicid", right_on="kepid",
 inj = pd.merge(inj, targets[["kepid", "mass"]],
                suffixes=["", "_stlr"])
 inj["stlr_mass"] = inj["mass"]
+del inj["mass"]
+inj["stlr_mass"] = inj["stlr_mass"].fillna(inj["stlr_radius"])
+
+P = inj.period
+inj["semimajor"] = (G*P*P*inj.stlr_mass/(4*np.pi*np.pi)) ** (1./3)
 
 if args.relation == "chen":
     relation = ChenMRRelation()
@@ -39,9 +44,6 @@ radii = inj.radius * 109.2
 log10_masses = np.log10(relation.predict_mass(radii, 12))
 inj["log10_mass"] = np.mean(log10_masses, axis=0)
 inj["log10_mass_uncert"] = np.std(log10_masses, axis=0)
-
-P = inj.period
-inj["semimajor"] = (G*P*P*inj.stlr_mass/(4*np.pi*np.pi)) ** (1./3)
 
 fn, ext = os.path.splitext(args.injections)
 inj.to_hdf(fn + "-with-mass" + ext, "injections")

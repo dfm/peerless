@@ -14,7 +14,7 @@ from autograd import grad
 import autograd.numpy as np
 
 
-inj = pd.read_hdf("../../results/injections.h5", "injections")
+inj = pd.read_hdf("../../results/injections-with-mass.h5", "injections")
 inj = inj[inj.ncadences > 0]
 rec = inj[inj.recovered]
 
@@ -163,3 +163,91 @@ ax.set_yticklabels([])
 ax.xaxis.set_major_locator(pl.MaxNLocator(3))
 
 fig.savefig("completeness.pdf", bbox_inches="tight")
+pl.close(fig)
+
+
+# Histograms.
+ln_mass_bins = np.linspace(np.log(2.0), np.log(1e5), 8)
+ln_semimajor_bins = np.linspace(np.log(1.5), np.log(9), 5) + np.log(215.1)
+n_all, ln_mass_bins, ln_semimajor_bins = np.histogram2d(
+    inj.log10_mass*np.log(10), np.log(inj.semimajor),
+    (ln_mass_bins, ln_semimajor_bins),
+)
+n_rec, _, _ = np.histogram2d(
+    rec.log10_mass*np.log(10), np.log(rec.semimajor),
+    (ln_mass_bins, ln_semimajor_bins),
+)
+n = n_rec / n_all
+n_err = n / np.sqrt(n_all)
+
+X, Y = np.meshgrid(np.exp(ln_semimajor_bins) / 215.1,
+                   np.exp(ln_mass_bins) / 317.828,
+                   indexing="ij")
+
+
+# Plot 2
+fig = pl.figure(figsize=2*np.array(SQUARE_FIGSIZE))
+
+ax = pl.axes([0.1, 0.1, 0.6, 0.6])
+ax.pcolor(X, Y, 100*n.T, cmap="viridis", vmin=0, vmax=100)
+
+# Label the bins with their completeness percentages.
+for i, j in product(range(len(ln_semimajor_bins)-1),
+                    range(len(ln_mass_bins)-1)):
+    x = np.exp(0.5 * (ln_semimajor_bins[i] + ln_semimajor_bins[i+1])) / 215.1
+    y = np.exp(0.5 * (ln_mass_bins[j] + ln_mass_bins[j+1])) / 317.828
+    ax.annotate(r"${0:.3f}$".format(n[j, i]),
+                (x, y), ha="center", va="center", alpha=1.0, fontsize=12,
+                color="white")
+
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlim(X.min(), X.max())
+ax.set_ylim(Y.min(), Y.max())
+ax.set_xlabel("semi-major axis [AU]")
+ax.set_ylabel("$M_\mathrm{P} / M_\mathrm{J}$")
+ax.set_xticks([2, 4, 8])
+ax.get_xaxis().set_major_formatter(pl.ScalarFormatter())
+ax.set_yticks([0.01, 0.1, 1, 10, 100])
+ax.set_yticklabels(["0.01", "0.1", "1", "10", "100"])
+
+# Histograms.
+
+# Top:
+ax = pl.axes([0.1, 0.71, 0.6, 0.15])
+x = np.exp(ln_semimajor_bins) / 215.1
+y = (
+    np.histogram(np.log(rec.semimajor), ln_semimajor_bins)[0] /
+    np.histogram(np.log(inj.semimajor), ln_semimajor_bins)[0]
+)
+x = np.array(list(zip(x[:-1], x[1:]))).flatten()
+y = np.array(list(zip(y, y))).flatten()
+ax.plot(x, y, lw=1, color=COLORS["DATA"])
+ax.fill_between(x, y, np.zeros_like(y), color=COLORS["DATA"], alpha=0.2)
+ax.set_xlim(X.min(), X.max())
+ax.set_ylim(0, 0.8)
+ax.set_xscale("log")
+ax.set_xticks([2, 4, 8])
+ax.set_xticklabels([])
+ax.yaxis.set_major_locator(pl.MaxNLocator(3))
+
+# Right:
+ax = pl.axes([0.71, 0.1, 0.15, 0.6])
+x = np.exp(ln_mass_bins) / 317.828
+y = (
+    np.histogram(rec.log10_mass*np.log(10), ln_mass_bins)[0] /
+    np.histogram(inj.log10_mass*np.log(10), ln_mass_bins)[0]
+)
+x = np.array(list(zip(x[:-1], x[1:]))).flatten()
+y = np.array(list(zip(y, y))).flatten()
+ax.plot(y, x, lw=1, color=COLORS["DATA"])
+ax.fill_betweenx(x, y, np.zeros_like(y), color=COLORS["DATA"], alpha=0.2)
+ax.set_ylim(Y.min(), Y.max())
+ax.set_xlim(0, 0.8)
+ax.set_yscale("log")
+ax.set_yticks([0.01, 0.1, 1, 10, 100])
+ax.set_yticklabels([])
+ax.xaxis.set_major_locator(pl.MaxNLocator(3))
+
+fig.savefig("completeness-am.pdf", bbox_inches="tight")
+pl.close(fig)

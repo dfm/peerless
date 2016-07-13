@@ -145,7 +145,9 @@ class ChenMRRelation(Catalog):
 
         r_inds = np.digitize(flat_log_r, log_r) - 1
         if np.any(r_inds < 0) or np.any(r_inds >= len(log_r) - 1):
-            raise ValueError("Invalid radii")
+            logging.warn("Radii outside of grid")
+            r_inds[r_inds < 0] = 0
+            r_inds[r_inds >= len(log_r) - 1] = len(log_r) - 2
 
         # Sample the masses.
         cp = grid[r_inds]

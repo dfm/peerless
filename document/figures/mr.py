@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from peerless.mr import WolfgangMRRelation, ChenMRRelation
 
-radii = np.linspace(1.0, 12, 100)
+radii = np.linspace(1.0, 24, 100)
 for r, c in zip((ChenMRRelation(), WolfgangMRRelation()), "gk"):
     masses = r.predict_mass(radii)
     q = np.percentile(masses, [16, 50, 84], axis=0)

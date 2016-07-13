@@ -55,7 +55,7 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     \colhead{radius} &
     \colhead{$T_\mathrm{eq}$\\tablenotemark{*}} &
     \colhead{comments} \\\\
-    & \colhead{K} & \colhead{$R_\odot$} && \colhead{years} & \colhead{KBJD} &
+    & \colhead{K} & \colhead{$R_\odot$} && \colhead{year} & \colhead{KBJD} &
     \colhead{$R_\mathrm{J}$} & \colhead{K} &
 }
 \\rotate
@@ -113,8 +113,12 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
     \colhead{kic id} &
     \colhead{radius} &
     \colhead{mass\\tablenotemark{*}} &
-    \colhead{semi-major axis} \\\\
-    & \colhead{$R_\mathrm{J}$} & \colhead{$M_\mathrm{J}$} & \colhead{AU}
+    \colhead{period} &
+    \colhead{semi-major axis} &
+    \colhead{semi-amplitude} &
+    \colhead{$K / P$} \\\\
+    & \colhead{$R_\mathrm{J}$} & \colhead{$M_\mathrm{J}$} & \colhead{year} &
+    \colhead{AU} & \colhead{m s$^{-1}$} & \colhead{m s$^{-1}$ yr$^{-1}$}
 }
 \startdata\n""")
     for _, row in df.sort_values("kicid").iterrows():
@@ -125,7 +129,8 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
         f.write("{0:d} & ".format(int(row.kicid)))
 
         cols = []
-        for v in ["radius", "mass", "semimajor"]:
+        for v in ["radius", "mass", "period", "semimajor", "semiamp",
+                  "rvaccel"]:
             u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]],
                          dtype=float)
             nd = int(-min(-1, np.floor(np.min(np.log10(u)) - 1)))

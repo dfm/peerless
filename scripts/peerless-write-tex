@@ -42,7 +42,7 @@ with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
     f.write("\\newcommand{{\\numtargets}}{{{0:,}}}\n".format(len(targets)))
     f.write("\\newcommand{{\\numinjs}}{{{0:,}}}\n".format(len(inj)))
     f.write("\\newcommand{{\\numcands}}{{{0:,}}}\n".format(len(df)))
-    f.write("\\newcommand{{\\massocc}}{{${0:.2f}\\pm{1:.2f}$}}\n"
+    f.write("\\newcommand{{\\massocc}}{{{0:.2f}\\pm{1:.2f}}}\n"
             .format(float(mass_occ.rate_density),
                     float(mass_occ.rate_density_uncert)))
 

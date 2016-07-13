@@ -13,7 +13,7 @@ __all__ = ["compute_occurrence"]
 _G = 2945.4625385377644
 
 
-def compute_occurrence(inj, fits0, rgrid, pgrid,
+def compute_occurrence(inj, fits0, pgrid, rgrid,
                        x_name="period", x_factor=365.25,
                        y_name="radius", y_factor=0.0995):
     """

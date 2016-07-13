@@ -35,6 +35,22 @@ parser.add_argument("--pmax", type=float, default=default_pmax,
 parser.add_argument("--pbins", type=int, default=1,
                     help="the number of period bins")
 
+parser.add_argument("--with-mass", action="store_true",
+                    help="also compute the mass-semimajor occurrence")
+parser.add_argument("--mmin", type=float, default=0.01,
+                    help="the minimum mass in Jupiter masses")
+parser.add_argument("--mmax", type=float, default=100.0,
+                    help="the maximum masses in Jupiter masses")
+parser.add_argument("--mbins", type=int, default=1,
+                    help="the number of mass bins")
+
+parser.add_argument("--amin", type=float, default=1.5,
+                    help="the minimum semi-major axis in AU")
+parser.add_argument("--amax", type=float, default=9.0,
+                    help="the maximum semi-major axis in AU")
+parser.add_argument("--abins", type=int, default=1,
+                    help="the number of semi-major axis bins")
+
 parser.add_argument("-o", "--output", default="results",
                     help="the root directory for the output")
 args = parser.parse_args()
@@ -42,10 +58,20 @@ args = parser.parse_args()
 # Load the target and injection tables.
 inj = pd.read_hdf(args.injections, "injections")
 fits = pd.read_csv(args.fits)
+if args.with_mass:
+    inj["mass"] = 10 ** inj.log10_mass  # Earth masses
+    mgrid = np.exp(np.linspace(np.log(args.mmin), np.log(args.mmax),
+                               args.mbins+1))
+    agrid = np.exp(np.linspace(np.log(args.amin), np.log(args.amax),
+                               args.abins+1))
+    df = compute_occurrence(inj, fits, agrid, mgrid,
+                            x_name="semimajor", x_factor=215.1,
+                            y_name="mass", y_factor=317.828)
+    df.to_csv(os.path.join(args.output, "rate-with-mass.csv"), index=False)
 
 # Define the grids.
 rgrid = np.exp(np.linspace(np.log(args.rmin), np.log(args.rmax), args.rbins+1))
 pgrid = np.exp(np.linspace(np.log(args.pmin), np.log(args.pmax), args.pbins+1))
 
-df = compute_occurrence(inj, fits, rgrid, pgrid)
+df = compute_occurrence(inj, fits, pgrid, rgrid)
 df.to_csv(os.path.join(args.output, "rate.csv"), index=False)

@@ -13,7 +13,9 @@ __all__ = ["compute_occurrence"]
 _G = 2945.4625385377644
 
 
-def compute_occurrence(inj, fits0, rgrid, pgrid):
+def compute_occurrence(inj, fits0, rgrid, pgrid,
+                       x_name="period", x_factor=365.25,
+                       y_name="radius", y_factor=0.0995):
     """
     Compute the occurrence rate density in a grid of period
 
@@ -31,8 +33,8 @@ def compute_occurrence(inj, fits0, rgrid, pgrid):
     # Note this only works because we injected uniformly in log-period.
     results = []
     for (rmin, rmax), (pmin, pmax) in product(rbins, pbins):
-        m = (rmin * 0.0995 <= inj0.radius) & (inj0.radius <= rmax * 0.0995)
-        m &= (pmin * 365.25 <= inj0.period) & (inj0.period <= pmax * 365.25)
+        m = (rmin*y_factor <= inj0[y_name]) & (inj0[y_name] <= rmax*y_factor)
+        m &= (pmin*x_factor <= inj0[x_name]) & (inj0[x_name] <= pmax*x_factor)
         inj = pd.DataFrame(inj0[m])
         rec = inj.accept
 
@@ -53,16 +55,20 @@ def compute_occurrence(inj, fits0, rgrid, pgrid):
         Qt = period**(-2./3) * (1.0 - (1.0 - fk)**(Tk / period))
 
         # Re-weight the samples based on the injected radius distribution.
-        radius = inj.radius
-        bins = np.log(0.0995) + np.linspace(np.log(rmin), np.log(rmax), 10)
-        n, _ = np.histogram(np.log(np.array(radius)), bins, density=True)
-        w = n[np.digitize(np.log(np.array(radius)), bins) - 1]
+        x_samp = np.log(np.array(inj[x_name]))
+        x_bins = np.log(x_factor) + np.linspace(np.log(pmin), np.log(pmax), 20)
+        y_samp = np.log(np.array(inj[y_name]))
+        y_bins = np.log(y_factor) + np.linspace(np.log(rmin), np.log(rmax), 22)
+        n, _, _ = np.histogram2d(x_samp, y_samp, (x_bins, y_bins),
+                                 normed=True)
+        w = n[np.digitize(x_samp, x_bins) - 1,
+              np.digitize(y_samp, y_bins) - 1]
 
         # Combine all the effects and integrate.
         Q = (Qk * Qt * Qe * w)[rec].sum() / w.sum()
 
-        m = ((pmin < fits0.period) & (fits0.period < pmax) &
-            (rmin < fits0.radius) & (fits0.radius < rmax))
+        m = ((pmin < fits0[x_name]) & (fits0[x_name] < pmax) &
+            (rmin < fits0[y_name]) & (fits0[y_name] < rmax))
         fits = fits0[m]
 
         N = len(fits)
@@ -70,10 +76,10 @@ def compute_occurrence(inj, fits0, rgrid, pgrid):
         vol = (np.log(pmax) - np.log(pmin)) * (np.log(rmax) - np.log(rmin))
 
         results.append(OrderedDict([
-            ("radius_min", rmin),
-            ("radius_max", rmax),
-            ("period_min", pmin),
-            ("period_max", pmax),
+            (y_name + "_min", rmin),
+            (y_name + "_max", rmax),
+            (x_name + "_min", pmin),
+            (x_name + "_max", pmax),
             ("count", len(fits)),
             ("volume", vol),
             ("normalization", Q),

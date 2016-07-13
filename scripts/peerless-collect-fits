@@ -174,11 +174,11 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     # Other parameters:
     impact = np.percentile(b, [16, 50, 84])
     eccen = np.percentile(e, [16, 50, 84])
-    semimajor = np.percentile(a, [16, 50, 84])
+    semimajor = np.percentile(a / 215.1, [16, 50, 84])
 
     # Predict the masses:
     mrrel = ChenMRRelation()
-    mass_samps = mrrel.predict_mass(radius_samps+np.log(10.864), 1)  # Earths
+    mass_samps = mrrel.predict_mass(radius_samps*10.864, 1)  # Earths
     mass_samps = mass_samps[0, :] / 317.828  # Jupiters
     mass = np.percentile(mass_samps, [16, 50, 84])
 

@@ -188,6 +188,9 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
     K_samps /= np.sqrt(mass_samps*9.5458e-4 + np.exp(chain["central:ln_mass"]))
     semiamp = np.percentile(K_samps, [16, 50, 84])
 
+    acc_samps = K_samps / period_samps
+    rvaccel = np.percentile(acc_samps, [16, 50, 84])
+
     print(kicid, nind, period[1], t0[1], radius[1], depth[1], teq[1],
           duration[1])
 
@@ -227,6 +230,9 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
         ("semiamp", semiamp[1]),
         ("semiamp_uncert_plus", semiamp[2]-semiamp[1]),
         ("semiamp_uncert_minus", semiamp[1]-semiamp[0]),
+        ("rvaccel", rvaccel[1]),
+        ("rvaccel_uncert_plus", rvaccel[2]-rvaccel[1]),
+        ("rvaccel_uncert_minus", rvaccel[1]-rvaccel[0]),
     ])
 
 parser = argparse.ArgumentParser(

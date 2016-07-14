@@ -22,12 +22,14 @@
 
 \setlength{\voffset}{0in}
 \setlength{\hoffset}{0in}
-\setlength{\textwidth}{6.5in}
+\setlength{\textwidth}{6in}
 \setlength{\textheight}{9in}
 \setlength{\headheight}{0ex}
 \setlength{\headsep}{\baselinestretch\baselineskip} % this is 2 lines in ``manuscript''
 \setlength{\footnotesep}{0in}
 \setlength{\topmargin}{-\headsep}
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
 
 \linespread{0.54} % close to 10/13 spacing in ``manuscript''
 \setlength{\parindent}{0.54\baselineskip}
@@ -136,7 +138,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 
 
 \shorttitle{The population of long-period transiting exoplanets}
-\shortauthors{Foreman-Mackey, Hogg, Morton, \etal}
+\shortauthors{Foreman-Mackey, Morton, Hogg, \etal}
 % \submitted{Submitted to \textit{The Astrophysical Journal}}
 
 \begin{document}
@@ -153,6 +155,10 @@ The population of long-period transiting exoplanets
 \edef \uw {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\uw}       {Astronomy Department, University of Washington,
                           Seattle, WA, 98195, USA}
+
+\edef \princeton {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\princeton}{Department of Astrophysics, Princeton University,
+                          Princeton, NJ, 08544, USA}
 
 \edef \scda {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\scda}     {Simons Center for Data Analysis, 160 Fifth Avenue,
@@ -171,20 +177,16 @@ The population of long-period transiting exoplanets
 \altaffiltext{\mpia}     {Max-Planck-Institut f\"ur Astronomie,
                           K\"onigstuhl 17, D-69117 Heidelberg, Germany}
 
-\edef \princeton {\arabic{affilcounter}}\stepcounter{affilcounter}
-\altaffiltext{\princeton}{Department of Astrophysics, Princeton University,
-                          Princeton, NJ, 08544, USA}
-
 \edef \mpis      {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\mpis}     {Max Planck Institute for Intelligent Systems
                           Spemannstrasse 38, 72076 T\"ubingen, Germany}
 
 \author{%
     Daniel~Foreman-Mackey\altaffilmark{1,\uw},
-    David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
     Timothy~D.~Morton\altaffilmark{\princeton},
-    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
+    David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
     Eric~Agol\altaffilmark{\uw},
+    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
     and others
 }
 
@@ -930,7 +932,7 @@ $b_2$ & $\paramb$ & $x_2$ & $\paramh$ \\
 \end{floattable}
 
 
-\section{The occurrence rate of long-period exoplanets}
+\section{The occurrence rate of long-period exoplanets}\sectlabel{occurrence}
 
 Using the catalog of exoplanet discoveries (\sect{catalog}) and the
 measurement of the search completeness (\sect{completeness}), we can now
@@ -950,7 +952,7 @@ $V$~--~defined as $P_\mathrm{min} \le P < P_\mathrm{max}$ and
 $R_\mathrm{min} \le R < R_\mathrm{max}$~--~is
 \citep[see, for example, the Appendix of][]{Foreman-Mackey:2014}
 \begin{eqnarray}\eqlabel{rate-density}
-\Gamma_V \equiv \frac{\dd N}{\dd\ln P\dd\ln R} &=&
+\Gamma_V \equiv \frac{\dd^2 N}{\dd\ln P\dd\ln R} &=&
     \frac{C(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})}
          {Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})}
 \end{eqnarray}
@@ -966,7 +968,7 @@ except the period and radius and $\bvec{1}[\cdot]$ is 1 if the argument is
 satisfied and 0 otherwise.
 Using the $J$ injections sampled uniformly in period and radius and other
 parameters from $p(w_{\{P,\,R\}})$,
-\begin{eqnarray}
+\begin{eqnarray}\eqlabel{approxnorm}
 Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &\approx&
     \frac{K}{J}\,\sum_{j=1}^{J} Q_k(w^{(j)})
 \end{eqnarray}
@@ -1013,17 +1015,69 @@ positives.  In this Section we explore the validity of this assumption.
 
 \section{Comparison with the literature}\sectlabel{comparison}
 
-We find
+The population of long-period planets has been previously studied using radial
+velocity, microlensing, and direct imaging surveys.
+These methods all measure the occurrence rate in units of mass and semi-major
+axis instead of radius and period.
+Using the transit method, we do not directly measure the mass of the planet.
+Instead, we must rely on a mass--radius (M--R) relationship constructed using
+exoplanets with both mass and radius measurements \citep[for
+example]{Weiss:2014, Wolfgang:2016, Chen:2016} to predict the expected masses
+of the transiting planets.
+
+Table~\ref{tab:masses} lists gives constraints on the predicted masses of the
+exoplanet candidates using the probabilistic M--R relationship from
+\citet{Chen:2016} and taking uncertainties in the planet radius and
+statistical uncertainties in the M--R parameters.
+We compared the predictions with the predictions from \citet{Wolfgang:2016}
+and found similar values with smaller uncertainties and chose to use the
+\citet{Chen:2016} relationship because it was more conservative in the
+relevant range of parameter space.
+
+A detailed discussion of the systematic effects introduced by the use of a
+M--R relationship is beyond the scope of this \paper\ but it is worth
+noting that all published relationships are based on exoplanets much closer to
+their host star than any of the candidates discussed here.
+This effect would probably cause the masses of these cool planets to be
+systematically underestimated.
+
+Using the same M--R relationship, we can also compute the completeness of our
+transit search as a function of planet mass and orbital semi-major axis.
+This function is plotted in \dfmfig{completeness-am} with the same color
+scheme as \dfmfig{completeness}.
+These injections and the predicted masses and measured semi-major axes of the
+candidates can then be used to estimate the occurrence rate in
+mass--semi-major axis units using the method from \sect{occurrence}.
+One small change to \eq{approxnorm} is necessary to account for the fact that
+the injections were not made uniformly in $\ln M$ and $\ln a$.
+We numerically estimate the prior distribution in mass and semi-major axis
+from which the injections were drawn $\tilde{p}(\ln a,\,\ln M)$ and
+\eq{approxnorm} becomes
 \begin{eqnarray}
+Z(a_\mathrm{min},\,a_\mathrm{max};\,M_\mathrm{min},\,M_\mathrm{max}) &\approx&
+    \frac{K}{J}\,\sum_{j=1}^{J}
+    \frac{Q_k(w^{(j)})}{\tilde{p}(\ln a^{(j)},\,\ln M^{(j)})} \quad.
+\end{eqnarray}
+Using this result, we find that the mean occurrence rate density in the range
+$0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ and $1.5\unit{au} \le a <
+9\unit{au}$ is
+\begin{eqnarray}\eqlabel{massocc}
 \frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& \massocc
 \end{eqnarray}
+where $N$ is the expected number of planets per G/K dwarf.
+The uncertainty in \eq{massocc} does not take into account the uncertainties
+in the semi-major axis or mass estimates or any systematic noise in the
+mass--radius relationship.
+Therefore, the specific result should be taken with the appropriate grain of
+salt but a result in this parameter space eases qualitative comparison with
+occurrence rates measured using different methods.
 
 
 \begin{floattable}
 \begin{deluxetable}{cccccccc}
 \tabletypesize{\footnotesize}
-\caption{The mass and semi-major axis estimates for the candidates from
-Table~\ref{tab:catalog} \label{tab:masses}}
+\caption{The predicted masses and radial velocity signals for the candidates
+from Table~\ref{tab:catalog} \label{tab:masses}}
 \include{masstab}
 \tablecomments{The masses and radial velocity amplitudes are estimated based
 on the measured radius using a probabilistic mass--radius relation

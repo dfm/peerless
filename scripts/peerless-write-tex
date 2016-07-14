@@ -34,7 +34,7 @@ targets = TargetCatalog().df
 df = pd.merge(df, targets, left_on="kicid", right_on="kepid",
               suffixes=["", "_stlr"])
 
-mass_occ = compute_occurrence(inj, df, [1.5, 9.0], [0.01, 100.0],
+mass_occ = compute_occurrence(inj, df, [1.5, 9.0], [0.01, 20.0],
                               x_name="semimajor", x_factor=215.1,
                               y_name="mass", y_factor=317.828)
 with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
@@ -42,7 +42,7 @@ with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
     f.write("\\newcommand{{\\numtargets}}{{{0:,}}}\n".format(len(targets)))
     f.write("\\newcommand{{\\numinjs}}{{{0:,}}}\n".format(len(inj)))
     f.write("\\newcommand{{\\numcands}}{{{0:,}}}\n".format(len(df)))
-    f.write("\\newcommand{{\\massocc}}{{{0:.2f}\\pm{1:.2f}}}\n"
+    f.write("\\newcommand{{\\massocc}}{{{0:.3f}\\pm{1:.3f}}}\n"
             .format(float(mass_occ.rate_density),
                     float(mass_occ.rate_density_uncert)))
 
@@ -126,7 +126,7 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
     \colhead{semi-amplitude} &
     \colhead{$K / P$} \\\\
     && \colhead{$R_\mathrm{J}$} & \colhead{$M_\mathrm{J}$} & \colhead{year} &
-    \colhead{AU} & \colhead{m s$^{-1}$} & \colhead{m s$^{-1}$ yr$^{-1}$}
+    \colhead{au} & \colhead{m s$^{-1}$} & \colhead{m s$^{-1}$ yr$^{-1}$}
 }
 \\rotate
 \startdata\n""")

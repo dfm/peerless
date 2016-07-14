@@ -28,7 +28,7 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
     targets = targets[np.isfinite(targets.mass)]
     inj0 = pd.merge(inj, targets, left_on="kicid", right_on="kepid",
                     suffixes=["", "_stlr"])
-    inj0 = pd.DataFrame(inj0[np.isfinite(inj0.mass)])
+    inj0 = pd.DataFrame(inj0[np.isfinite(inj0.stlr_mass)])
 
     # Note this only works because we injected uniformly in log-period.
     results = []
@@ -41,10 +41,10 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
         # Geometric.
         fk = inj.dutycycle
         Tk = inj.dataspan
-        Mk = inj.mass
-        Rk = inj.radius_stlr
-        Qk = (4*np.pi/(_G * Mk))**(1./3) * (Rk + inj.radius * 0.0995)
+        Mk = inj.stlr_mass
+        Rk = inj.stlr_radius
         period = inj.period
+        Qk = period**(-2./3) * (4*np.pi/(_G * Mk))**(1./3) * (Rk + inj.radius)
 
         # Eccentric contribution to geometric transit probability.
         eccen = inj.e
@@ -52,17 +52,16 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
         Qe = (1.0 + eccen * np.sin(omega)) / (1.0 - eccen**2)
 
         # Window function.
-        Qt = period**(-2./3) * (1.0 - (1.0 - fk)**(Tk / period))
+        Qt = (1.0 - (1.0 - fk)**(Tk / period))
 
         # Re-weight the samples based on the injected radius distribution.
         x_samp = np.log(np.array(inj[x_name]))
-        x_bins = np.log(x_factor) + np.linspace(np.log(pmin), np.log(pmax), 20)
+        x_bins = np.log(x_factor) + np.linspace(np.log(pmin), np.log(pmax), 5)
         y_samp = np.log(np.array(inj[y_name]))
-        y_bins = np.log(y_factor) + np.linspace(np.log(rmin), np.log(rmax), 22)
-        n, _, _ = np.histogram2d(x_samp, y_samp, (x_bins, y_bins),
-                                 normed=True)
-        w = n[np.digitize(x_samp, x_bins) - 1,
-              np.digitize(y_samp, y_bins) - 1]
+        y_bins = np.log(y_factor) + np.linspace(np.log(rmin), np.log(rmax), 6)
+        n, _, _ = np.histogram2d(x_samp, y_samp, (x_bins, y_bins))
+        w = (1./n)[np.digitize(x_samp, x_bins) - 1,
+                   np.digitize(y_samp, y_bins) - 1]
 
         # Combine all the effects and integrate.
         Q = (Qk * Qt * Qe * w)[rec].sum() / w.sum()

@@ -56,22 +56,24 @@ parser.add_argument("-o", "--output", default="results",
 args = parser.parse_args()
 
 # Load the target and injection tables.
-inj = pd.read_hdf(args.injections, "injections")
-fits = pd.read_csv(args.fits)
+inj0 = pd.read_hdf(args.injections, "injections")
+fits0 = pd.read_csv(args.fits)
 if args.with_mass:
+    inj = pd.DataFrame(inj0)
+    fits = pd.DataFrame(fits0)
     inj["mass"] = 10 ** inj.log10_mass  # Earth masses
     mgrid = np.exp(np.linspace(np.log(args.mmin), np.log(args.mmax),
                                args.mbins+1))
     agrid = np.exp(np.linspace(np.log(args.amin), np.log(args.amax),
                                args.abins+1))
-    df = compute_occurrence(inj, fits, agrid, mgrid,
-                            x_name="semimajor", x_factor=215.1,
-                            y_name="mass", y_factor=317.828)
-    df.to_csv(os.path.join(args.output, "rate-with-mass.csv"), index=False)
+    occ = compute_occurrence(inj, fits, agrid, mgrid,
+                             x_name="semimajor", x_factor=215.1,
+                             y_name="mass", y_factor=317.828)
+    occ.to_csv(os.path.join(args.output, "rate-with-mass.csv"), index=False)
 
 # Define the grids.
 rgrid = np.exp(np.linspace(np.log(args.rmin), np.log(args.rmax), args.rbins+1))
 pgrid = np.exp(np.linspace(np.log(args.pmin), np.log(args.pmax), args.pbins+1))
 
-df = compute_occurrence(inj, fits, pgrid, rgrid)
+df = compute_occurrence(inj0, fits0, pgrid, rgrid)
 df.to_csv(os.path.join(args.output, "rate.csv"), index=False)

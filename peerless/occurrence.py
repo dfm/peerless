@@ -67,7 +67,7 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
         Q = (Qk * Qt * Qe * w)[rec].sum() / w.sum()
 
         m = ((pmin < fits0[x_name]) & (fits0[x_name] < pmax) &
-            (rmin < fits0[y_name]) & (fits0[y_name] < rmax))
+             (rmin < fits0[y_name]) & (fits0[y_name] < rmax))
         fits = fits0[m]
 
         N = len(fits)

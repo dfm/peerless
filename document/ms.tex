@@ -22,12 +22,14 @@
 
 \setlength{\voffset}{0in}
 \setlength{\hoffset}{0in}
-\setlength{\textwidth}{6.5in}
+\setlength{\textwidth}{6in}
 \setlength{\textheight}{9in}
 \setlength{\headheight}{0ex}
 \setlength{\headsep}{\baselinestretch\baselineskip} % this is 2 lines in ``manuscript''
 \setlength{\footnotesep}{0in}
 \setlength{\topmargin}{-\headsep}
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
 
 \linespread{0.54} % close to 10/13 spacing in ``manuscript''
 \setlength{\parindent}{0.54\baselineskip}
@@ -136,7 +138,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 
 
 \shorttitle{The population of long-period transiting exoplanets}
-\shortauthors{Foreman-Mackey, Hogg, Morton, \etal}
+\shortauthors{Foreman-Mackey, Morton, Hogg, \etal}
 % \submitted{Submitted to \textit{The Astrophysical Journal}}
 
 \begin{document}
@@ -153,6 +155,10 @@ The population of long-period transiting exoplanets
 \edef \uw {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\uw}       {Astronomy Department, University of Washington,
                           Seattle, WA, 98195, USA}
+
+\edef \princeton {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\princeton}{Department of Astrophysics, Princeton University,
+                          Princeton, NJ, 08544, USA}
 
 \edef \scda {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\scda}     {Simons Center for Data Analysis, 160 Fifth Avenue,
@@ -171,20 +177,16 @@ The population of long-period transiting exoplanets
 \altaffiltext{\mpia}     {Max-Planck-Institut f\"ur Astronomie,
                           K\"onigstuhl 17, D-69117 Heidelberg, Germany}
 
-\edef \princeton {\arabic{affilcounter}}\stepcounter{affilcounter}
-\altaffiltext{\princeton}{Department of Astrophysics, Princeton University,
-                          Princeton, NJ, 08544, USA}
-
 \edef \mpis      {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\mpis}     {Max Planck Institute for Intelligent Systems
                           Spemannstrasse 38, 72076 T\"ubingen, Germany}
 
 \author{%
     Daniel~Foreman-Mackey\altaffilmark{1,\uw},
-    David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
     Timothy~D.~Morton\altaffilmark{\princeton},
-    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
+    David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
     Eric~Agol\altaffilmark{\uw},
+    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
     and others
 }
 
@@ -1013,10 +1015,33 @@ positives.  In this Section we explore the validity of this assumption.
 
 \section{Comparison with the literature}\sectlabel{comparison}
 
-We find
-\begin{eqnarray}
+The population of long-period planets has been previously studied using radial
+velocity, microlensing, and direct imaging surveys.
+These methods all measure the occurrence rate in units of mass and semi-major
+axis instead of radius and period.
+Using the transit method, we do not directly measure the mass of the planet.
+Instead, we must rely on a mass--radius relationship constructed using
+exoplanets with both mass and radius measurements \citep[for
+example]{Weiss:2014, Wolfgang:2016, Chen:2016} to predict the expected masses
+of the transiting planets.
+
+A detailed discussion of the systematic effects introduced by the use of a
+mass--radius relationship is beyond the scope of this \paper\ but it is worth
+noting that all published relationships are based on exoplanets much closer to
+their host star than any of the candidates discussed here.
+
+We find that the mean occurrence rate density in the range $0.01\,M_\mathrm{J}
+\le M < 20\,M_\mathrm{J}$ and $1.5\unit{au} \le a < 9\unit{au}$ is
+\begin{eqnarray}\eqlabel{massocc}
 \frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& \massocc
 \end{eqnarray}
+where $N$ is the expected number of planets per G/K dwarf.
+The uncertainty in \eq{massocc} does not take into account the uncertainties
+in the semi-major axis or mass estimates or any systematic noise in the
+mass--radius relationship.
+Therefore, the specific result should be taken with the appropriate grain of
+salt but a result in this parameter space eases qualitative comparison with
+occurrence rates measured using different methods.
 
 
 \begin{floattable}

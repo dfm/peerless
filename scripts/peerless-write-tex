@@ -34,7 +34,7 @@ targets = TargetCatalog().df
 df = pd.merge(df, targets, left_on="kicid", right_on="kepid",
               suffixes=["", "_stlr"])
 
-mass_occ = compute_occurrence(inj, df, [1.5, 9.0], [0.01, 100.0],
+mass_occ = compute_occurrence(inj, df, [1.5, 9.0], [0.01, 20.0],
                               x_name="semimajor", x_factor=215.1,
                               y_name="mass", y_factor=317.828)
 with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:

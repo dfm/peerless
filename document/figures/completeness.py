@@ -64,10 +64,10 @@ ln_period_bins = np.linspace(np.log(2), np.log(25), 101)
 Y, X = np.meshgrid(ln_period_bins, ln_radius_bins, indexing="ij")
 Z = analytic_model(r.x, X + np.log(0.0995), Y + np.log(365.25))
 c = ax.pcolor(np.exp(ln_period_bins), np.exp(ln_radius_bins), Z.T,
-              cmap="viridis", vmin=0, vmax=1)
+              cmap="Blues", vmin=0, vmax=1)
 cbar = fig.colorbar(c)
 cbar.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-ax.contour(np.exp(Y), np.exp(X), Z, [0.1, 0.3, 0.5, 0.7], colors="w")
+ax.contour(np.exp(Y), np.exp(X), Z, [0.1, 0.3, 0.5, 0.7], colors="k")
 ax.set_xscale("log")
 ax.set_yscale("log")
 ax.set_ylim(np.exp([X.min(), X.max()]))
@@ -102,7 +102,7 @@ X, Y = np.meshgrid(np.exp(ln_period_bins) / 365.25,
 fig = pl.figure(figsize=2*np.array(SQUARE_FIGSIZE))
 
 ax = pl.axes([0.1, 0.1, 0.6, 0.6])
-ax.pcolor(X, Y, 100*n.T, cmap="viridis", vmin=0, vmax=100)
+ax.pcolor(X, Y, 100*n.T, cmap="Blues", vmin=0, vmax=100)
 
 # Label the bins with their completeness percentages.
 for i, j in product(range(len(ln_period_bins)-1),
@@ -111,7 +111,7 @@ for i, j in product(range(len(ln_period_bins)-1),
     y = np.exp(0.5 * (ln_radius_bins[j] + ln_radius_bins[j+1])) / 0.0995
     ax.annotate(r"${0:.3f}$".format(n[j, i]),
                 (x, y), ha="center", va="center", alpha=1.0, fontsize=12,
-                color="white")
+                color="k")
 
 ax.set_xscale("log")
 ax.set_yscale("log")
@@ -189,7 +189,7 @@ X, Y = np.meshgrid(np.exp(ln_semimajor_bins) / 215.1,
 fig = pl.figure(figsize=2*np.array(SQUARE_FIGSIZE))
 
 ax = pl.axes([0.1, 0.1, 0.6, 0.6])
-ax.pcolor(X, Y, 100*n.T, cmap="viridis", vmin=0, vmax=100)
+ax.pcolor(X, Y, 100*n.T, cmap="Blues", vmin=0, vmax=100)
 
 # Label the bins with their completeness percentages.
 for i, j in product(range(len(ln_semimajor_bins)-1),
@@ -198,7 +198,7 @@ for i, j in product(range(len(ln_semimajor_bins)-1),
     y = np.exp(0.5 * (ln_mass_bins[j] + ln_mass_bins[j+1])) / 317.828
     ax.annotate(r"${0:.3f}$".format(n[j, i]),
                 (x, y), ha="center", va="center", alpha=1.0, fontsize=12,
-                color="white")
+                color="k")
 
 ax.set_xscale("log")
 ax.set_yscale("log")

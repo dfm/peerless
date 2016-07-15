@@ -153,15 +153,19 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
 
 
 occ = compute_occurrence(inj, df, [2.0, 25.0], [0.1, 0.4, 1.0])
+occ = occ.append(compute_occurrence(inj, df, [2.0, 25.0], [0.1, 1.0]))
 with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &
     \colhead{$R_\mathrm{max}\,[R_\mathrm{J}]$} &
-    \colhead{$\Gamma_V$\\tablenotemark{a}}
+    \colhead{$\Gamma_V$\\tablenotemark{a}} &
+    \colhead{$\\tilde{\Gamma}_V$\\tablenotemark{b}}
 }
 \startdata\n""")
     for _, row in occ.iterrows():
-        f.write("${0:.1f}$ & ${1:.1f}$ & ${2:.2f}\pm{3:.2f}$ \\\\\n"
+        f.write(("${0:.1f}$ & ${1:.1f}$ & ${2:.2f}\pm{3:.2f}$ &"
+                 "${4:.2f}\pm{5:.2f}$ \\\\\n")
                 .format(row.radius_min, row.radius_max,
-                        row.rate_density, row.rate_density_uncert))
+                        row.rate_density, row.rate_density_uncert,
+                        row.rate_density_minus, row.rate_density_minus_uncert))
     f.write("\enddata\n")

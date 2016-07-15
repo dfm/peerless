@@ -72,6 +72,7 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
 
         N = len(fits)
         int_rate = N / (Q * len(targets))
+        int_rate_minus = (N - 1) / (Q * len(targets))
         vol = (np.log(pmax) - np.log(pmin)) * (np.log(rmax) - np.log(rmin))
 
         results.append(OrderedDict([
@@ -84,6 +85,8 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
             ("normalization", Q),
             ("rate_density", int_rate/vol),
             ("rate_density_uncert", int_rate/vol/np.sqrt(N)),
+            ("rate_density_minus", int_rate_minus/vol),
+            ("rate_density_minus_uncert", int_rate_minus/vol/np.sqrt(N)),
         ]))
 
     return pd.DataFrame(results)

@@ -16,6 +16,9 @@
 \usepackage{multirow}
 \bibliographystyle{aasjournal}
 
+\usepackage{endnotes}
+\let\footnote=\endnote
+
 % ----------------------------------- %
 % start of AASTeX mods by DWH and DFM %
 % ----------------------------------- %
@@ -59,8 +62,8 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand\subsectionprelude{\vspace{1em}}
 \makeatother
 
-\widowpenalty=1000
-\clubpenalty=1000
+\widowpenalty=100000
+\clubpenalty=100000
 
 \sloppy\sloppypar
 
@@ -316,7 +319,12 @@ search completeness~--~using injection and recovery tests~--~and use these
 products to place probabilistic constraints on the occurrence rate of
 long-period planets.
 We apply this method to a subset of the archival data from the \kepler\
-Mission and produce a catalog of discoveries.
+Mission, release a catalog of exoplanet candidates, and estimate the
+occurrence rate of long-period exoplanets.
+We finish by discussing the potential effects of false positives, the
+prospects for radial velocity follow-up of these candidates, and compare to
+calculated occurrence rate to results based on discoveries using different
+planet discovery methods.
 
 
 \section{A fully automated search method}\sectlabel{search}
@@ -1229,7 +1237,6 @@ University.
 	\project{numpy} \citep{Van-Der-Walt:2011},
 	\project{scipy} \citep{Jones:2001}}.
 
-\newpage
 \appendix
 
 \section{Details of the light curve models}\sectlabel{model-details}
@@ -1387,5 +1394,7 @@ where
 
 
 \bibliography{peerless}
+
+\theendnotes
 
 \end{document}

@@ -1026,7 +1026,7 @@ statistical uncertainties should not be taken too seriously.
 \include{ortab}
 \tablenotetext{a}{$\Gamma_V = \dd^2 N/\dd\ln P\dd\ln R$; see \eq{rate-density}}
 \tablenotetext{b}{$\Gamma_V$ computed assuming that one candidate is a false
-positive}
+positive; see \eq{rate-minus}}
 \tablecomments{These values are computed in the period range 2--25~years.}
 \end{deluxetable}
 \end{floattable}
@@ -1098,7 +1098,7 @@ In light of this result, we demonstrate the sensitivity of our measured
 occurrence rates on contamination by computing a second constraint on
 $\Gamma_V$ for each volume with one candidate removed.
 In this case, \eq{rate-density} would be replaced by
-\begin{eqnarray}
+\begin{eqnarray}\eqlabel{rate-minus}
 \tilde{\Gamma}_V &\equiv&
     \frac{C(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})
           - 1}
@@ -1129,8 +1129,8 @@ axis instead of radius and period.
 Using the transit method, we do not directly measure the mass of the planet.
 Instead, we must rely on a mass--radius (M--R) relationship constructed using
 exoplanets with both mass and radius measurements \citep[for
-example]{Weiss:2014, Wolfgang:2016, Chen:2016} to predict the expected masses
-of the transiting planets.
+example][]{Weiss:2014, Wolfgang:2016, Chen:2016} to predict the expected
+masses of the transiting planets.
 
 Table~\ref{tab:masses} lists gives constraints on the predicted masses of the
 exoplanet candidates using the probabilistic M--R relationship from
@@ -1179,6 +1179,8 @@ Therefore, the specific result should be taken with the appropriate grain of
 salt but a result in this parameter space eases qualitative comparison with
 occurrence rates measured using different methods.
 
+\dfmtodo{COMPARE!}
+
 
 \begin{floattable}
 \begin{deluxetable}{cccccccc}
@@ -1204,6 +1206,18 @@ mass, a probabilistic mass--radius relation \citep{Chen:2016} was used to
 convert radius to mass.
 \dfmfiglabel{completeness-am}}
 \end{figure*}
+
+
+\section{Prospects for follow-up}\sectlabel{follow-up}
+
+A real concern about the detection of exoplanets from a single transit is that
+follow-up and confirmation is difficult.
+Since the period of the orbit is poorly constrained and transits are sparse,
+any prediction of a subsequent transit time will be too uncertain to schedule
+targeted photometric follow-up.
+Instead, follow-up using radial velocity and astrometry are more promising.
+
+\hoggtodo{Comments about GAIA follow-up}
 
 
 \section{Discussion}\sectlabel{discussion}

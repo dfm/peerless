@@ -61,7 +61,7 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     \colhead{period} & \colhead{$t_0$} &
     \colhead{radius} &
     \colhead{$T_\mathrm{eq}$\\tablenotemark{*}} &
-    \colhead{comments} \\\\
+    \\\\
     & \colhead{K} & \colhead{$R_\odot$} && \colhead{year} & \colhead{KBJD} &
     \colhead{$R_\mathrm{J}$} & \colhead{K} &
 }

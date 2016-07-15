@@ -76,6 +76,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\bls}{\project{BLS}}
 \newcommand{\emcee}{\project{emcee}}
+\newcommand{\exosyspop}{\project{exosyspop}}
 
 \newcommand{\foreign}[1]{\emph{#1}}
 \newcommand{\etal}{\foreign{et\,al.}}
@@ -1006,11 +1007,61 @@ statistical uncertainties should not be taken too seriously.
 
 \section{Astrophysical false positives}\sectlabel{false-positives}
 
-Various configurations of grazing or blended eclipsing binaries can mimic the
-signal of a transiting planet \citep{}. The occurrence rate calculation
-presented in the preceding section assumes that none of the planet
-candidates identified in this work are caused by such astrophysical false
-positives.  In this Section we explore the validity of this assumption.
+
+Various configurations of eclipsing binary stars can mimic the signal of a
+transiting planet \citep{}.  However, the occurrence rate calculation
+presented in the preceding section assumes no astrophysical false positives
+among the candidates identified in this work.  In this Section we explore the
+validity of this assumption.
+
+While an eclipsing binary (EB) typically produces a photometric dip much
+deeper than a transiting planet, the depth of the signal may be comparable to
+that of a planet if the eclipse is grazing, or if the EB only comprises a small
+fraction of the total light in the photometric aperture---a so-called blended
+eclipsing binary (BEB).  Additionally, if a binary star has an eccentric
+orbit, it may be oriented so as to present only a secondary occultation and
+not a primary eclipse, causing a shallow and potentially flat-bottomed
+photometric dip without an accompanying tell-tale deep primary signal.
+
+To determine to what extent the catalog of detections presented in this work
+may contain such false positives, we simulate populations of detected signals
+to predict how many we should expect.  To accomplish this, we use the python
+package \exosyspop\ \citep{Morton:2016b}, which we developed for this
+purpose.
+
+With \exosyspop\, one can define the parameters of a population model and
+generate synthetic catalogs according to the model (and the parameters of a
+survey) very efficiently.  For example, a population of EBs may be defined by
+a binary fraction, power-law distributions in mass ratio and period (within
+given bounds), and a beta distribution for eccentricity.  This population,
+initialized with a catalog of target stars (each of which has a duty cycle and
+total span of observation), may then be ``observed,'' returning a catalog of
+objects potentially detectable via either primary or secondary eclipse
+(according to randomly oriented orbital geometries).  This synthetic catalog
+includes signal-to-noise estimates of both the primary and secondary eclipses,
+the number of detected primary and secondary eclipses, and the trapezoidal
+shape parameters (depth, duration, and ingress-to-duration ratio, as defined
+in \citet{Morton:2012}) of each detection.
+
+In order to predict how many EBs or BEBs we might expect to detect in this 
+particular search of \kepler\ data, we first need to choose reasonable parameters
+for the binary star population.  To do this, we calibrate the population 
+parameters using the catalog of detected \kepler\ eclipsing binaries.  We
+find that a binary fraction of 15\% between periods of 20 days and 25 years, with
+periods distributed as $f(P) \sim P^{-1.1}$ and eccentrities distributed according
+to $\beta(0.8, 2.0)$ is able to reproduce well both the number and period 
+distribution of observed \kepler\ EBs between 20 and 1000 days.  We thus fix these
+binary star population parameters for our subsequent EB and BEB simulations.
+
+
+
+The scenarios typically considered in \kepler\ false positive analysis
+\citep[][e.g.]{Morton:2016} are unblended eclipsing binary stars (EB),
+background/foreground chance-aligned eclipsing binaries (BEB), and
+hierarchical triple eclipsing binaries (HEB).  In this work, where
+we are concerned with long-period signals, we do not consider the HEB
+scenario, as most known hierarchical stellar systems have two components on
+relatively short orbits \citep{}.  
 
 
 \section{Comparison with the literature}\sectlabel{comparison}

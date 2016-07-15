@@ -73,6 +73,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 \newcommand{\kepler}{\project{Kepler}}
 \newcommand{\KT}{\project{K2}}
 \newcommand{\tess}{\project{TESS}}
+\newcommand{\plato}{\project{PLATO}}
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\bls}{\project{BLS}}
 \newcommand{\emcee}{\project{emcee}}
@@ -228,20 +229,16 @@ stars: statistics
 
 \section{Introduction}
 
-% EB catalog: \citep{Kirk:2016}
-
-% Microlensing OR: \citep{Shvartzvald:2016}
-
-Data from the \kepler\ Mission has been used to discover thousands of
-transiting exoplanets.
+Data from the \kepler\ Mission \citep{Borucki:2011} has been used to discover
+thousands of transiting exoplanets.
 The systematic nature of these discoveries and careful quantification of
 survey selection effects, search completeness, and catalog reliability has
 enabled many diverse studies of the detailed frequency and distribution of
 exoplanets \citep[for example,][]{Howard:2012, Petigura:2013,
 Foreman-Mackey:2014, Dressing:2015, Burke:2015, Mulders:2015}.
 So far, these results have been limited to relatively short orbital periods
-because existing transit search methods require the observation of multiple
-transits within the baseline of the data.
+because existing transit search methods require the observation of at least
+three transits within the baseline of the data.
 For \kepler, with a baseline of about four years, this sets an absolute upper
 limit on the detectable periods of about two years.
 In the Solar System, Jupiter~--~with a period of 12 years~--~dominates the
@@ -249,18 +246,36 @@ planetary dynamics and, since it would only exhibit at most one transit in the
 \kepler\ data, an exo-Jupiter would be missed by most existing transit search
 procedures.
 
+Before the launch of the \kepler\ Mission, it was predicted that the nominal
+mission would discover at least 10 exoplanets with only one or two observed
+transits \citep{Yee:2008} and subsequent searches for these signals have
+already been more fruitful than expected \citep{Wang:2015, Uehara:2016}.
+However, the systematic study of the population of long-period exoplanets
+found in the \kepler\ data has, so far, been limited because of the
+substantial technical challenge and the subtleties of interpretation.
+Any single transit events discovered in the \kepler\ light curves are
+interesting in their own right but the development of a method for the
+discovery of planets with orbital periods longer than the survey baseline are
+crucial for the future of the study of exoplanets via the transit method.
+All future transit surveys have shorter observational baselines than the
+\kepler\ Mission (\KT, \citealt{Howell:2014}; \tess, \citealt{Ricker:2015};
+\plato, \citealt{Rauer:2014}).
+The methodology presented in the following pages can be modified to be applied
+to these forthcoming data sets as they are collecting in the upcoming years.
+
 A study of the population of long-period transiting planets complements
 parallel radial velocity \citep[RV; for example][]{Cumming:2008,
 Knutson:2014, Bryan:2016}, microlensing \citep[for
 example][]{Gould:2010, Cassan:2012, Clanton:2014, Shvartzvald:2016}, and
 direct imaging \citep[for example][]{Bowler:2016}.
-
-It is possible to discover long-period planets like this using targeted radial
-velocity (RV) surveys
-
-but the cost of implementing a systematic RV search is
-substantially higher than searching the existing and forthcoming photometric
-data for single transits.
+Exoplanets with both mass and radius measurements can be used to study
+planetary compositions and the formation of planetary systems \citep[for
+example][]{Weiss:2014, Rogers:2015, Wolfgang:2016}.
+The existing catalog of exoplanets with measured densities is sparsely
+populated at long orbital periods and discoveries with the transit method are
+compelling targets for follow-up observations.
+Furthermore, even at long orbital periods, the \kepler\ light curves should be
+sensitive to smaller planets than the current state-of-the-art RV surveys.
 
 There are two main technical barriers to a systematic search for single
 transit events.
@@ -995,11 +1010,13 @@ in Table~\ref{tab:occurrence} but we note that extrapolations and their
 statistical uncertainties should not be taken too seriously.
 
 \begin{floattable}
-\begin{deluxetable}{ccc}
+\begin{deluxetable}{cccc}
 \tabletypesize{\footnotesize}
 \caption{The occurrence rate density in two radius bins \label{tab:occurrence}}
 \include{ortab}
-\tablenotetext{a}{See \eq{rate-density}}
+\tablenotetext{a}{$\Gamma_V = \dd^2 N/\dd\ln P\dd\ln R$; see \eq{rate-density}}
+\tablenotetext{b}{$\Gamma_V$ computed assuming that one candidate is a false
+positive}
 \tablecomments{These values are computed in the period range 2--25~years.}
 \end{deluxetable}
 \end{floattable}
@@ -1043,13 +1060,13 @@ the number of detected primary and secondary eclipses, and the trapezoidal
 shape parameters (depth, duration, and ingress-to-duration ratio, as defined
 in \citet{Morton:2012}) of each detection.
 
-In order to predict how many EBs or BEBs we might expect to detect in this 
+In order to predict how many EBs or BEBs we might expect to detect in this
 particular search of \kepler\ data, we first need to choose reasonable parameters
-for the binary star population.  To do this, we calibrate the population 
+for the binary star population.  To do this, we calibrate the population
 parameters using the catalog of detected \kepler\ eclipsing binaries.  We
 find that a binary fraction of 15\% between periods of 20 days and 25 years, with
 periods distributed as $f(P) \sim P^{-1.1}$ and eccentrities distributed according
-to $\beta(0.8, 2.0)$ is able to reproduce well both the number and period 
+to $\beta(0.8, 2.0)$ is able to reproduce well both the number and period
 distribution of observed \kepler\ EBs between 20 and 1000 days.  We thus fix these
 binary star population parameters for our subsequent EB and BEB simulations.
 
@@ -1061,7 +1078,7 @@ background/foreground chance-aligned eclipsing binaries (BEB), and
 hierarchical triple eclipsing binaries (HEB).  In this work, where
 we are concerned with long-period signals, we do not consider the HEB
 scenario, as most known hierarchical stellar systems have two components on
-relatively short orbits \citep{}.  
+relatively short orbits \citep{}.
 
 
 \section{Comparison with the literature}\sectlabel{comparison}

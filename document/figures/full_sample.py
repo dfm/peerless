@@ -44,7 +44,7 @@ rad = np.array("2439.7 6051.8 6371.00 3389.5 69911 58232 25362 24622"
                .split(), dtype=float)
 period = np.array("0.2408467 0.61519726 1.0000174 1.8808476 11.862615 "
                   "29.447498 84.016846 164.79132".split(), dtype=float)
-ax.plot(period * 365, rad / rad[2], "o",  # color=COLORS["MODEL_2"],
+ax.plot(period * 365, rad / rad[2], "s",  # color=COLORS["MODEL_2"],
         ms=4, mec="none")
 ax.axvline(4.2*365 / 2., color="k", alpha=0.6)
 ax.axvline(4.2*365, color="k", ls="dashed", alpha=0.6)

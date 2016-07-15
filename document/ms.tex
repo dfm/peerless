@@ -42,8 +42,9 @@
 \vspace*{-\headsep}\vspace*{\headheight}
 \noindent\footnotesize
 {\noindent\footnotesize\textsc{\@journalinfo}}\par
-{\noindent\scriptsize Preprint typeset using \LaTeX\ style AASTeX6 with
-modifications by David W. Hogg and Daniel Foreman-Mackey.
+{\noindent\scriptsize Preprint typeset using \LaTeX\ style AASTeX6\\
+With modifications by David W. Hogg and Daniel Foreman-Mackey\\
+See the last page for endnotes
 }\par\vspace*{-\baselineskip}\vspace*{0.625in}
 }%
 \makeatother
@@ -125,6 +126,7 @@ modifications by David W. Hogg and Daniel Foreman-Mackey.
 % TO DOS
 \newcommand{\todo}[3]{{\color{#2}\emph{#1}: #3}}
 \newcommand{\dfmtodo}[1]{\todo{DFM}{red}{#1}}
+\newcommand{\tdmtodo}[1]{\todo{TDM}{blue}{#1}}
 \newcommand{\hoggtodo}[1]{\todo{HOGG}{blue}{#1}}
 
 
@@ -1088,6 +1090,33 @@ we are concerned with long-period signals, we do not consider the HEB
 scenario, as most known hierarchical stellar systems have two components on
 relatively short orbits \citep{}.
 
+\tdmtodo{Just a note that I've added your figure in at the end of this section
+--- DFM}
+
+
+In light of this result, we demonstrate the sensitivity of our measured
+occurrence rates on contamination by computing a second constraint on
+$\Gamma_V$ for each volume with one candidate removed.
+In this case, \eq{rate-density} would be replaced by
+\begin{eqnarray}
+\tilde{\Gamma}_V &\equiv&
+    \frac{C(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})
+          - 1}
+         {Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max})}
+\quad.
+\end{eqnarray}
+These updated rates are listed in Table~\ref{tab:occurrence}.
+
+
+
+\begin{figure*}[htbp]~\\
+\begin{center}
+\includegraphics[width=\textwidth]{../prediction/shape_kdes.pdf}
+\end{center}
+\caption{%
+\dfmfiglabel{shape-kdes}}
+\end{figure*}
+
 
 \section{Comparison with the literature}\sectlabel{comparison}
 
@@ -1199,7 +1228,10 @@ with git commit \texttt{\githash} (\gitdate).
 
 \acknowledgments
 It is a pleasure to thank
-\ldots
+So Hattori,
+Angie Wolfgang,
+and
+Hans-Walter Rix
 for helpful contributions to the ideas and code presented here.
 
 DWH was partially supported by the National Science Foundation (grant

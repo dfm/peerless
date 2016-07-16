@@ -722,7 +722,7 @@ secondary eclipse of a binary system but we will keep the candidate is the
 list and treat this effect statistically in \sect{false-positives}.
 
 \begin{floattable}
-\begin{deluxetable}{ccccccccl}
+\begin{deluxetable}{cccccccccl}
 \tabletypesize{\footnotesize}
 \caption{The inferred parameters for the long-period transiting exoplanet
 candidates \label{tab:catalog}}
@@ -1038,7 +1038,7 @@ positive; see \eq{rate-minus}}
 
 
 Various configurations of eclipsing binary stars can mimic the signal of a
-transiting planet \citep{}.  However, the occurrence rate calculation
+transiting planet.  However, the occurrence rate calculation
 presented in the preceding section assumes no astrophysical false positives
 among the candidates identified in this work.  In this Section we explore the
 validity of this assumption.
@@ -1088,7 +1088,7 @@ the \kepler\ target list described in \sect{target-selection} according to the
 above EB population parameters.  We consider an EB to be detected if it
 presents fewer than three eclipses (either primary or secondary, but not
 both), if the signal-to-noise ratio is $>$15, and the duration of the
-detected eclipse is $<$2.5\,d.  In 100 realizations of these synthetic 
+detected eclipse is $<$2.5\,d.  In 100 realizations of these synthetic
 observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals.
 
 To simulate BEBs, we assume an exponentially varying background field star
@@ -1113,36 +1113,36 @@ should fear that $\sim$7 of the planet candidates might be EBs. Rather, we can
 instead inspect the synthetic observation simulations in more detail; in
 particular, we can analyze the shape distribution of the different scenarios and
 compare them with the observed shapes of the actual \kepler\ detections in order
-to quantify the probability that each of them may be a false positive.  
+to quantify the probability that each of them may be a false positive.
 
 Following the method of \citet{Morton:2012} used to compute false positive
 probabilities for the regular \kepler\ KOI catalogs \citet{Morton:2016}, we
 can calculate the posterior probability for each of our candidates to belong
 to each of the three scenarios we consider (EB, BEB, or planet) as follows:
-\begin{eqnarray} 
-{\rm Pr}_i = \frac{\pi_i \mathcal L_i}{\sum_{j} \pi_j \mathcal L_j}, 
-\end{eqnarray} 
+\begin{eqnarray}
+{\rm Pr}_i = \frac{\pi_i \mathcal L_i}{\sum_{j} \pi_j \mathcal L_j},
+\end{eqnarray}
 where the $\pi$ factors are the hypothesis priors, $\mathcal L$ are
 the hypothesis likelihoods, and the sum over $j$ is over all the hypotheses.
-In this case, we determine the relative hypothesis priors from the synthetic 
-observations, using the mean numbers of ``observed'' EBs (7.2) and BEBs (0.4), 
+In this case, we determine the relative hypothesis priors from the synthetic
+observations, using the mean numbers of ``observed'' EBs (7.2) and BEBs (0.4),
 and choosing the expected number of planets to be 12.  We calculate the hypothesis
 likelihoods using the depth/duration distributions of synthetic populations
-of each scenario and evaluating these distributions at the observed depths and 
+of each scenario and evaluating these distributions at the observed depths and
 durations of each candidate signal.  To estimate the expected shape distribution
 of the planet scenario, we define a custom \exosyspop\ population of planets
-according to the two-bin population model described by \ref{tab:occurrence} and 
+according to the two-bin population model described by Table~\ref{tab:occurrence} and
 generate a population of 1000 detected signals.
 
 We list the probabilities for each of our candidates to belong to each
-hypothesis in \ref{tab:fpp}.  We find that the two deepest signals in our
+hypothesis in Table~\ref{tab:catalog}.  We find that the two deepest signals in our
 candidate catalog (9306307 and  10602068) are very likely to be EBs, though we
 note that this result may be dominated by the fact that our planet population
 is fixed to have a maximum radius of 1\,$R_{\rm J}$.  Most of the rest of the
 candidates  have false positive probabilities below 10\%.  We do note that as
-discussed in \sect{}, 4754460 (which we calculate to have a 5\% false positive
+discussed in \sect{catalog}, 4754460 (which we calculate to have a 5\% false positive
 probability) does show a partial deep eclipse right at the end of the \kepler\
-data that indicates that it is most likely an EB.  Apart from this, the expected 
+data that indicates that it is most likely an EB.  Apart from this, the expected
 number of false positives among the candidates with $R < R_{\rm J}$, according
 to these calculations, is about one.
 
@@ -1235,7 +1235,7 @@ occurrence rates measured using different methods.
 
 
 \begin{floattable}
-\begin{deluxetable}{cccccccc}
+\begin{deluxetable}{ccccccccc}
 \tabletypesize{\footnotesize}
 \caption{The predicted masses and radial velocity signals for the candidates
 from Table~\ref{tab:catalog} \label{tab:masses}}
@@ -1288,15 +1288,13 @@ cases, the radial velocity trends are small.
 Some candidates should, however, be within the reach of current
 state-of-the-art facilities.
 
-\hoggtodo{Comments about GAIA follow-up}
-
 In priniciple the \gaia\ Mission will be very sensitive to the astrometric
 wobble produced by a long-period exoplanet \citep{Perryman:2014}.
 To leading order, the astrometric signal strength is proportional to the
 semi-major axis of the stellar (primary) reflex motion in angular units.
 That is, detectability is related to the angle $\alpha$ given by
 \begin{eqnarray}
-alpha &=& \frac{a}{D}\,\frac{M_{\mathrm p}}{M_{\mathrm s}} \quad ,
+\alpha &=& \frac{a}{D}\,\frac{M_{\mathrm p}}{M_{\mathrm s}} \quad ,
 \end{eqnarray}
 % obviously fix to your notation!
 where $a$ is the semi-major axis, $D$ is the distance from the observer to the
@@ -1322,8 +1320,8 @@ However, similar planets around closer stars \emph{will} be detectable with
 \gaia.
 This means that there will be a comparable exoplanet occurrence rate
 measurement from the \gaia\ data.
-It also means that many of the discoveries of the \tess\ Mission will be
-followed up and precisely measured by the \gaia\ Mission.
+It also means that many of the discoveries of the \KT\ and \tess\ missions
+will be followed up and precisely measured by the \gaia\ Mission.
 
 
 \section{Discussion}\sectlabel{discussion}

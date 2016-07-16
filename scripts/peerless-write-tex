@@ -196,7 +196,7 @@ with open(os.path.join(args.tex_output, "rejecttab.tex"), "w") as f:
         if not row.accept_offset:
             cols.append("centroid")
         else:
-            cols.append("shape")
+            cols.append("impact")
         f.write(" & ".join(cols) + "\\\\\n")
     f.write("\enddata\n")
 

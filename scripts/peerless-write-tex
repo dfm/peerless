@@ -207,8 +207,8 @@ with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{$R_\mathrm{min}\,[R_\mathrm{J}]$} &
     \colhead{$R_\mathrm{max}\,[R_\mathrm{J}]$} &
-    \colhead{$\Gamma_V$\\tablenotemark{a}} &
-    \colhead{$\\tilde{\Gamma}_V$\\tablenotemark{b}}
+    \colhead{rate density\\tablenotemark{a}} &
+    \colhead{integrated rate\\tablenotemark{b}}
 }
 \startdata\n""")
     for _, row in occ.iterrows():

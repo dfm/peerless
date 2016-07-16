@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("fits", help="the csv of fit results")
 parser.add_argument("injections", help="the hdf5 file of injections")
+parser.add_argument("fpp", help="the csv of fpps")
 parser.add_argument("-f", "--fig-output", default="figures",
                     help="the root directory for the figure output")
 parser.add_argument("-t", "--tex-output", default="document",
@@ -26,6 +27,8 @@ args = parser.parse_args()
 df = pd.read_csv(args.fits)
 inj = pd.read_hdf(args.injections, "injections")
 inj["mass"] = 10 ** inj.log10_mass  # Earth masses
+fpp = pd.read_csv(args.fpp)
+df = pd.merge(df, fpp)
 kois = CumulativeCatalog().df
 wang = WangCatalog().df
 uehara = UeharaCatalog().df
@@ -61,9 +64,10 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     \colhead{period} & \colhead{$t_0$} &
     \colhead{radius} &
     \colhead{$T_\mathrm{eq}$\\tablenotemark{*}} &
+    \colhead{$\mathrm{Pr}_\mathrm{planet}$} &
     \\\\
     & \colhead{K} & \colhead{$R_\odot$} && \colhead{year} & \colhead{KBJD} &
-    \colhead{$R_\mathrm{J}$} & \colhead{K} &
+    \colhead{$R_\mathrm{J}$} & \colhead{K} &&
 }
 \\rotate
 \startdata\n""")
@@ -111,6 +115,16 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
             cols.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
+
+        pr = row.pr_pl
+        if pr > 0.01:
+            cols.append("${0:.2f}$".format(pr))
+        else:
+            nd = int(np.floor(np.log10(pr)))
+            print(nd, pr)
+            cols.append("${0:.1f} \\times 10^{{{1:.0f}}}$".format(
+                pr * 10**(-nd), nd
+            ))
         cols.append(comment)
         f.write(" & ".join(cols) + "\\\\\n")
     f.write("\enddata\n")
@@ -122,11 +136,13 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
     \colhead{radius} &
     \colhead{mass} &
     \colhead{period} &
+    \colhead{$t_0$} &
     \colhead{semi-major axis} &
     \colhead{semi-amplitude} &
     \colhead{$K / P$} \\\\
     && \colhead{$R_\mathrm{J}$} & \colhead{$M_\mathrm{J}$} & \colhead{year} &
-    \colhead{au} & \colhead{m s$^{-1}$} & \colhead{m s$^{-1}$ yr$^{-1}$}
+    \colhead{KBJD} & \colhead{au} & \colhead{m s$^{-1}$} &
+    \colhead{m s$^{-1}$ yr$^{-1}$}
 }
 \\rotate
 \startdata\n""")
@@ -139,7 +155,7 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
 
         cols = []
         cols.append("${0:.1f}$".format(row.kepmag))
-        for v in ["radius", "mass", "period", "semimajor", "semiamp",
+        for v in ["radius", "mass", "period", "t0", "semimajor", "semiamp",
                   "rvaccel"]:
             u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]],
                          dtype=float)

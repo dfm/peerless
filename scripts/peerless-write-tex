@@ -177,7 +177,7 @@ with open(os.path.join(args.tex_output, "rejecttab.tex"), "w") as f:
     f.write("""\\tablehead{
     \colhead{kic id} &
     \colhead{time} &
-    \colhead{depth} &
+    \colhead\ depth &
     \colhead{duration} &
     \colhead{reason} \\\\
     & \colhead{KBJD} & \colhead{ppt} & \colhead{hours} &

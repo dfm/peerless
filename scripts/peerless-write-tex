@@ -212,9 +212,12 @@ with open(os.path.join(args.tex_output, "ortab.tex"), "w") as f:
 }
 \startdata\n""")
     for _, row in occ.iterrows():
-        f.write(("${0:.1f}$ & ${1:.1f}$ & ${2:.2f}\pm{3:.2f}$ &"
-                 "${4:.2f}\pm{5:.2f}$ \\\\\n")
+        f.write(("${0:.1f}$ & ${1:.1f}$ & "
+                 "${2:.2f}\pm{3:.2f}\,({4:.2f}\pm{5:.2f})$ & "
+                 "${6:.2f}\pm{7:.2f}\,({8:.2f}\pm{9:.2f})$ \\\\\n")
                 .format(row.radius_min, row.radius_max,
                         row.rate_density, row.rate_density_uncert,
-                        row.rate_density_minus, row.rate_density_minus_uncert))
+                        row.rate_density_minus, row.rate_density_minus_uncert,
+                        row.rate, row.rate_uncert,
+                        row.rate_minus, row.rate_minus_uncert))
     f.write("\enddata\n")

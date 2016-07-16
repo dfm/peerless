@@ -63,8 +63,8 @@ See the last page for endnotes
 \newcommand\subsectionprelude{\vspace{1em}}
 \makeatother
 
-\widowpenalty=100000
-\clubpenalty=100000
+\widowpenalty=10000
+\clubpenalty=10000
 
 \sloppy\sloppypar
 
@@ -1067,9 +1067,10 @@ photometric dip without an accompanying tell-tale deep primary signal.
 
 To determine to what extent the catalog of detections presented in this work
 may contain such false positives, we simulate populations of detected signals
-to predict how many we should expect.  To accomplish this, we use the python
-package \exosyspop\ \citep{Morton:2016b}, which we developed for this
-purpose.
+to predict how many we should expect.  To accomplish this, we use the Python
+package
+\exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}}, which
+we developed for this purpose.
 
 With \exosyspop\, one can define the parameters of a population model and
 generate synthetic catalogs according to the model (and the parameters of a

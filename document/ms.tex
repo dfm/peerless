@@ -1065,36 +1065,86 @@ a binary fraction, power-law distributions in mass ratio and period (within
 given bounds), and a beta distribution for eccentricity.  This population,
 initialized with a catalog of target stars (each of which has a duty cycle and
 total span of observation), may then be ``observed,'' returning a catalog of
-objects potentially detectable via either primary or secondary eclipse
-(according to randomly oriented orbital geometries).  This synthetic catalog
-includes signal-to-noise estimates of both the primary and secondary eclipses,
-the number of detected primary and secondary eclipses, and the trapezoidal
-shape parameters (depth, duration, and ingress-to-duration ratio, as defined
-in \citet{Morton:2012}) of each detection.
+objects detectable via either primary or secondary eclipse (according to
+randomly oriented orbital geometries and accounting for observation duty cycle
+and data span).  This synthetic catalog includes signal-to-noise estimates of
+both the primary and secondary eclipses, the number of detected primary and
+secondary eclipses, and the trapezoidal shape parameters of each detection
+(depth, duration, and ingress-to-duration ratio, as defined in
+\citet{Morton:2012}).
 
 In order to predict how many EBs or BEBs we might expect to detect in this
 particular search of \kepler\ data, we first need to choose reasonable parameters
 for the binary star population.  To do this, we calibrate the population
 parameters using the catalog of detected \kepler\ eclipsing binaries.  We
-find that a binary fraction of 15\% between periods of 20 days and 25 years, with
-periods distributed as $f(P) \sim P^{-1.1}$ and eccentrities distributed according
+find that a binary fraction of 25\% between periods of 20 days and 25 years with
+a log-flat period distribution and eccentrities distributed according
 to $\beta(0.8, 2.0)$ is able to reproduce well both the number and period
 distribution of observed \kepler\ EBs between 20 and 1000 days.  We thus fix these
 binary star population parameters for our subsequent EB and BEB simulations.
 
+To simulate synthetic populations of EB detections, we assign binary stars  to
+the \kepler\ target list described in \sect{target-selection} according to the
+above EB population parameters.  We consider an EB to be detected if it
+presents fewer than three eclipses (either primary or secondary, but not
+both), if the signal-to-noise ratio is $>$15, and the duration of the
+detected eclipse is $<$2.5\,d.  In 100 realizations of these synthetic 
+observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals.
 
+To simulate BEBs, we assume an exponentially varying background field star
+density across the \kepler\ field, from 0.005\,arcsec$^{-2}$ at a Galactic
+latitude $b=20$ to 0.05\,arcsec$^{-2}$ at $b=5$ (matching up well with the
+simulations of \citep{Morton:2011} at many different Galactic latitudes). Each
+\kepler\ target star is then assigned a number of background stars drawn from
+a Poisson distribution with mean given by the expected number of stars to be
+found within a circle of 4\,arcsec radius, given the  appropriate density at
+its Galactic lattitude.   We draw the specific background stars from a
+TRILEGAL \citep{Girardi:2005}  field star simulation toward the center of the
+\kepler\ field.  Binary companions are then assigned to these background stars
+according to the same stellar binary population distribution as the EB
+population above, and synthetic detected populations  are ``observed''
+according to the same rules (accounting appropriately for the diluted eclipse
+depths in the \kepler\ bandpass).  In 100 synthetic observations, we see an
+average of only 0.41 detected BEBs.
 
-The scenarios typically considered in \kepler\ false positive analysis
-\citep[][e.g.]{Morton:2016} are unblended eclipsing binary stars (EB),
-background/foreground chance-aligned eclipsing binaries (BEB), and
-hierarchical triple eclipsing binaries (HEB).  In this work, where
-we are concerned with long-period signals, we do not consider the HEB
-scenario, as most known hierarchical stellar systems have two components on
-relatively short orbits \citep{}.
+These results suggest that we might certainly expect to see some unblended
+eclipsing binary signals in our search.  However, this does not mean that  we
+should fear that $\sim$7 of the planet candidates might be EBs. Rather, we can
+instead inspect the synthetic observation simulations in more detail; in
+particular, we can analyze the shape distribution of the different scenarios and
+compare them with the observed shapes of the actual \kepler\ detections in order
+to quantify the probability that each of them may be a false positive.  
 
-\tdmtodo{Just a note that I've added your figure in at the end of this section
---- DFM}
+Following the method of \citet{Morton:2012} used to compute false positive
+probabilities for the regular \kepler\ KOI catalogs \citet{Morton:2016}, we
+can calculate the posterior probability for each of our candidates to belong
+to each of the three scenarios we consider (EB, BEB, or planet) as follows:
+\begin{eqnarray} 
+{\rm Pr}_i = \frac{\pi_i \mathcal L_i}{\sum_{j} \pi_j \mathcal L_j}, 
+\end{eqnarray} 
+where the $\pi$ factors are the hypothesis priors, $\mathcal L$ are
+the hypothesis likelihoods, and the sum over $j$ is over all the hypotheses.
+In this case, we determine the relative hypothesis priors from the synthetic 
+observations, using the mean numbers of ``observed'' EBs (7.2) and BEBs (0.4), 
+and choosing the expected number of planets to be 12.  We calculate the hypothesis
+likelihoods using the depth/duration distributions of synthetic populations
+of each scenario and evaluating these distributions at the observed depths and 
+durations of each candidate signal.  To estimate the expected shape distribution
+of the planet scenario, we define a custom \exosyspop\ population of planets
+according to the two-bin population model described by \ref{tab:occurrence} and 
+generate a population of 1000 detected signals.
 
+We list the probabilities for each of our candidates to belong to each
+hypothesis in \ref{tab:fpp}.  We find that the two deepest signals in our
+candidate catalog (9306307 and  10602068) are very likely to be EBs, though we
+note that this result may be dominated by the fact that our planet population
+is fixed to have a maximum radius of 1\,$R_{\rm J}$.  Most of the rest of the
+candidates  have false positive probabilities below 10\%.  We do note that as
+discussed in \sect{}, 4754460 (which we calculate to have a 5\% false positive
+probability) does show a partial deep eclipse right at the end of the \kepler\
+data that indicates that it is most likely an EB.  Apart from this, the expected 
+number of false positives among the candidates with $R < R_{\rm J}$, according
+to these calculations, is about one.
 
 In light of this result, we demonstrate the sensitivity of our measured
 occurrence rates on contamination by computing a second constraint on

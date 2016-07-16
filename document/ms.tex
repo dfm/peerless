@@ -78,6 +78,7 @@ See the last page for endnotes
 \newcommand{\KT}{\project{K2}}
 \newcommand{\tess}{\project{TESS}}
 \newcommand{\plato}{\project{PLATO}}
+\newcommand{\gaia}{\project{Gaia}}
 \newcommand{\pdc}{\project{PDC}}
 \newcommand{\bls}{\project{BLS}}
 \newcommand{\emcee}{\project{emcee}}
@@ -1238,6 +1239,41 @@ Some candidates should, however, be within the reach of current
 state-of-the-art facilities.
 
 \hoggtodo{Comments about GAIA follow-up}
+
+In priniciple the \gaia\ Mission will be very sensitive to the astrometric
+wobble produced by a long-period exoplanet \citep{Perryman:2014}.
+To leading order, the astrometric signal strength is proportional to the
+semi-major axis of the stellar (primary) reflex motion in angular units.
+That is, detectability is related to the angle $\alpha$ given by
+\begin{eqnarray}
+alpha &=& \frac{a}{D}\,\frac{M_{\mathrm p}}{M_{\mathrm s}} \quad ,
+\end{eqnarray}
+% obviously fix to your notation!
+where $a$ is the semi-major axis, $D$ is the distance from the observer to the
+primary, and $M_{\mathrm{p}}/M_{\mathrm{s}}$ is the planet-to-star mass ratio.
+
+The single-visit precision of \gaia\ will vary with magnitude but is expected
+to be on the order of 40\,$\mu$as at these magnitudes \hoggtodo{cite
+something}.
+In detail the confidence with which an exoplanet can be detected or measured
+in the final \gaia\ data depends on this precision, the number of crossings of
+the star through the \gaia\ focal plane, and details of how the projected
+orbit is sampled by the time history of the focal-plane crossings.
+However, it is not expected that \gaia\ can detect or measure precisely
+exoplanet-induced astrometric wobbles that are much smaller in amplitude than
+the single-visit precision \citep{Perryman:2014}.
+
+The primary stars in the \kepler\  Field are typically at distances of $\sim
+500$\,pc, and typical mass ratios are in the $10^{-4}$ range.
+We therefore expect astrometric amplitudes in the 0.3 to 3\,$\mu$as range.
+These planets will not be detectable or measurable in the \gaia\ data under
+any circumstances.
+However, similar planets around closer stars \emph{will} be detectable with
+\gaia.
+This means that there will be a comparable exoplanet occurrence rate
+measurement from the \gaia\ data.
+It also means that many of the discoveries of the \tess\ Mission will be
+followed up and precisely measured by the \gaia\ Mission.
 
 
 \section{Discussion}\sectlabel{discussion}

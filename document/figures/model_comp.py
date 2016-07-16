@@ -14,7 +14,8 @@ from peerless.search import search
 models = [
     ("variability", "gp", 7220674, 0),
     ("step", "step", 8631697, 0),
-    ("box", "box2", 5521451, 0),
+    ("box", "box1", 9411471, 0),
+    # ("box", "box2", 5521451, 0),
     ("transit", "transit", 8505215, 0),
 ]
 

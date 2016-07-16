@@ -121,7 +121,6 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             cols.append("${0:.2f}$".format(pr))
         else:
             nd = int(np.floor(np.log10(pr)))
-            print(nd, pr)
             cols.append("${0:.1f} \\times 10^{{{1:.0f}}}$".format(
                 pr * 10**(-nd), nd
             ))

@@ -143,6 +143,7 @@ See the last page for endnotes
 \newcommand{\rate}{{\ensuremath{\Gamma}}}
 
 \newcommand{\modelname}[1]{{\textsf{#1}}}
+\newcommand{\datareleaseurl}{url to be added at submission}
 
 
 \shorttitle{The population of long-period transiting exoplanets}
@@ -465,6 +466,16 @@ half of the candidate events in the \kepler\ light curves, followed by the
 \modelname{variability} model.
 To further restrict to non-grazing transits, we also reject events where the
 best fit impact parameter is less than $1 - R_\mathrm{P} / R_\star$.
+
+Since the search procedure described here was tuned to discover transit
+signals, we do not consider the distribution or potential astrophysical nature
+of any models besides the \modelname{transit} model.
+In the future, it would be interesting to relax this goal and investigate the
+other model classes because, for example, the \modelname{box} model is
+probably sensitive to other astrophysical phenomena like secondary eclipses.
+In a cursory investigation it is clear that the majority of signals labeled
+\modelname{box} in our analysis are noise but a subset are likely to be
+astrophysical in nature.
 
 The reliability of this method of automated vetting is limited by the specific
 models selected in this step.

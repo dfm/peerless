@@ -121,7 +121,6 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
 
     mu = model.system.light_curve(x + t0, texp=lc.texp, maxdepth=2)
     ax.plot(x, (mu - 1.0) * 1e3, color=COLORS["MODEL_2"], lw=1.5)
-    # ax.set_ylabel("rel.\\ flux [ppt]")
     ax.set_xlim(-2, 2)
     ax.set_ylim(0.5*(mx+mn) + (mx - mn) * 1.1 * np.array([-0.5, 0.5]))
     ax.xaxis.set_major_locator(pl.NullLocator())

@@ -15,6 +15,7 @@ from peerless.catalogs import (
 parser = argparse.ArgumentParser(
     description="write TeX tables for the paper"
 )
+parser.add_argument("candidates", help="the csv of candidates")
 parser.add_argument("fits", help="the csv of fit results")
 parser.add_argument("injections", help="the hdf5 file of injections")
 parser.add_argument("fpp", help="the csv of fpps")
@@ -33,6 +34,11 @@ kois = CumulativeCatalog().df
 wang = WangCatalog().df
 uehara = UeharaCatalog().df
 targets = TargetCatalog().df
+
+cands = pd.read_csv(args.candidates)
+cands = pd.merge(cands, targets[["kepid"]], left_on="kicid", right_on="kepid",
+                 how="inner")
+rejects = cands[cands.accept_bic & cands.accept_time & (~cands.accept)]
 
 df = pd.merge(df, targets, left_on="kicid", right_on="kepid",
               suffixes=["", "_stlr"])
@@ -163,6 +169,34 @@ with open(os.path.join(args.tex_output, "masstab.tex"), "w") as f:
             plus = ("{{0:.{0:d}f}}".format(nd)).format(u[1])
             mean = ("{{0:.{0:d}f}}".format(nd)).format(row[v])
             cols.append("${0}_{{-{1}}}^{{+{2}}}$".format(mean, minus, plus))
+        f.write(" & ".join(cols) + "\\\\\n")
+    f.write("\enddata\n")
+
+
+with open(os.path.join(args.tex_output, "rejecttab.tex"), "w") as f:
+    f.write("""\\tablehead{
+    \colhead{kic id} &
+    \colhead{time} &
+    \colhead{depth} &
+    \colhead{duration} &
+    \colhead{reason} \\\\
+    & \colhead{KBJD} & \colhead{ppt} & \colhead{hours} &
+}
+\startdata\n""")
+    for _, row in rejects.sort_values("kicid").iterrows():
+        # And the columns of the table.
+        f.write("{0:d} & ".format(int(row.kicid)))
+        cols = []
+        for v, fac in [("transit_time", 1.0),
+                       ("transit_depth", 1e3),
+                       ("transit_duration", 24.0)]:
+            val = float(row[v]) * fac
+            nd = int(-min(-1, np.floor(np.min(np.log10(val)) - 1)))
+            cols.append(("{{0:.{0:d}f}}".format(nd)).format(val))
+        if not row.accept_offset:
+            cols.append("centroid")
+        else:
+            cols.append("shape")
         f.write(" & ".join(cols) + "\\\\\n")
     f.write("\enddata\n")
 

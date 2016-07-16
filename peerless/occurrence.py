@@ -87,6 +87,10 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
             ("rate_density_uncert", int_rate/vol/np.sqrt(N)),
             ("rate_density_minus", int_rate_minus/vol),
             ("rate_density_minus_uncert", int_rate_minus/vol/np.sqrt(N)),
+            ("rate", int_rate),
+            ("rate_uncert", int_rate/np.sqrt(N)),
+            ("rate_minus", int_rate_minus),
+            ("rate_minus_uncert", int_rate_minus/np.sqrt(N)),
         ]))
 
     return pd.DataFrame(results)

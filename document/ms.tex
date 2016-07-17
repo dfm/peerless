@@ -725,16 +725,15 @@ published.
 
 Of the \numcands\ candidates, \numinner\ have known inner planets with three
 or more observable transits \citep{Coughlin:2016}.
-Given the fact that only \numkois\ of the \numtargets\ targets have known
-planets, this means that of the systems with known inner planets, \fracinner\
-have outer transiting planets with one or two transits detectable by our
-search.
-This fraction is nearly a factor of 20 larger than the same number for targets
-with no known inner transiting planets: $\fracnoinner$.
+Given the fact that only \numkois\ of the \numtargets\ targets had previously
+known planets, this means that systems with short-period transiting planets
+are nearly a factor of 20 more likely to host long-period planets accessible
+by our method than systems with no known inner transiting planets.
 This difference cannot be accounted for by differences in completeness between
 targets with known planets and without because the average detection
 efficiency for both populations is consistent within sampling uncertainty.
-This suggests that these long-period planets are preferentially aligned with
+Qualitatively, this suggests that these long-period planets occur with a
+higher frequency in multi-planet systems or are preferentially aligned with
 the plane of any inner planets but a more detailed analysis would be needed to
 make a quantitative statement \citep[see, for example,][]{Tremaine:2012,
 Fang:2012, Ballard:2016, Moriarty:2015}.
@@ -1048,12 +1047,6 @@ Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &\approx&
 \end{eqnarray}
 where the sum is over all injections in the volume $V$.
 
-Using the injection results from \sect{completeness} and the catalog of
-discoveries from \sect{catalog}, we compute the occurrence rate in the period
-range 2 to 25 years and in two radius bins between 0.1 and
-$1.0\,R_\mathrm{J}$.
-The calculated occurrence rates are listed in Table~\ref{tab:occurrence}.
-
 For comparison, we repeated the analysis of \citet{Burke:2015} and fit a
 double power-law occurrence rate to the short-period \kepler\ planet
 candidates\footnote{The analysis was adapted from publicly available code that
@@ -1066,6 +1059,25 @@ extrapolated rate is $0.15\pm0.05$.
 These extrapolated values are qualitatively consistent with the rates listed
 in Table~\ref{tab:occurrence} but we note that extrapolations and their
 statistical uncertainties should not be taken too seriously.
+
+Using the injection results from \sect{completeness} and the catalog of
+discoveries from \sect{catalog}, we compute the occurrence rate in the period
+range 2 to 25 years and in two radius bins between 0.1 and
+$1.0\,R_\mathrm{J}$.
+The calculated occurrence rates are listed in Table~\ref{tab:occurrence}.
+Integrating the two bin model in this range, we find an expected occurrence
+rate of
+\begin{eqnarray}
+N_{0.1\,R_\mathrm{J}-1\,R_\mathrm{J},\,2\unit{yr}-25\unit{yr}} &=&
+    \intocc \unit{planets}
+\end{eqnarray}
+per G/K dwarf with radii in the range $0.1\,R_\mathrm{J}-1\,R_\mathrm{J}$ and
+periods in the range $2\unit{yr}-25\unit{yr}$.
+This result is qualitatively consistent with the Solar System where there is
+one planet~--~Jupiter~--~in this parameter range and Saturn is just outside
+the range with an orbital period of 29~years.
+In \sect{comparison}, we compare with similar occurrence rate estimates from
+the literature.
 
 \begin{floattable}
 \begin{deluxetable}{cccc}

@@ -4,7 +4,6 @@ from __future__ import division, print_function
 
 from peerless.plot_setup import SQUARE_FIGSIZE, COLORS
 
-# import numpy as np
 import pandas as pd
 from itertools import product
 import matplotlib.pyplot as pl
@@ -13,10 +12,21 @@ from scipy.optimize import minimize
 from autograd import grad
 import autograd.numpy as np
 
+from peerless.catalogs import KOICatalog
+
 
 inj = pd.read_hdf("../../results/injections-with-mass.h5", "injections")
 inj = inj[inj.ncadences > 0]
 rec = inj[inj.recovered]
+
+kois = set(KOICatalog().df.kepid)
+
+inj_koi = inj[inj.kicid.isin(kois)]
+rec_koi = rec[rec.kicid.isin(kois)]
+inj_no_koi = inj[~inj.kicid.isin(kois)]
+rec_no_koi = rec[~rec.kicid.isin(kois)]
+print("Completeness for KOIs: {0}".format(len(rec_koi) / len(inj_koi)))
+print("Completeness for non-KOIs: {0}".format(len(rec_no_koi)/len(inj_no_koi)))
 
 
 def analytic_model(params, ln_radius, ln_period):

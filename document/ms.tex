@@ -1365,7 +1365,7 @@ on the measured radius using a probabilistic mass--radius relation
 The same as \dfmfig{completeness} converted into the planet mass and
 semi-major axis plane.
 Since the completeness function depends on the planet's radius and not its
-mass, a probabilistic mass--radius relation \citep{Chen:2016} was used to
+mass, a probabilistic mass--radius relationship \citep{Chen:2016} was used to
 convert radius to mass.
 \dfmfiglabel{completeness-am}}
 \end{figure*}
@@ -1460,11 +1460,15 @@ will be followed up and precisely measured by the \gaia\ Mission.
 \section{Discussion}\sectlabel{discussion}
 
 We have developed a fully automated method to search for the transits of
-long-period exoplanets in the \kepler\ archival light curves.
+long-period exoplanets with only one or two observable transits in the
+\kepler\ archival light curves.
 This method uses probabilistic model comparison to veto non-transit signals.
 Applying this method to the brightest \numtargets\ G/K-dwarfs in the \kepler\
 target list, we discover \numcands\ systems with likely astrophysical
 transits and eclipses.
+We fit the light curve for each candidate with a physical generative model and
+informative priors on eccentricity and stellar density to estimate the
+planet's orbital period.
 Simulations of the false positive population~--~the secondary eclipses of
 binary systems and background eclipsing binaries~--~suggest that 13 of these
 candidates have high probability of being planetary in nature.
@@ -1476,15 +1480,28 @@ By combining the measured detection efficiency and the catalog of exoplanet
 candidates, we estimate the integrated occurrence rate of exoplanets with
 orbital periods in the range $2-25\unit{years}$ and radii in the range
 $0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K-dwarf.
+This result is qualitatively consistent with estimates from radial velocity,
+microlensing, and direct imaging surveys.
 
-Of these discoveries, at least about YY are likely to be planetary in nature.
-Combining this catalog of discoveries with a measurement of the completeness
-of our search method, we place a constraint on the occurrence rate of
-long-period exoplanets.
+These long-period exoplanet candidates are potentially interesting candidates
+for follow-up observations.
+Using a probabilistic mass--radius relationship, we predict the masses of our
+candidates and report predictions for the radial velocity amplitudes.
+Unfortunately, since the target stars are faint and the amplitudes are small,
+these targets are unlikely to be accessible with even the current
+state-of-the-art high-precision instruments.
+We also discuss the potential for astrometric follow-up using the forthcoming
+data from the \gaia\ Mission with similarly discouraging results.
 
-Our method for transit detection finds convincing transit-shaped signals does
-a model comparison between a physical transit model.
+Our method of transit discovery is especially relevant for future photometric
+surveys like \KT, \tess, and \plato\ where the survey baseline is shorter than
+\kepler.
+The transits of planets with orbital periods longer than the observation
+baselines will be plentiful in these forthcoming data sets and this method
+can, in principle, be trivially generalized to discover these planets,
+prioritize follow-up, and study their population.
 
+\vspace{1.5em}
 All of the code used in this project is available from
 \url{https://github.com/dfm/peerless} under the MIT open-source software
 license.

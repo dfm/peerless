@@ -41,12 +41,13 @@ inner = KOICatalog().df
 inner = pd.merge(inner, targets[["kepid"]], how="inner")
 inner = set(inner[inner.koi_pdisposition == "CANDIDATE"].kepid)
 
-frac_inner = df.kicid.isin(inner).sum() / len(inner)
+num_inner = df.kicid.isin(inner).sum()
+num_kois = len(inner)
+frac_inner = df.kicid.isin(inner).sum() / num_kois
 frac_no_inner = (
     (~df.kicid.isin(inner)).sum() / (~targets.kepid.isin(inner)).sum()
 )
 frac_all = len(df) / len(targets)
-# print(frac_inner, frac_no_inner, frac_all)
 
 cands = pd.read_csv(args.candidates)
 cands = pd.merge(cands, targets[["kepid"]], left_on="kicid", right_on="kepid",
@@ -65,6 +66,8 @@ with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
              "10^{{-4}}}}}}\n").format(frac_inner * 1e4))
     f.write(("\\newcommand{{\\fracnoinner}}{{\\ensuremath{{{0:.0f} \\times "
              "10^{{-4}}}}}}\n").format(frac_no_inner * 1e4))
+    f.write("\\newcommand{{\\numinner}}{{{0:,}}}\n".format(num_inner))
+    f.write("\\newcommand{{\\numkois}}{{{0:,}}}\n".format(num_kois))
     f.write("\\newcommand{{\\numtargets}}{{{0:,}}}\n".format(len(targets)))
     f.write("\\newcommand{{\\numinjs}}{{{0:,}}}\n".format(len(inj)))
     f.write("\\newcommand{{\\numcands}}{{{0:,}}}\n".format(len(df)))

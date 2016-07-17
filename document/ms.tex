@@ -1239,13 +1239,14 @@ uncertainty introduced by false positives.
 
 The population of long-period planets has been previously studied using radial
 velocity, microlensing, and direct imaging surveys.
-These methods all measure the occurrence rate in units of mass and semi-major
-axis instead of radius and period.
-Using the transit method, we do not directly measure the mass of the planet.
-Instead, we must rely on a mass--radius (M--R) relationship constructed using
-exoplanets with both mass and radius measurements \citep[for
-example][]{Weiss:2014, Wolfgang:2016, Chen:2016} to predict the expected
-masses of the transiting planets.
+These methods all measure the occurrence rate as a function of planet mass
+instead of radius.
+Using the transit method, however, we do not directly measure the mass of the
+planet.
+Therefore, to compare our results with the literature, we must rely on a
+mass--radius (M--R) relationship constructed using exoplanets with both mass
+and radius measurements \citep[for example][]{Weiss:2014, Wolfgang:2016,
+Chen:2016} to predict the expected masses of the transiting planets.
 
 Table~\ref{tab:masses} lists gives constraints on the predicted masses of the
 exoplanet candidates using the probabilistic M--R relationship from
@@ -1284,18 +1285,47 @@ Using this result, we find that the mean occurrence rate density in the range
 $0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ and $1.5\unit{au} \le a <
 9\unit{au}$ is
 \begin{eqnarray}\eqlabel{massocc}
-\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& \massocc
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& \masssemiocc
 \end{eqnarray}
 where $N$ is the expected number of planets per G/K dwarf.
-The uncertainty in \eq{massocc} does not take into account the uncertainties
-in the semi-major axis or mass estimates or any systematic noise in the
-mass--radius relationship.
-Therefore, the specific result should be taken with the appropriate grain of
-salt but a result in this parameter space eases qualitative comparison with
-occurrence rates measured using different methods.
+This result and the equivalent result as a function of planet mass and orbital
+period are listed in Table~\ref{tab:occrates}.
 
-\dfmtodo{COMPARE!}
+The uncertainty in \eq{massocc} and Table~\ref{tab:occrates} does not take
+into account the uncertainties in the mass estimates or any systematic noise
+in the mass--radius relationship.
+Therefore, these specific results should be taken with the appropriate grain
+of salt but predictions in these parameter spaces ease comparison with
+occurrence rates measured computed using different methods.
 
+\citet{Clanton:2014} studied the occurrence rate of long-period giant planets
+orbiting M-dwarfs by combining results from radial velocity and microlensing
+surveys.
+In the range $10^3\unit{days}<P<10^4\unit{days}$ and
+$10\,M_\oplus<M<10^4\,M_\oplus$, they find a mean occurrence rate density
+of
+\begin{eqnarray}
+\frac{\dd^2 N}{\dd\ln M/M_\mathrm{J}\,\dd\ln P/\unit{yr}}
+    &\lesssim& 0.026
+\end{eqnarray}
+per M-dwarf.
+This result is slightly lower than our estimated rate for a similar range of
+masses and periods but around G/K dwarfs.
+This difference is consistent with previous results that cooler stars host
+fewer long-period giant planets \citep[for example][]{Cumming:2008}.
+
+A recent review of the occurrence rate estimates based on direct imaging
+surveys \citep{Bowler:2016} reports the upper limit on the occurrence rate of
+giant planets orbiting F/G/K dwarfs as $<6.8\%$ in the range
+$5-13\,M_\mathrm{J}$ and $10-100\unit{au}$.
+Converted to a rate density, this gives
+\begin{eqnarray}
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &<& 0.03 \quad.
+\end{eqnarray}
+This value is lower than the value computed using our sample in
+Table~\ref{tab:occrates} but this is consistent with the fact that direct
+imaging is sensitive to larger planets at wider separations than the transit
+method.
 
 \begin{floattable}
 \begin{deluxetable}{ccccccccc}
@@ -1321,6 +1351,29 @@ mass, a probabilistic mass--radius relation \citep{Chen:2016} was used to
 convert radius to mass.
 \dfmfiglabel{completeness-am}}
 \end{figure*}
+
+\begin{floattable}
+\begin{deluxetable}{ccc}
+\tabletypesize{\footnotesize}
+\caption{The occurrence rate computed in mass units
+\label{tab:occrates}}
+
+\tablehead{%
+    \colhead{volume} & \colhead{rate density\tablenotemark{a}} & \colhead{integrated rate}
+}
+
+\startdata
+$2\unit{yr}<P<25\unit{yr};\,0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ &
+\massocc & \massoccint \\
+$1.5\unit{au}<a<9\unit{au};\,0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ &
+\masssemiocc & \masssemioccint \\
+\enddata
+
+\tablenotetext{a}{The rate density is measured in natural logarithmic units.}
+\tablecomments{These values are computed assuming that the occurrence rate is
+flat in the logarithmic parameters.}
+\end{deluxetable}
+\end{floattable}
 
 
 \section{Prospects for follow-up}\sectlabel{follow-up}

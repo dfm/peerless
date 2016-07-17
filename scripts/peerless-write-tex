@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+
 import os
 import argparse
 import numpy as np
@@ -8,7 +10,8 @@ import pandas as pd
 
 from peerless.occurrence import compute_occurrence
 from peerless.catalogs import (
-    CumulativeCatalog, UeharaCatalog, WangCatalog, TargetCatalog
+    CumulativeCatalog, UeharaCatalog, WangCatalog, TargetCatalog,
+    KOICatalog
 )
 
 
@@ -34,6 +37,16 @@ kois = CumulativeCatalog().df
 wang = WangCatalog().df
 uehara = UeharaCatalog().df
 targets = TargetCatalog().df
+inner = KOICatalog().df
+inner = pd.merge(inner, targets[["kepid"]], how="inner")
+inner = set(inner[inner.koi_pdisposition == "CANDIDATE"].kepid)
+
+frac_inner = df.kicid.isin(inner).sum() / len(inner)
+frac_no_inner = (
+    (~df.kicid.isin(inner)).sum() / (~targets.kepid.isin(inner)).sum()
+)
+frac_all = len(df) / len(targets)
+# print(frac_inner, frac_no_inner, frac_all)
 
 cands = pd.read_csv(args.candidates)
 cands = pd.merge(cands, targets[["kepid"]], left_on="kicid", right_on="kepid",
@@ -48,6 +61,10 @@ mass_occ = compute_occurrence(inj, df, [1.5, 9.0], [0.01, 20.0],
                               y_name="mass", y_factor=317.828)
 with open(os.path.join(args.tex_output, "numbers.tex"), "w") as f:
     f.write("% Automatically generated\n")
+    f.write(("\\newcommand{{\\fracinner}}{{\\ensuremath{{{0:.0f} \\times "
+             "10^{{-4}}}}}}\n").format(frac_inner * 1e4))
+    f.write(("\\newcommand{{\\fracnoinner}}{{\\ensuremath{{{0:.0f} \\times "
+             "10^{{-4}}}}}}\n").format(frac_no_inner * 1e4))
     f.write("\\newcommand{{\\numtargets}}{{{0:,}}}\n".format(len(targets)))
     f.write("\\newcommand{{\\numinjs}}{{{0:,}}}\n".format(len(inj)))
     f.write("\\newcommand{{\\numcands}}{{{0:,}}}\n".format(len(df)))

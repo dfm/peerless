@@ -1079,6 +1079,20 @@ the range with an orbital period of 29~years.
 In \sect{comparison}, we compare with similar occurrence rate estimates from
 the literature.
 
+The occurrence rates given here should be interpreted with a few caveats in
+mind.
+First, when we inferred the periods of the planets with only one transit, we
+assumed that the period was long enough that no other transit occurred during
+the \kepler\ lifetime.
+This neglects the small but non-negligible probability~--~less than one
+percent for the typical candidate~--~that a second transit might have
+occurred in a data gap.
+All of the candidates in our catalog are consistent with having periods this
+long but the geometric transit probability decreases quickly with orbital
+period.
+For the purposes of this \paper, we neglect this effect because its rigorous
+treatment is subtle.
+
 \begin{floattable}
 \begin{deluxetable}{cccc}
 \tabletypesize{\footnotesize}
@@ -1231,6 +1245,12 @@ uncertainty introduced by false positives.
 \includegraphics[width=\textwidth]{../prediction/shape_kdes.pdf}
 \end{center}
 \caption{%
+Predicted eclipse shape distributions for the two false positive scenerios and
+exoplanet transits (grayscale heatmap).
+In this figure, the relative normalization of the maps are arbitrary but the
+actual normalizations are given in the text.
+The green points show the shapes parameters of the long-period exoplanet
+candidates from Table~\ref{tab:catalog}.
 \dfmfiglabel{shape-kdes}}
 \end{figure*}
 
@@ -1239,13 +1259,14 @@ uncertainty introduced by false positives.
 
 The population of long-period planets has been previously studied using radial
 velocity, microlensing, and direct imaging surveys.
-These methods all measure the occurrence rate in units of mass and semi-major
-axis instead of radius and period.
-Using the transit method, we do not directly measure the mass of the planet.
-Instead, we must rely on a mass--radius (M--R) relationship constructed using
-exoplanets with both mass and radius measurements \citep[for
-example][]{Weiss:2014, Wolfgang:2016, Chen:2016} to predict the expected
-masses of the transiting planets.
+These methods all measure the occurrence rate as a function of planet mass
+instead of radius.
+Using the transit method, however, we do not directly measure the mass of the
+planet.
+Therefore, to compare our results with the literature, we must rely on a
+mass--radius (M--R) relationship constructed using exoplanets with both mass
+and radius measurements \citep[for example][]{Weiss:2014, Wolfgang:2016,
+Chen:2016} to predict the expected masses of the transiting planets.
 
 Table~\ref{tab:masses} lists gives constraints on the predicted masses of the
 exoplanet candidates using the probabilistic M--R relationship from
@@ -1284,18 +1305,59 @@ Using this result, we find that the mean occurrence rate density in the range
 $0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ and $1.5\unit{au} \le a <
 9\unit{au}$ is
 \begin{eqnarray}\eqlabel{massocc}
-\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& \massocc
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& \masssemiocc
 \end{eqnarray}
 where $N$ is the expected number of planets per G/K dwarf.
-The uncertainty in \eq{massocc} does not take into account the uncertainties
-in the semi-major axis or mass estimates or any systematic noise in the
-mass--radius relationship.
-Therefore, the specific result should be taken with the appropriate grain of
-salt but a result in this parameter space eases qualitative comparison with
-occurrence rates measured using different methods.
+This result and the equivalent result as a function of planet mass and orbital
+period are listed in Table~\ref{tab:occrates}.
 
-\dfmtodo{COMPARE!}
+The uncertainty in \eq{massocc} and Table~\ref{tab:occrates} does not take
+into account the uncertainties in the mass estimates or any systematic noise
+in the mass--radius relationship.
+Therefore, these specific results should be taken with the appropriate grain
+of salt but predictions in these parameter spaces ease comparison with
+occurrence rates measured computed using different methods.
 
+\citet{Clanton:2014} studied the occurrence rate of long-period giant planets
+orbiting M-dwarfs by combining results from radial velocity and microlensing
+surveys.
+In the period and mass range $10^3-10^4\unit{days}$ and $10-10^4\,M_\oplus$,
+they find a mean occurrence rate density of
+\begin{eqnarray}
+\frac{\dd^2 N}{\dd\ln M/M_\mathrm{J}\,\dd\ln P/\unit{yr}}
+    &\lesssim& 0.026
+\end{eqnarray}
+per M-dwarf.
+This result is slightly lower than our estimated rate for a similar range of
+masses and periods but around G/K dwarfs.
+This difference is consistent with previous results that cooler stars host
+fewer long-period giant planets \citep[for example][]{Cumming:2008}.
+
+Recently, \citep{Bryan:2016} studied the frequency of long-period giant
+planets in systems with inner hot-Jupiters based on long-baseline radial
+velocity monitoring of these systems \citep{Knutson:2014}.
+In this sample, the computed occurrence rate of long-period giant planets was
+found to be
+\begin{eqnarray}
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &=& 0.125 \pm 0.012
+\end{eqnarray}
+in the range $1-20\,M_\mathrm{J}$ and $5-20\unit{au}$.
+This result is about a factor of two larger than our estimate
+(\eqalt{massocc}) once again suggesting that cold-Jupiters preferentially
+occur in systems with inner planets.
+
+A recent review of the occurrence rate estimates based on direct imaging
+surveys \citep{Bowler:2016} reports the upper limit on the occurrence rate of
+giant planets orbiting F/G/K dwarfs as $<6.8\%$ in the range
+$5-13\,M_\mathrm{J}$ and $10-100\unit{au}$.
+Converted to a rate density, this gives
+\begin{eqnarray}
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &<& 0.03 \quad.
+\end{eqnarray}
+This value is lower than the value computed using our sample in
+Table~\ref{tab:occrates} but this is consistent with the fact that direct
+imaging is sensitive to larger planets at wider separations than the transit
+method.
 
 \begin{floattable}
 \begin{deluxetable}{ccccccccc}
@@ -1317,10 +1379,33 @@ on the measured radius using a probabilistic mass--radius relation
 The same as \dfmfig{completeness} converted into the planet mass and
 semi-major axis plane.
 Since the completeness function depends on the planet's radius and not its
-mass, a probabilistic mass--radius relation \citep{Chen:2016} was used to
+mass, a probabilistic mass--radius relationship \citep{Chen:2016} was used to
 convert radius to mass.
 \dfmfiglabel{completeness-am}}
 \end{figure*}
+
+\begin{floattable}
+\begin{deluxetable}{ccc}
+\tabletypesize{\footnotesize}
+\caption{The occurrence rate computed in mass units
+\label{tab:occrates}}
+
+\tablehead{%
+    \colhead{volume} & \colhead{rate density\tablenotemark{a}} & \colhead{integrated rate}
+}
+
+\startdata
+$2\unit{yr}<P<25\unit{yr};\,0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ &
+\massocc & \massoccint \\
+$1.5\unit{au}<a<9\unit{au};\,0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ &
+\masssemiocc & \masssemioccint \\
+\enddata
+
+\tablenotetext{a}{The rate density is measured in natural logarithmic units.}
+\tablecomments{These values are computed assuming that the occurrence rate is
+flat in the logarithmic parameters.}
+\end{deluxetable}
+\end{floattable}
 
 
 \section{Prospects for follow-up}\sectlabel{follow-up}
@@ -1388,18 +1473,49 @@ will be followed up and precisely measured by the \gaia\ Mission.
 
 \section{Discussion}\sectlabel{discussion}
 
-We have developed a fully automated method to search for the transits and
-eclipses of long-period companions in photometric time series.
-Applying this method to a subset of the \kepler\ archival light curves, we
-discovered XX astrophysical transits.
-Of these discoveries, at least about YY are likely to be planetary in nature.
-Combining this catalog of discoveries with a measurement of the completeness
-of our search method, we place a constraint on the occurrence rate of
-long-period exoplanets.
+We have developed a fully automated method to search for the transits of
+long-period exoplanets with only one or two observable transits in the
+\kepler\ archival light curves.
+This method uses probabilistic model comparison to veto non-transit signals.
+Applying this method to the brightest \numtargets\ G/K-dwarfs in the \kepler\
+target list, we discover \numcands\ systems with likely astrophysical
+transits and eclipses.
+We fit the light curve for each candidate with a physical generative model and
+informative priors on eccentricity and stellar density to estimate the
+planet's orbital period.
+Simulations of the false positive population~--~the secondary eclipses of
+binary systems and background eclipsing binaries~--~suggest that 13 of these
+candidates have high probability of being planetary in nature.
 
-Our method for transit detection finds convincing transit-shaped signals does
-a model comparison between a physical transit model.
+We measure the empirical detection efficiency function of our search procedure
+by injecting simulated transit signals into the target light curves and
+measuring the recovery rate.
+By combining the measured detection efficiency and the catalog of exoplanet
+candidates, we estimate the integrated occurrence rate of exoplanets with
+orbital periods in the range $2-25\unit{years}$ and radii in the range
+$0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K-dwarf.
+This result is qualitatively consistent with estimates from radial velocity,
+microlensing, and direct imaging surveys.
 
+These long-period exoplanet candidates are potentially interesting candidates
+for follow-up observations.
+Using a probabilistic mass--radius relationship, we predict the masses of our
+candidates and report predictions for the radial velocity amplitudes.
+Unfortunately, since the target stars are faint and the amplitudes are small,
+these targets are unlikely to be accessible with even the current
+state-of-the-art high-precision instruments.
+We also discuss the potential for astrometric follow-up using the forthcoming
+data from the \gaia\ Mission with similarly discouraging results.
+
+Our method of transit discovery is especially relevant for future photometric
+surveys like \KT, \tess, and \plato\ where the survey baseline is shorter than
+\kepler.
+The transits of planets with orbital periods longer than the observation
+baselines will be plentiful in these forthcoming data sets and this method
+can, in principle, be trivially generalized to discover these planets,
+prioritize follow-up, and study their population.
+
+\vspace{1.5em}
 All of the code used in this project is available from
 \url{https://github.com/dfm/peerless} under the MIT open-source software
 license.
@@ -1411,6 +1527,7 @@ with git commit \texttt{\githash} (\gitdate).
 \acknowledgments
 It is a pleasure to thank
 So Hattori,
+Jeff Coughlin,
 Angie Wolfgang,
 and
 Hans-Walter Rix

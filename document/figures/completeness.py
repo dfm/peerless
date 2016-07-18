@@ -17,7 +17,7 @@ from peerless.catalogs import KOICatalog
 
 inj = pd.read_hdf("../../results/injections-with-mass.h5", "injections")
 inj = inj[inj.ncadences > 0]
-rec = inj[inj.recovered]
+rec = inj[inj.accept]
 
 kois = set(KOICatalog().df.kepid)
 
@@ -50,7 +50,7 @@ def error(params, ln_radius, ln_period, flag):
 
 
 x, y = np.log(np.array(inj.radius)), np.log(np.array(inj.period))
-flag = np.array(inj.recovered, dtype=int)
+flag = np.array(inj.accept, dtype=int)
 params = np.array([0.0, 1.0, 0.0, 0.6, 0.0, 10.0, 0.0, -3.0])
 r = minimize(nll, params, jac=grad(nll), args=(x, y, flag))
 with open("../completenessfit.tex", "w") as f:

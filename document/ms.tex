@@ -219,7 +219,7 @@ Since our method involves no human intervention, we empirically characterize
 the detection efficiency of our search.
 Based on these results, we measure the average occurrence rate of exoplanets
 smaller than Jupiter with orbital periods longer than two years orbiting
-Sun-like stars.
+Sun-like stars to be $1.80\pm 0.65$ planets per star.
 
 \end{abstract}
 
@@ -1024,9 +1024,9 @@ Using the catalog of exoplanet discoveries (\sect{catalog}) and the
 measurement of the search completeness (\sect{completeness}), we can now
 estimate the occurrence rate of long-period exoplanets.
 To simplify the analysis, we will make the strong assumption that none of the
-candidates are astrophysical false positives (the eclipse of a stellar mass
-companion, a background eclipsing binary, or the secondary eclipse of a
-long-period binary system).
+candidates are astrophysical false positives (the eclipse or occultation 
+of a stellar mass companion, around either the target star or a 
+faint background star).
 We revisit this assumption and discuss its validity in the following section.
 As a further simplification, we also neglect the measurement uncertainties on
 the planet parameters (including orbital period).
@@ -1091,7 +1091,7 @@ All of the candidates in our catalog are consistent with having periods this
 long but the geometric transit probability decreases quickly with orbital
 period.
 For the purposes of this \paper, we neglect this effect because its rigorous
-treatment is subtle but comment that this would only ever decrease the
+treatment is subtle, but comment that this would only ever decrease the
 occurrence rate estimate.
 
 
@@ -1134,7 +1134,8 @@ To determine to what extent the catalog of detections presented in this work
 may contain such false positives, we simulate populations of detected signals
 to predict how many we should expect.  To accomplish this, we use the Python
 package
-\exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}}, which
+\exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}; in this
+work we use commit \textsf{e4f54288}}, which
 we developed for this purpose.
 
 With \exosyspop\, one can define the parameters of a population model and
@@ -1186,10 +1187,17 @@ according to the same rules (accounting appropriately for the diluted eclipse
 depths in the \kepler\ bandpass).  In 100 synthetic observations, we see an
 average of only 0.41 detected BEBs.
 
-These results suggest that we might certainly expect to see some unblended
-eclipsing binary signals in our search.  However, this does not mean that  we
-should fear that $\sim$7 of the planet candidates might be EBs. Rather, we can
-instead inspect the synthetic observation simulations in more detail; in
+These prediction results suggest that we should indeed expect to see some 
+astrophysical false positives in our search.  However, this does not mean that  we
+should fear that $\sim$7 of the planet candidates might be EBs. In particular,
+we note that these simulations do not include the full vetting procedure 
+described in \sect{catalog}, and it is likely that the three impact-parameter-rejected
+candidates are EBs and that the centroid-rejected candidate is a BEB.  Thus,
+we might expect maybe two or three additional false positives among our planet
+candidates.
+
+In order to more precisely quantify which of the candidates might indeed be false
+positives, we can inspect the synthetic observation simulations in more detail. In
 particular, we can analyze the shape distribution of the different scenarios and
 compare them with the observed shapes of the actual \kepler\ detections in order
 to quantify the probability that each of them may be a false positive.
@@ -1212,7 +1220,8 @@ likelihoods using the depth/duration distributions of synthetic populations
 of each scenario and evaluating these distributions at the observed depths and
 durations of each candidate signal.  To estimate the expected shape distribution
 of the planet scenario, we define a custom \exosyspop\ population of planets
-according to the two-bin population model described by Table~\ref{tab:occurrence} and
+according to the two-bin population model described by the
+median posterior values in Table~\ref{tab:occurrence} and
 generate a population of 1000 detected signals.
 
 We list the probabilities for each of our candidates to belong to each
@@ -1221,7 +1230,7 @@ candidate catalog (9306307 and  10602068) are very likely to be EBs, though we
 note that this result may be dominated by the fact that our planet population
 is fixed to have a maximum radius of 1\,$R_{\rm J}$.  Most of the rest of the
 candidates  have false positive probabilities below 10\%.  We do note that as
-discussed in \sect{catalog}, 4754460 (which we calculate to have a 5\% false positive
+discussed in \sect{catalog}, 4754460 (for which we calculate a 5\% false positive
 probability) does show a partial deep eclipse right at the end of the \kepler\
 data that indicates that it is most likely an EB.  Apart from this, the expected
 number of false positives among the candidates with $R < R_{\rm J}$, according
@@ -1500,8 +1509,8 @@ transits and eclipses.
 We fit the light curve for each candidate with a physical generative model and
 informative priors on eccentricity and stellar density to estimate the
 planet's orbital period.
-Simulations of the false positive population~--~the secondary eclipses of
-binary systems and background eclipsing binaries~--~suggest that 13 of these
+Simulations of the false positive population~--~lone primary or secondary eclipses of
+binary systems or background eclipsing binaries~--~suggest that 13 of these
 candidates have high probability of being planetary in nature.
 
 We measure the empirical detection efficiency function of our search procedure
@@ -1584,6 +1593,7 @@ University.
     \project{corner.py} \citep{Foreman-Mackey:2016},
     \project{emcee} \citep{Foreman-Mackey:2013},
     \project{george} \citep{Ambikasaran:2016},
+    \project{isochrones} \citep{Morton:2015},
 	\project{matplotlib} \citep{Hunter:2007},
 	\project{numpy} \citep{Van-Der-Walt:2011},
 	\project{scipy} \citep{Jones:2001}}.

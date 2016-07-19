@@ -178,13 +178,13 @@ The population of long-period transiting exoplanets
                           New York University,
                           4 Washington Place, New York, NY, 10003, USA}
 
-\edef \cds       {\arabic{affilcounter}}\stepcounter{affilcounter}
-\altaffiltext{\cds}      {Center for Data Science, New York University,
-                          726 Broadway, 7th Floor, New York, NY, 10003, USA}
-
 \edef \mpia      {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\mpia}     {Max-Planck-Institut f\"ur Astronomie,
                           K\"onigstuhl 17, D-69117 Heidelberg, Germany}
+
+\edef \cds       {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\cds}      {Center for Data Science, New York University,
+                          726 Broadway, 7th Floor, New York, NY, 10003, USA}
 
 \edef \mpis      {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\mpis}     {Max Planck Institute for Intelligent Systems
@@ -194,9 +194,8 @@ The population of long-period transiting exoplanets
     Daniel~Foreman-Mackey\altaffilmark{1,\uw},
     Timothy~D.~Morton\altaffilmark{\princeton},
     David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
-    Eric~Agol\altaffilmark{\uw},
-    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
-    and others
+    Eric~Agol\altaffilmark{\uw}, and
+    Bernhard~Sch\"olkopf\altaffilmark{\mpis}
 }
 
 
@@ -209,12 +208,14 @@ This large, homogeneous catalog of discoveries has enabled rigorous studies of
 the occurrence rate of exoplanets and planetary systems as a function of their
 physical properties.
 Transit surveys like \kepler\ are most sensitive to planets with shorter
-orbital periods than the gas giant planets that dominate the dynamics of our
+orbital periods than Jupiter and Saturn which dominate the dynamics of our
 Solar System.
 We performed a fully automated search for long-period exoplanets with only one
 or two transits in the archival \kepler\ light curves.
-When applied to the 40,000 brightest Sun-like target stars, this search
+When applied to the $\sim 40,000$ brightest Sun-like target stars, this search
 produces \numcands\ long-period exoplanet candidates.
+Of these candidates, 6 are novel discoveries and 5 are in systems with inner
+short-period transiting planets.
 Since our method involves no human intervention, we empirically characterize
 the completeness and reliability of our search.
 Based on these results, we measure the average occurrence rate of exoplanets
@@ -236,7 +237,7 @@ stars: statistics
 
 \section{Introduction}
 
-Data from the \kepler\ Mission \citep{Borucki:2011} has been used to discover
+Data from the \kepler\ Mission \citep{Borucki:2011} have been used to discover
 thousands of transiting exoplanets.
 The systematic nature of these discoveries and careful quantification of
 survey selection effects, search completeness, and catalog reliability has
@@ -1084,14 +1085,21 @@ mind.
 First, when we inferred the periods of the planets with only one transit, we
 assumed that the period was long enough that no other transit occurred during
 the \kepler\ lifetime.
-This neglects the small but non-negligible probability~--~less than one
-percent for the typical candidate~--~that a second transit might have
+This neglects the small but non-negligible posterior probability~--~less than
+one percent for the typical candidate~--~that a second transit might have
 occurred in a data gap.
 All of the candidates in our catalog are consistent with having periods this
 long but the geometric transit probability decreases quickly with orbital
 period.
 For the purposes of this \paper, we neglect this effect because its rigorous
-treatment is subtle.
+treatment is subtle but comment that this would only ever decrease the
+occurrence rate estimate.
+
+% This occurrence rate estimate~--~and all other results based on transit
+% surveys~--~is affected by Malmquist bias.
+% For a transit survey, this bias enters in two ways: \emph{(a)} contamination
+% of the sample by giants, and \emph{(b)} discrepancy
+
 
 \begin{floattable}
 \begin{deluxetable}{cccc}
@@ -1319,15 +1327,15 @@ of salt but predictions in these parameter spaces ease comparison with
 occurrence rates measured computed using different methods.
 
 \citet{Clanton:2014} studied the occurrence rate of long-period giant planets
-orbiting M-dwarfs by combining results from radial velocity and microlensing
+orbiting M dwarfs by combining results from radial velocity and microlensing
 surveys.
 In the period and mass range $10^3-10^4\unit{days}$ and $10-10^4\,M_\oplus$,
 they find a mean occurrence rate density of
 \begin{eqnarray}
-\frac{\dd^2 N}{\dd\ln M/M_\mathrm{J}\,\dd\ln P/\unit{yr}}
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln P}
     &\lesssim& 0.026
 \end{eqnarray}
-per M-dwarf.
+per M dwarf.
 This result is slightly lower than our estimated rate for a similar range of
 masses and periods but around G/K dwarfs.
 This difference is consistent with previous results that cooler stars host
@@ -1401,7 +1409,8 @@ $1.5\unit{au}<a<9\unit{au};\,0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ &
 \masssemiocc & \masssemioccint \\
 \enddata
 
-\tablenotetext{a}{The rate density is measured in natural logarithmic units.}
+\tablenotetext{a}{The rate density is measured in natural logarithmic units;
+see \eq{massocc}.}
 \tablecomments{These values are computed assuming that the occurrence rate is
 flat in the logarithmic parameters.}
 \end{deluxetable}
@@ -1454,7 +1463,7 @@ In detail the confidence with which an exoplanet can be detected or measured
 in the final \gaia\ data depends on this precision, the number of crossings of
 the star through the \gaia\ focal plane, and details of how the projected
 orbit is sampled by the time history of the focal-plane crossings.
-However, it is not expected that \gaia\ can detect or measure precisely
+However, it is not expected that \gaia\ can detect or precisely measure
 exoplanet-induced astrometric wobbles that are much smaller in amplitude than
 the single-visit precision \citep{Perryman:2014}.
 
@@ -1468,16 +1477,16 @@ However, similar planets around closer stars \emph{will} be detectable with
 This means that there will be a comparable exoplanet occurrence rate
 measurement from the \gaia\ data.
 It also means that many of the discoveries of the \KT\ and \tess\ missions
-will be followed up and precisely measured by the \gaia\ Mission.
+could be followed up and precisely measured by the \gaia\ Mission.
 
 
-\section{Discussion}\sectlabel{discussion}
+\section{Summary}\sectlabel{summary}
 
 We have developed a fully automated method to search for the transits of
 long-period exoplanets with only one or two observable transits in the
 \kepler\ archival light curves.
 This method uses probabilistic model comparison to veto non-transit signals.
-Applying this method to the brightest \numtargets\ G/K-dwarfs in the \kepler\
+Applying this method to the brightest \numtargets\ G/K dwarfs in the \kepler\
 target list, we discover \numcands\ systems with likely astrophysical
 transits and eclipses.
 We fit the light curve for each candidate with a physical generative model and
@@ -1493,9 +1502,11 @@ measuring the recovery rate.
 By combining the measured detection efficiency and the catalog of exoplanet
 candidates, we estimate the integrated occurrence rate of exoplanets with
 orbital periods in the range $2-25\unit{years}$ and radii in the range
-$0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K-dwarf.
+$0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K dwarf.
 This result is qualitatively consistent with estimates from radial velocity,
 microlensing, and direct imaging surveys.
+
+\dfmtodo{More words here about comparison.}
 
 These long-period exoplanet candidates are potentially interesting candidates
 for follow-up observations.
@@ -1526,11 +1537,12 @@ with git commit \texttt{\githash} (\gitdate).
 
 \acknowledgments
 It is a pleasure to thank
-So Hattori,
 Jeff Coughlin,
-Angie Wolfgang,
+So Hattori,
+Hans-Walter Rix,
+Dun Wang,
 and
-Hans-Walter Rix
+Angie Wolfgang
 for helpful contributions to the ideas and code presented here.
 
 DWH was partially supported by the National Science Foundation (grant

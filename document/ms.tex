@@ -16,8 +16,8 @@
 \usepackage{multirow}
 \bibliographystyle{aasjournal}
 
-\usepackage{endnotes}
-\let\footnote=\endnote
+% \usepackage{endnotes}
+% \let\footnote=\endnote
 
 % ----------------------------------- %
 % start of AASTeX mods by DWH and DFM %
@@ -43,8 +43,7 @@
 \noindent\footnotesize
 {\noindent\footnotesize\textsc{\@journalinfo}}\par
 {\noindent\scriptsize Preprint typeset using \LaTeX\ style AASTeX6\\
-With modifications by David W. Hogg and Daniel Foreman-Mackey\\
-See the last page for endnotes
+With modifications by David W. Hogg and Daniel Foreman-Mackey
 }\par\vspace*{-\baselineskip}\vspace*{0.625in}
 }%
 \makeatother
@@ -533,6 +532,7 @@ In this section, we describe the target selection process, the parameter
 estimation procedure, and present the catalog of discoveries.
 
 
+\newpage
 \subsection{Target selection}\sectlabel{target-selection}
 
 We select the $\sim40,000$ brightest and quietest G and K dwarfs from the
@@ -1518,7 +1518,7 @@ $0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K dwarf.
 This result is qualitatively consistent with estimates from radial velocity,
 microlensing, and direct imaging surveys.
 
-\dfmtodo{More words here about comparison.}
+\dfmtodo{More words here about comparison and interpretation.}
 
 These long-period exoplanet candidates are potentially interesting candidates
 for follow-up observations.
@@ -1747,6 +1747,6 @@ where
 
 \bibliography{peerless}
 
-\theendnotes
+% \theendnotes
 
 \end{document}

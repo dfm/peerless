@@ -16,8 +16,8 @@
 \usepackage{multirow}
 \bibliographystyle{aasjournal}
 
-\usepackage{endnotes}
-\let\footnote=\endnote
+% \usepackage{endnotes}
+% \let\footnote=\endnote
 
 % ----------------------------------- %
 % start of AASTeX mods by DWH and DFM %
@@ -43,8 +43,7 @@
 \noindent\footnotesize
 {\noindent\footnotesize\textsc{\@journalinfo}}\par
 {\noindent\scriptsize Preprint typeset using \LaTeX\ style AASTeX6\\
-With modifications by David W. Hogg and Daniel Foreman-Mackey\\
-See the last page for endnotes
+With modifications by David W. Hogg and Daniel Foreman-Mackey
 }\par\vspace*{-\baselineskip}\vspace*{0.625in}
 }%
 \makeatother
@@ -178,13 +177,13 @@ The population of long-period transiting exoplanets
                           New York University,
                           4 Washington Place, New York, NY, 10003, USA}
 
-\edef \cds       {\arabic{affilcounter}}\stepcounter{affilcounter}
-\altaffiltext{\cds}      {Center for Data Science, New York University,
-                          726 Broadway, 7th Floor, New York, NY, 10003, USA}
-
 \edef \mpia      {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\mpia}     {Max-Planck-Institut f\"ur Astronomie,
                           K\"onigstuhl 17, D-69117 Heidelberg, Germany}
+
+\edef \cds       {\arabic{affilcounter}}\stepcounter{affilcounter}
+\altaffiltext{\cds}      {Center for Data Science, New York University,
+                          726 Broadway, 7th Floor, New York, NY, 10003, USA}
 
 \edef \mpis      {\arabic{affilcounter}}\stepcounter{affilcounter}
 \altaffiltext{\mpis}     {Max Planck Institute for Intelligent Systems
@@ -194,9 +193,8 @@ The population of long-period transiting exoplanets
     Daniel~Foreman-Mackey\altaffilmark{1,\uw},
     Timothy~D.~Morton\altaffilmark{\princeton},
     David~W.~Hogg\altaffilmark{\scda,\nyu,\mpia,\cds},
-    Eric~Agol\altaffilmark{\uw},
-    Bernhard~Sch\"olkopf\altaffilmark{\mpis},
-    and others
+    Eric~Agol\altaffilmark{\uw}, and
+    Bernhard~Sch\"olkopf\altaffilmark{\mpis}
 }
 
 
@@ -208,17 +206,20 @@ our understanding of their population.
 This large, homogeneous catalog of discoveries has enabled rigorous studies of
 the occurrence rate of exoplanets and planetary systems as a function of their
 physical properties.
-Transit surveys like \kepler\ are most sensitive to planets with shorter
-orbital periods than the gas giant planets that dominate the dynamics of our
-Solar System.
-We performed a fully automated search for long-period exoplanets with only one
+However, transit surveys like \kepler\ are most sensitive to planets with
+orbital periods shorter than a few years, which is shorter than the orbital periods of
+Jupiter and Saturn, which dominate the dynamics of our Solar System.  To address this deficiency,
+we performed a fully automated search for long-period exoplanets with only one
 or two transits in the archival \kepler\ light curves.
-When applied to the 40,000 brightest Sun-like target stars, this search
-produces \numcands\ long-period exoplanet candidates.
+When applied to the $\sim 40,000$ brightest Sun-like target stars, this search
+produced \numcands\ long-period exoplanet candidates.
+Of these candidates, 6 are novel discoveries and 5 are in systems with inner
+short-period transiting planets.
 Since our method involves no human intervention, we empirically characterize
-the completeness and reliability of our search.
+the detection efficiency of our search.
 Based on these results, we measure the average occurrence rate of exoplanets
-smaller than Jupiter with orbital periods longer than two years.
+smaller than Jupiter with orbital periods longer than two years to be $1.80\pm
+0.65$ planets per Sun-like star.
 
 \end{abstract}
 
@@ -236,7 +237,7 @@ stars: statistics
 
 \section{Introduction}
 
-Data from the \kepler\ Mission \citep{Borucki:2011} has been used to discover
+Data from the \kepler\ Mission \citep{Borucki:2011} have been used to discover
 thousands of transiting exoplanets.
 The systematic nature of these discoveries and careful quantification of
 survey selection effects, search completeness, and catalog reliability has
@@ -244,10 +245,10 @@ enabled many diverse studies of the detailed frequency and distribution of
 exoplanets \citep[for example,][]{Howard:2012, Petigura:2013,
 Foreman-Mackey:2014, Dressing:2015, Burke:2015, Mulders:2015}.
 So far, these results have been limited to relatively short orbital periods
-because existing transit search methods require the observation of at least
+because existing transit search methods impose the requirement of the detection of at least
 three transits within the baseline of the data.
 For \kepler, with a baseline of about four years, this sets an absolute upper
-limit on the detectable periods of about two years.
+limit of about two years on the range of detectable periods.
 In the Solar System, Jupiter~--~with a period of 12 years~--~dominates the
 planetary dynamics and, since it would only exhibit at most one transit in the
 \kepler\ data, an exo-Jupiter would be missed by most existing transit search
@@ -255,35 +256,42 @@ procedures.
 
 Before the launch of the \kepler\ Mission, it was predicted that the nominal
 mission would discover at least 10 exoplanets with only one or two observed
-transits \citep{Yee:2008} and subsequent searches for these signals have
+transits \citep{Yee:2008}, yet subsequent searches for these signals have
 already been more fruitful than expected \citep{Wang:2015, Uehara:2016}.
 However, the systematic study of the population of long-period exoplanets
-found in the \kepler\ data has, so far, been limited because of the
-substantial technical challenge and the subtleties of interpretation.
+found in the \kepler\ data to date has been hampered due to the
+substantial technical challenge of implementing a search, as well as the
+subtleties involved in intepreting the results. For example,
+false alarms in the form of uncorrected systematics in the data and background
+eclipsing binaries can make single-transit detections ambiguous.
+
 Any single transit events discovered in the \kepler\ light curves are
-interesting in their own right but the development of a method for the
-discovery of planets with orbital periods longer than the survey baseline are
-crucial for the future of the study of exoplanets via the transit method.
+interesting in their own right, but the development of a general and
+systematic method for the discovery of planets with orbital periods longer
+than the survey baseline is also crucial for the future of exoplanet research
+with the transit method.
 All future transit surveys have shorter observational baselines than the
 \kepler\ Mission (\KT, \citealt{Howell:2014}; \tess, \citealt{Ricker:2015};
-\plato, \citealt{Rauer:2014}).
-The methodology presented in the following pages can be modified to be applied
-to these forthcoming data sets as they are collecting in the upcoming years.
+\plato, \citealt{Rauer:2014}) and given suitable techniques, single transit
+events will be plentiful and easily discovered.
+The methodological framework presented in the following pages is a candidate
+for this task.
 
-A study of the population of long-period transiting planets complements
-parallel radial velocity \citep[for example][]{Cumming:2008,
-Knutson:2014, Bryan:2016}, microlensing \citep[for
+A study of the population of long-period transiting planets complements other
+planet detection techniques, such as radial velocity \citep[for
+example][]{Cumming:2008, Knutson:2014, Bryan:2016}, microlensing \citep[for
 example][]{Gould:2010, Cassan:2012, Clanton:2014, Shvartzvald:2016}, and
-direct imaging \citep[for example][]{Bowler:2016}.
-Exoplanets with both mass and radius measurements can be used to study
-planetary compositions and the formation of planetary systems \citep[for
+direct imaging \citep[for example][]{Bowler:2016} surveys.
+The marriage of the radial velocity and transit techniques is particularly
+powerful as exoplanets with both mass and radius measurements can be used to
+study planetary compositions and the formation of planetary systems \citep[for
 example][]{Weiss:2014, Rogers:2015, Wolfgang:2016}.
-The existing catalog of exoplanets with measured densities is sparsely
-populated at long orbital periods and discoveries with the transit method are
-compelling targets for follow-up observations.
+Unfortunately the existing catalog of exoplanets with measured densities is sparsely
+populated at long orbital periods;  this makes discoveries with the transit method
+at long orbital period compelling targets for follow-up observations.
 Furthermore, even at long orbital periods, the \kepler\ light curves should be
-sensitive to smaller planets than the current state-of-the-art radial velocity
-surveys.
+sensitive to planets at the detection limits of the current state-of-the-art
+radial velocity surveys.
 
 There are two main technical barriers to a systematic search for single
 transit events.
@@ -296,7 +304,7 @@ The second challenge is that there are many signals in the observed light
 curves caused by stochastic processes~--~both instrumental and
 astrophysical~--~that can masquerade as transits.
 Even when the most sophisticated methods for removing this variability are
-used, false signals far outnumber the true single transits in any traditional
+used, false signals far outnumber the true transit events in any traditional
 search.
 
 At the heart of all periodic transit search procedures is a filtering step
@@ -308,28 +316,40 @@ In practice, the fraction of false signals can be substantially reduced by
 requiring that at least three self-consistent transits be observed
 \citep{Petigura:2013, Burke:2014, Rowe:2015, Coughlin:2016}.
 
+Relaxing the requirement of three transits requires a higher signal-to-noise
+threshold per transit for validating candidate planets that display only one
+to two transits.
+Higher signal-to-noise allows matching the candidate transit to the expected
+shape of a limb-darkened light curve, as well as ruling out various false
+alarms.  This is analagous to microlensing surveys, for which a planet can only be
+detected once, thus requiring high signal-to-noise for a reliable detection
+\citep{Gould:2004}.  %http://arxiv.org/abs/astro-ph/0405217
+
 Recent work has yielded discoveries of long-period transiting planets with
 only one or two transits identified in archival \kepler\ and \KT\ light curves
 by visual inspection \citep{Wang:2013, Kipping:2014a, Osborn:2016,
-Kipping:2016, Uehara:2016, Wang:2015}.
-Since all of these discoveries rely on human interaction, it is prohibitively
-expensive to reliably measure the completeness of these catalogs and they
-cannot be used to constrain the occurrence rate of long-period planets.
+Kipping:2016, Uehara:2016, Wang:2015}.  Detection via visual inspection requires
+a high signal-to-noise for transit events to be seen by eye.
+These discoveries have already yielded some tantalizing insight into the
+population of long-period transiting planets.  However, as these previous results
+rely on human interaction, it is prohibitively expensive to reliably measure
+the completeness of these catalogs.
+As a result, the existing catalogs of long-period transiting planets cannot be
+used to rigorously constrain the occurrence rate of long-period planets.
 
 In this \paper, we develop a systematic method for reliably discovering the
-transits of large long-period companions in photometric time series
+transits of large, long-period companions in photometric time series
 \emph{without human intervention}.
 Since the search methodology is fully automated, we can robustly measure the
 search completeness~--~using injection and recovery tests~--~and use these
 products to place probabilistic constraints on the occurrence rate of
 long-period planets.
 We apply this method to a subset of the archival data from the \kepler\
-Mission, release a catalog of exoplanet candidates, and estimate the
+Mission, present a catalog of exoplanet candidates, and estimate the
 occurrence rate of long-period exoplanets.
-We finish by discussing the potential effects of false positives, the
-prospects for radial velocity follow-up of these candidates, and compare to
-calculated occurrence rate to results based on discoveries using different
-planet discovery methods.
+We finish by discussing the potential effects of false positives, evaluating the
+prospects for follow-up, and comparing our results to other studies
+based on different planet discovery methods.
 
 
 \section{A fully automated search method}\sectlabel{search}
@@ -340,7 +360,7 @@ procedure that can be broken into three main steps:
 \begin{enumerate}
 {\item an initial candidate search using a box-shaped matched filter,}
 {\item light curve-level vetting (using automated model comparison) to remove
-signals that don't match a transit shape, and}
+signals that don't have a convincing transit shape, and}
 {\item pixel-level vetting to remove some astrophysical false positives.}
 \end{enumerate}
 The following sections describe each of these steps in more detail.
@@ -348,10 +368,10 @@ The following sections describe each of these steps in more detail.
 The model comparison step (step 2) is the key component of our method that
 enables robust automation but it is also computationally expensive because we
 must estimate the marginalized likelihoods of several different models
-describing a transit and many other processes that ``look'' like transits but
-are actually caused by noise.
-This step is also conservative; unless a signal is a very convincing transit,
-it won't pass the test.
+describing a transit and other processes that ``look'' like transits but are
+actually caused by noise.
+This step is conservative: unless a signal is a very convincing transit, it
+won't pass the test.
 In practice, this means that all but the highest signal-to-noise events will
 be rejected at this step.
 Therefore, in the inexpensive first step~--~the initial candidate search~--~we
@@ -361,8 +381,8 @@ substantial loss in detection efficiency.
 \subsection{Step 1 -- Initial candidate events}\sectlabel{stepone}
 
 It is not computationally feasible to run a full model comparison at every
-conceivable transit time possible in the light curve so we must first find
-potentially interesting events.
+conceivable transit time in the light curve so we must first find potentially
+interesting events.
 For our purposes, ``interesting'' means high signal-to-noise and previously
 unknown.
 
@@ -372,8 +392,8 @@ box.
 After masking any known transits, we filter the \pdc\ light curves
 \citep{Stumpe:2012, Smith:2012} using a running windowed median with a
 half-width of 2~days to remove stellar variability.
-We then compute the signal-to-noise of the depth of a 0.6~day long
-transit on a grid of times spanning the full baseline of observations.
+We then compute the signal-to-noise of the depth of a 0.6~day-long top hat on
+a grid of times spanning the full baseline of observations.
 
 In detail, at each proposal time $t_0$, we hypothesize a box-shaped transit
 with duration $\tau$
@@ -389,23 +409,23 @@ $\mu$ and transit depth $\delta$ can be analytically computed to be a
 two-dimensional Gaussian with mean and covariance given by linear
 least-squares.
 This likelihood function provides a natural scalar objective: the
-signal-to-noise of the measured depth computed a function of time.
+signal-to-noise of the measured depth computed as a function of time.
 In principle this scalar is also a function of duration but we only use a
 single transit duration because the following steps in this procedure are only
-sensitive to transits with very high signal-to-noise.
-In practice, the final results are insensitive to the specific choice of
-duration.
+sensitive to transits with very high signal-to-noise, and in practice, the
+final results are insensitive to the specific choice of duration.
 
 To avoid edge effects, we apodize this detection scalar near any large gaps in
 the time series using a logistic function with width equal to one transit
 duration.
 Finally, we estimate the background noise level in the detection scalar time
 series using a robust running windowed variance estimate of the detection
-scalar and accepting peaks more than 25-times this noise as candidates.
+scalar.  We accept peaks that are more than 25-times this background noise
+level as candidates.
 
 For the \kepler\ light curves, this procedure yields at least one candidate
-event in about 1~percent of targets and the three highest signal-to-noise
-events are investigated in the following step.
+event in about 1~percent of targets.  For these targets, we investigate
+the three highest signal-to-noise events in the following step.
 
 \subsection{Step 2 -- Light curve vetting}\sectlabel{light-curve-vetting}
 
@@ -416,9 +436,10 @@ transit model and a set of other parameterized models for systematics.
 In order for a candidate to pass this vetting step, the transit model must be
 ``preferred'' to any other model as measured using the Bayesian Information
 Criterion (BIC).
-The BIC is not the optimal choice for this model comparison but it is
-computationally intractable to compute thousands of precise marginalized
-likelihoods for each model.
+The BIC is not the optimal choice for this model comparison, but it is
+more computationally computationally tractable than the alternatives, such
+as computing thousands of precise marginalized
+likelihoods or expected utilities for each model.
 The BIC can be efficiently computed and it exhibits the desired
 behavior~--~decreasing with increasing likelihood but flexible models are
 penalized~--~and we find that it performs sufficiently well in practice.
@@ -440,12 +461,12 @@ For each model, we describe the data using a Gaussian Process
 the chosen model $m_k(t;\,\meanpars)$ parameterized by the parameter vector
 \meanpars.
 
-We consider the following mean models and this list provides a qualitative
-justification for each model:
+We consider the following mean models (this list provides a qualitative
+justification for each model):
 \begin{itemize}
-{\item \modelname{transit} -- a limb-darkened, exposure time integrated
+{\item \modelname{transit} -- a limb-darkened, exposure-time integrated
 transit light curve,}
-{\item \modelname{variability} -- a pure Gaussian Process model to capture
+{\item \modelname{variability} -- a pure GP model to capture
 stellar variability,}
 {\item \modelname{outlier} -- a single outlier to account for a bad data
 point,}
@@ -454,7 +475,9 @@ sensitivity dropouts \citep[SPSDs; for example][]{Christiansen:2013}, and}
 {\item \modelname{box} -- a box to catch signals that are well fit by the
 search scalar but insufficiently transit-like to be convincing.}
 \end{itemize}
-The functional forms of these models are given in \app{model-details}.
+The functional forms of these models are given in \app{model-details} and the
+details of the technical methodology of GP fitting are described in
+\app{gp-regression}.
 
 \dfmfig{model-comp} shows representative events that fall into different
 classes and the corresponding maximum-likelihood model.
@@ -465,23 +488,24 @@ The \modelname{box} model is the most restrictive comparison, vetoing about
 half of the candidate events in the \kepler\ light curves, followed by the
 \modelname{variability} model.
 To further restrict to non-grazing transits, we also reject events where the
-best fit impact parameter is less than $1 - R_\mathrm{P} / R_\star$.
+maximum impact parameter is greater than $1 - R_\mathrm{P} / R_\star$.
 
 Since the search procedure described here was tuned to discover transit
 signals, we do not consider the distribution or potential astrophysical nature
 of any models besides the \modelname{transit} model.
 In the future, it would be interesting to relax this goal and investigate the
-other model classes because, for example, the \modelname{box} model is
-probably sensitive to other astrophysical phenomena like secondary eclipses.
-In a cursory investigation it is clear that the majority of signals labeled
-\modelname{box} in our analysis are noise but a subset are likely to be
+other model classes; in particular, the \modelname{box} model is
+sensitive to astrophysical phenomena, notably occultations of white dwarfs,
+which produce a perfect box-shaped signal.  In a cursory investigation
+it is clear that the majority of signals labeled
+\modelname{box} in our analysis are noise; however, a subset are likely to be
 astrophysical in nature.
 
 The reliability of this method of automated vetting is limited by the specific
 models selected in this step.
-We find that these are sufficient for the targets discussed below but other
-target lists might require additional models to be included for robust
-selection.
+We find that these are sufficient for the targets discussed below but
+different target lists or data sets might require additional models to be
+included for robust selection.
 
 \begin{figure*}[p]~\\
 \begin{center}
@@ -492,7 +516,7 @@ Representative examples of candidate events flagged by the initial search.
 Each example falls into a different model category and the figure shows the
 data as black points and the best fit mean model prediction.
 The examples represent the following model categories:
-\emph{(a)} variability, \emph{(b)} step, \emph{(c)} box, and \emph{(d)}
+\emph{(a)} step \emph{(b)} variability, \emph{(c)} box, and \emph{(d)}
 transit.
 \dfmfiglabel{model-comp}}
 \end{figure*}
@@ -571,7 +595,7 @@ catalog (black).
 \subsection{Parameter estimation}
 
 For each transit candidate, we constrain the physical parameters of the system
-by fitting a section of light curve around each transit using an exposure time
+by fitting a section of light curve around each transit using an exposure-time
 integrated  Keplerian orbit with a quadratic limb darkening law for the
 central body\footnote{Implemented at \url{https://github.com/dfm/transit};
 this \paper\ uses git commit \textsf{482d99b} of that repository.}.
@@ -592,7 +616,7 @@ the inner planets, instead treating each long-period transiting system in
 isolation, but this would be a good follow-up project.
 
 In the following paragraphs, we describe the components of the probabilistic
-model.
+model used to infer the planet candidates' properties.
 To perform parameter estimation under this model, we use the Markov Chain
 Monte Carlo (MCMC) package \emcee\footnote{\url{http://dfm.io/emcee}}
 \citep{Foreman-Mackey:2013} with an ensemble of 40 walkers.
@@ -607,11 +631,10 @@ third of the chain as burn-in.
 \paragraph{Priors}
 
 For each candidate in our sample, we take the constraints on the stellar
-parameters from the \kepler\ stellar properties catalog\footnote{The
-\textsf{q1\_q17\_dr24\_stellar} table from the NASA Exoplanet Archive
-\citep{Huber:2014}} and assume an empirical beta function prior on the
-eccentricities based on the observed eccentricity distribution of long-period
-planets discovered using radial velocities \citep{Kipping:2013}.
+parameters from the \kepler\ DR24 stellar properties catalog and assume an
+empirical beta function prior on the eccentricities based on the observed
+eccentricity distribution of long-period planets discovered using radial
+velocities \citep{Kipping:2013}.
 Table~\ref{tab:parameters} lists all the fit parameters and their prior
 distributions.
 Besides these listed priors, we add the extra constraint that no other
@@ -623,8 +646,9 @@ significantly affected.
 
 \paragraph{Likelihood function}
 
-As above, we model the light curve as GP with a physical transit model as the
-mean and a covariance matrix described by a Mat\'ern-3/2 kernel function.
+As above, we model the light curve as a Gaussian Process (GP) with a physical
+transit model as the mean, and a covariance matrix described by a Mat\'ern-3/2
+kernel function.
 The full likelihood function and some details of GP regression are given in
 \app{gp-regression}.
 For computational efficiency, we first perform a joint optimization of the
@@ -709,17 +733,19 @@ Table~\ref{tab:catalog} indicates the candidates that were also discovered by
 earlier searches for long-period transiting systems using visual inspection
 \citep{Wang:2015, Uehara:2016}.
 The consistency between our results and the earlier catalogs is reassuring.
-Our automated search did not find any more candidates than visual inspection
-of the light curves of known KOIs \citep{Uehara:2016} and one candidate
-(KIC~3230491) reported by the human analysis was discarded as grazing by our
-search.
-The PH citizen science project reported five long-period candidates with one
-or two observed transits in our target list \citep{Wang:2015}.
+In the light curves of targets with previously known short-period planets, our
+automated search did not find any candidates that weren't previously detected
+by visual inspection \citep{Uehara:2016} and one candidate (KIC~3230491)
+reported by the human analysis was discarded as grazing by our search.
+The Planet Hunters citizen science project \citep{Fischer:2012} reported five
+long-period candidates with one or two observed transits in our target list
+\citep{Wang:2015}.
 Of these, we also find two (KIC~8410697 and KIC~10842718) although we find a
-second transit in the KIC~8410697 system that was not previously reported.
-The three other candidates reported by \citet{Wang:2015} that we miss
-(KIC~5536555, KIC~9662267, and KIC~12454613) are have low signal-to-noise
-transits that do not pass our initial signal-to-noise threshold.
+second transit in the KIC~8410697 system that was previously missed.
+We do not recover the three other candidates reported by \citet{Wang:2015}:
+KIC~5536555, KIC~9662267, and KIC~12454613.
+The transits of these candidates are all low signal-to-noise and they do not
+pass our initial signal-to-noise threshold.
 Six of the candidates in Table~\ref{tab:catalog} have not been previously
 published.
 
@@ -742,9 +768,8 @@ Five candidate transit events in the light curves of four targets were
 rejected because of a significant centroid shift or a large impact parameter.
 These events are probably astrophysical eclipses from binary star systems that
 were not found by previous studies of long-period eclipsing binary systems.
-We do not consider these events further in the rest of this \paper\ but
-Table~\ref{tab:rejects} lists these events and their properties for
-posterity.
+We do not consider these events further in the following analysis but
+Table~\ref{tab:rejects} lists these events and their properties for posterity.
 
 The candidate in the light curve of KIC~4754460 is an individual transit
 candidate but another deeper eclipse can be found at a KBJD of 1587.13; right
@@ -793,7 +818,8 @@ bottom-right.
 \caption{%
 The catalog of long-period transiting exoplanet candidates (green points with
 error bars) compared to the \kepler\ candidates (blue points) and confirmed
-planets (black points), and the Solar System (orange squares).
+planets \citep[black points;][]{Morton:2016}, and the Solar System (orange
+squares).
 The vertical dashed line indicates the full lifetime of the \kepler\ Mission;
 planets with orbital periods longer than this will show at most one transit.
 The vertical solid line shows the absolute maximum period accessible to
@@ -846,16 +872,15 @@ visible in at least one non-flagged cadence.}
 {\item The transit signal induced by this planet is computed and multiplied
 into the \pdc\ light curve.}
 {\item The transit search method described in \sect{search}~--~including
-de-trending and all automated vetting~--~is applied to this light
+de-trending and \emph{all automated vetting}~--~is applied to this light
 curve with the injected transit signal.}
 {\item This candidate is flagged as recovered if at least one transit within
 one transit duration passes all the cuts imposed by the automated vetting.}
 \end{enumerate}
 
 The fraction of recovered simulations as a function of the relevant parameters
-gives an estimate of the search completeness or the probability of detecting
-an exoplanet transit with a given set of parameters, \emph{conditioned on the
-fact that it transits}.
+gives an estimate of the probability of detecting an exoplanet transit with a
+given set of parameters, \emph{conditioned on the fact that it transits}.
 We will call this function $Q_{\mathrm{det},k}(\params)$ where \params\ is the
 set of all parameters affecting the transit detectability and $k$ is an index
 running over target stars.
@@ -867,6 +892,10 @@ This figure shows the transit detection efficiency falling with decreasing
 planet radius.
 This is the expected behavior because the depth (and signal strength) of a
 transit scales with the area ratio between the planet and the star.
+There is also a slight decrease in the completeness to larger planet radius.
+This trend is introduced in steps~2 and~3 of the search procedure where the
+tuning parameters were chosen to maximize the yield of convincing small
+transit discoveries.
 The decreasing completeness with orbital period is less intuitive because, on
 average, the signal strength should increase as the duration of the transit
 increases.
@@ -883,8 +912,8 @@ For the star $k$, the geometric transit probability is given by
 \begin{eqnarray}
 Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k} + R}{a_k}
     \, \frac{1 + e\,\sin\omega}{1-e^2} \\
-&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}\,(R_{\star,k}+R)
-    \, \left[\frac{1 + e\,\sin \omega}{1-e^2}\right]
+&=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}
+    \, \left[\frac{1 + e\,\sin \omega}{1-e^2}\right]\,(R_{\star,k}+R)
     \, P^{-2/3}
 \end{eqnarray}
 where $R$ is the planet radius, $P$ is the orbital period, $e$ is the orbital
@@ -934,7 +963,7 @@ When fit to the set of \numinjs\ injected transits, the best fit parameters
 are given in Table~\ref{tab:completeness} and the approximation is plotted
 in \dfmfig{completeness-analytic}.
 Note that we do not use this approximation in the following analysis but
-instead compute the relevant integrals using the injection catalog directly.
+instead compute the relevant integrals using the injection results directly.
 
 
 \begin{floattable}
@@ -1011,14 +1040,14 @@ Using the catalog of exoplanet discoveries (\sect{catalog}) and the
 measurement of the search completeness (\sect{completeness}), we can now
 estimate the occurrence rate of long-period exoplanets.
 To simplify the analysis, we will make the strong assumption that none of the
-candidates are astrophysical false positives (the eclipse of a stellar mass
-companion, a background eclipsing binary, or the secondary eclipse of a
-long-period binary system).
+candidates are astrophysical false positives (the eclipse or occultation
+of a stellar mass companion, around either the target star or a
+faint background star).
 We revisit this assumption and discuss its validity in the following section.
 As a further simplification, we also neglect the measurement uncertainties on
 the planet parameters (including orbital period).
 This assumption is only justified because we are only making high-level
-measurements of the mean occurrence rate in large bins.
+measurements of the mean occurrence rate in bins larger than the uncertainties.
 
 Assuming a Poisson likelihood, the occurrence rate density in a volume
 $V$~--~defined as $P_\mathrm{min} \le P < P_\mathrm{max}$ and
@@ -1047,19 +1076,6 @@ Z(P_\mathrm{min},\,P_\mathrm{max};\,R_\mathrm{min},\,R_\mathrm{max}) &\approx&
 \end{eqnarray}
 where the sum is over all injections in the volume $V$.
 
-For comparison, we repeated the analysis of \citet{Burke:2015} and fit a
-double power-law occurrence rate to the short-period \kepler\ planet
-candidates\footnote{The analysis was adapted from publicly available code that
-was demonstrated to reproduce the same results as \citet{Burke:2015} by
-\citet{Foreman-Mackey:2015a}.} and extrapolated to the center of the two
-bins where we computed the occurrence rate.
-At a period of 7~years and a radius of $0.2\,R_\mathrm{J}$, the extrapolated
-occurrence is $0.73\pm0.28$ and at a radius of $0.6\,R_\mathrm{J}$, the
-extrapolated rate is $0.15\pm0.05$.
-These extrapolated values are qualitatively consistent with the rates listed
-in Table~\ref{tab:occurrence} but we note that extrapolations and their
-statistical uncertainties should not be taken too seriously.
-
 Using the injection results from \sect{completeness} and the catalog of
 discoveries from \sect{catalog}, we compute the occurrence rate in the period
 range 2 to 25 years and in two radius bins between 0.1 and
@@ -1084,14 +1100,16 @@ mind.
 First, when we inferred the periods of the planets with only one transit, we
 assumed that the period was long enough that no other transit occurred during
 the \kepler\ lifetime.
-This neglects the small but non-negligible probability~--~less than one
-percent for the typical candidate~--~that a second transit might have
+This neglects the small but non-negligible posterior probability~--~less than
+one percent for the typical candidate~--~that a second transit might have
 occurred in a data gap.
 All of the candidates in our catalog are consistent with having periods this
 long but the geometric transit probability decreases quickly with orbital
 period.
 For the purposes of this \paper, we neglect this effect because its rigorous
-treatment is subtle.
+treatment is subtle, but comment that this would only ever decrease the
+occurrence rate estimate.
+
 
 \begin{floattable}
 \begin{deluxetable}{cccc}
@@ -1132,8 +1150,10 @@ To determine to what extent the catalog of detections presented in this work
 may contain such false positives, we simulate populations of detected signals
 to predict how many we should expect.  To accomplish this, we use the Python
 package
-\exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}}, which
-we developed for this purpose.
+\exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}; in this
+work we use commit \textsf{e4f54288}}, which
+we developed for this purpose and utilizes the \project{isochrones}
+package \citep{Morton:2015} for simulations of stellar populations.
 
 With \exosyspop\, one can define the parameters of a population model and
 generate synthetic catalogs according to the model (and the parameters of a
@@ -1148,7 +1168,7 @@ and data span).  This synthetic catalog includes signal-to-noise estimates of
 both the primary and secondary eclipses, the number of detected primary and
 secondary eclipses, and the trapezoidal shape parameters of each detection
 (depth, duration, and ingress-to-duration ratio, as defined in
-\citet{Morton:2012}).
+\citealt{Morton:2012}).
 
 In order to predict how many EBs or BEBs we might expect to detect in this
 particular search of \kepler\ data, we first need to choose reasonable parameters
@@ -1171,7 +1191,7 @@ observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals.
 To simulate BEBs, we assume an exponentially varying background field star
 density across the \kepler\ field, from 0.005\,arcsec$^{-2}$ at a Galactic
 latitude $b=20$ to 0.05\,arcsec$^{-2}$ at $b=5$ (matching up well with the
-simulations of \citep{Morton:2011} at many different Galactic latitudes). Each
+simulations of \citet{Morton:2011} at many different Galactic latitudes). Each
 \kepler\ target star is then assigned a number of background stars drawn from
 a Poisson distribution with mean given by the expected number of stars to be
 found within a circle of 4\,arcsec radius, given the  appropriate density at
@@ -1184,16 +1204,25 @@ according to the same rules (accounting appropriately for the diluted eclipse
 depths in the \kepler\ bandpass).  In 100 synthetic observations, we see an
 average of only 0.41 detected BEBs.
 
-These results suggest that we might certainly expect to see some unblended
-eclipsing binary signals in our search.  However, this does not mean that  we
-should fear that $\sim$7 of the planet candidates might be EBs. Rather, we can
-instead inspect the synthetic observation simulations in more detail; in
+These prediction results suggest that we should indeed expect to see some
+astrophysical false positives in our search.  However, this does not mean that  we
+should fear that $\sim$7 of the planet candidates might be EBs. In particular,
+we note that these simulations do not include the full vetting procedure
+described in \sect{catalog}, and it is likely that the three impact-parameter-rejected
+candidates are EBs and that the centroid-rejected candidate is a BEB.  Thus,
+we might expect maybe two or three additional false positives among our planet
+candidates.
+
+In order to more precisely quantify which of the candidates might indeed be false
+positives, we can inspect the synthetic observation simulations in more detail. In
 particular, we can analyze the shape distribution of the different scenarios and
 compare them with the observed shapes of the actual \kepler\ detections in order
 to quantify the probability that each of them may be a false positive.
+These distributions and the observed shape parameters are plotted in
+\dfmfig{shape-kdes}.
 
 Following the method of \citet{Morton:2012} used to compute false positive
-probabilities for the regular \kepler\ KOI catalogs \citet{Morton:2016}, we
+probabilities for the regular \kepler\ KOI catalogs \citep{Morton:2016}, we
 can calculate the posterior probability for each of our candidates to belong
 to each of the three scenarios we consider (EB, BEB, or planet) as follows:
 \begin{eqnarray}
@@ -1208,7 +1237,8 @@ likelihoods using the depth/duration distributions of synthetic populations
 of each scenario and evaluating these distributions at the observed depths and
 durations of each candidate signal.  To estimate the expected shape distribution
 of the planet scenario, we define a custom \exosyspop\ population of planets
-according to the two-bin population model described by Table~\ref{tab:occurrence} and
+according to the two-bin population model described by the
+median posterior values in Table~\ref{tab:occurrence} and
 generate a population of 1000 detected signals.
 
 We list the probabilities for each of our candidates to belong to each
@@ -1217,7 +1247,7 @@ candidate catalog (9306307 and  10602068) are very likely to be EBs, though we
 note that this result may be dominated by the fact that our planet population
 is fixed to have a maximum radius of 1\,$R_{\rm J}$.  Most of the rest of the
 candidates  have false positive probabilities below 10\%.  We do note that as
-discussed in \sect{catalog}, 4754460 (which we calculate to have a 5\% false positive
+discussed in \sect{catalog}, 4754460 (for which we calculate a 5\% false positive
 probability) does show a partial deep eclipse right at the end of the \kepler\
 data that indicates that it is most likely an EB.  Apart from this, the expected
 number of false positives among the candidates with $R < R_{\rm J}$, according
@@ -1237,7 +1267,7 @@ In this case, \eq{rate-density} would be replaced by
 These updated rates are listed in Table~\ref{tab:occurrence}.
 In each case, the results are consistent within the uncertainties but the
 difference can be used to get a qualitative sense of the systematic
-uncertainty introduced by false positives.
+uncertainty introduced by the false positive population.
 
 
 \begin{figure*}[htbp]~\\
@@ -1248,8 +1278,8 @@ uncertainty introduced by false positives.
 Predicted eclipse shape distributions for the two false positive scenerios and
 exoplanet transits (grayscale heatmap).
 In this figure, the relative normalization of the maps are arbitrary but the
-actual normalizations are given in the text.
-The green points show the shapes parameters of the long-period exoplanet
+absolute normalization is discussed in \sect{false-positives}.
+The green points show the shape parameters of the long-period exoplanet
 candidates from Table~\ref{tab:catalog}.
 \dfmfiglabel{shape-kdes}}
 \end{figure*}
@@ -1272,19 +1302,19 @@ Table~\ref{tab:masses} lists gives constraints on the predicted masses of the
 exoplanet candidates using the probabilistic M--R relationship from
 \citet{Chen:2016} and taking uncertainties in the planet radius and
 statistical uncertainties in the M--R parameters.
-We compared the predictions with the predictions from \citet{Wolfgang:2016}
-and found similar values with smaller uncertainties and chose to use the
-\citet{Chen:2016} relationship because it was more conservative in the
-relevant range of parameter space.
+We compare the predictions with the predictions from \citet{Wolfgang:2016} and
+find similar values with smaller uncertainties and choose to use the
+\citet{Chen:2016} relationship because it is more conservative in the relevant
+range of parameter space.
 
 A detailed discussion of the systematic effects introduced by the use of a
 M--R relationship is beyond the scope of this \paper\ but it is worth
 noting that all published relationships are based on exoplanets much closer to
 their host star than any of the candidates discussed here.
-This effect would probably cause the masses of these cool planets to be
-systematically underestimated.
+This effect would cause the masses of these cool planets to be systematically
+underestimated.
 
-Using the same M--R relationship, we can also compute the completeness of our
+Using the same M--R relationship, we also compute the completeness of our
 transit search as a function of planet mass and orbital semi-major axis.
 This function is plotted in \dfmfig{completeness-am} with the same color
 scheme as \dfmfig{completeness}.
@@ -1298,7 +1328,7 @@ from which the injections were drawn $\tilde{p}(\ln a,\,\ln M)$ and
 \eq{approxnorm} becomes
 \begin{eqnarray}
 Z(a_\mathrm{min},\,a_\mathrm{max};\,M_\mathrm{min},\,M_\mathrm{max}) &\approx&
-    \frac{K}{J}\,\sum_{j=1}^{J}
+    \frac{K\,V}{J}\,\sum_{j=1}^{J}
     \frac{Q_k(w^{(j)})}{\tilde{p}(\ln a^{(j)},\,\ln M^{(j)})} \quad.
 \end{eqnarray}
 Using this result, we find that the mean occurrence rate density in the range
@@ -1319,21 +1349,20 @@ of salt but predictions in these parameter spaces ease comparison with
 occurrence rates measured computed using different methods.
 
 \citet{Clanton:2014} studied the occurrence rate of long-period giant planets
-orbiting M-dwarfs by combining results from radial velocity and microlensing
+orbiting M dwarfs by combining results from radial velocity and microlensing
 surveys.
 In the period and mass range $10^3-10^4\unit{days}$ and $10-10^4\,M_\oplus$,
 they find a mean occurrence rate density of
 \begin{eqnarray}
-\frac{\dd^2 N}{\dd\ln M/M_\mathrm{J}\,\dd\ln P/\unit{yr}}
-    &\lesssim& 0.026
+\frac{\dd^2 N}{\dd\ln M\,\dd\ln P} &\lesssim& 0.013
 \end{eqnarray}
-per M-dwarf.
+per M dwarf.
 This result is slightly lower than our estimated rate for a similar range of
 masses and periods but around G/K dwarfs.
 This difference is consistent with previous results that cooler stars host
 fewer long-period giant planets \citep[for example][]{Cumming:2008}.
 
-Recently, \citep{Bryan:2016} studied the frequency of long-period giant
+Recently, \citet{Bryan:2016} studied the frequency of long-period giant
 planets in systems with inner hot-Jupiters based on long-baseline radial
 velocity monitoring of these systems \citep{Knutson:2014}.
 In this sample, the computed occurrence rate of long-period giant planets was
@@ -1343,8 +1372,8 @@ found to be
 \end{eqnarray}
 in the range $1-20\,M_\mathrm{J}$ and $5-20\unit{au}$.
 This result is about a factor of two larger than our estimate
-(\eqalt{massocc}) once again suggesting that cold-Jupiters preferentially
-occur in systems with inner planets.
+(\eqalt{massocc}) once again suggesting that cold-Jupiters might
+preferentially occur in systems with inner planets.
 
 A recent review of the occurrence rate estimates based on direct imaging
 surveys \citep{Bowler:2016} reports the upper limit on the occurrence rate of
@@ -1353,11 +1382,24 @@ $5-13\,M_\mathrm{J}$ and $10-100\unit{au}$.
 Converted to a rate density, this gives
 \begin{eqnarray}
 \frac{\dd^2 N}{\dd\ln M\,\dd\ln a} &<& 0.03 \quad.
-\end{eqnarray}
-This value is lower than the value computed using our sample in
+\end{eqnarray} This value is lower than the value computed using our sample in
 Table~\ref{tab:occrates} but this is consistent with the fact that direct
-imaging is sensitive to larger planets at wider separations than the transit
-method.
+imaging is sensitive to the potentially less common large planets at wider
+separations than detections with the transit method.
+
+As a final comparison, we repeated the analysis of \citet{Burke:2015} and fit
+a double power-law occurrence rate to the short-period \kepler\ planet
+candidates\footnote{The analysis was adapted from publicly available code that
+was demonstrated to reproduce the same results as \citet{Burke:2015} by
+\citet{Foreman-Mackey:2015a}.} and extrapolated to the center of the two bins
+where we computed the occurrence rate.
+At a period of 7~years and a radius of $0.2\,R_\mathrm{J}$, the extrapolated
+occurrence rate density is $0.73\pm0.28$ and at a radius of
+$0.6\,R_\mathrm{J}$, the extrapolated rate density is $0.15\pm0.05$.
+These extrapolated values are qualitatively consistent with the rates listed
+in Table~\ref{tab:occurrence} but we note that extrapolations and their
+statistical uncertainties should not be taken too seriously.
+
 
 \begin{floattable}
 \begin{deluxetable}{ccccccccc}
@@ -1401,7 +1443,8 @@ $1.5\unit{au}<a<9\unit{au};\,0.01\,M_\mathrm{J} \le M < 20\,M_\mathrm{J}$ &
 \masssemiocc & \masssemioccint \\
 \enddata
 
-\tablenotetext{a}{The rate density is measured in natural logarithmic units.}
+\tablenotetext{a}{The rate density is measured in natural logarithmic units;
+see \eq{massocc}.}
 \tablecomments{These values are computed assuming that the occurrence rate is
 flat in the logarithmic parameters.}
 \end{deluxetable}
@@ -1454,7 +1497,7 @@ In detail the confidence with which an exoplanet can be detected or measured
 in the final \gaia\ data depends on this precision, the number of crossings of
 the star through the \gaia\ focal plane, and details of how the projected
 orbit is sampled by the time history of the focal-plane crossings.
-However, it is not expected that \gaia\ can detect or measure precisely
+However, it is not expected that \gaia\ can detect or precisely measure
 exoplanet-induced astrometric wobbles that are much smaller in amplitude than
 the single-visit precision \citep{Perryman:2014}.
 
@@ -1468,23 +1511,23 @@ However, similar planets around closer stars \emph{will} be detectable with
 This means that there will be a comparable exoplanet occurrence rate
 measurement from the \gaia\ data.
 It also means that many of the discoveries of the \KT\ and \tess\ missions
-will be followed up and precisely measured by the \gaia\ Mission.
+could be followed up and precisely measured by the \gaia\ Mission.
 
 
-\section{Discussion}\sectlabel{discussion}
+\section{Summary}\sectlabel{summary}
 
 We have developed a fully automated method to search for the transits of
 long-period exoplanets with only one or two observable transits in the
 \kepler\ archival light curves.
 This method uses probabilistic model comparison to veto non-transit signals.
-Applying this method to the brightest \numtargets\ G/K-dwarfs in the \kepler\
+Applying this method to the brightest \numtargets\ G/K dwarfs in the \kepler\
 target list, we discover \numcands\ systems with likely astrophysical
 transits and eclipses.
 We fit the light curve for each candidate with a physical generative model and
 informative priors on eccentricity and stellar density to estimate the
 planet's orbital period.
-Simulations of the false positive population~--~the secondary eclipses of
-binary systems and background eclipsing binaries~--~suggest that 13 of these
+Simulations of the false positive population~--~lone primary or secondary eclipses of
+binary systems or background eclipsing binaries~--~suggest that 13 of these
 candidates have high probability of being planetary in nature.
 
 We measure the empirical detection efficiency function of our search procedure
@@ -1493,9 +1536,11 @@ measuring the recovery rate.
 By combining the measured detection efficiency and the catalog of exoplanet
 candidates, we estimate the integrated occurrence rate of exoplanets with
 orbital periods in the range $2-25\unit{years}$ and radii in the range
-$0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K-dwarf.
+$0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K dwarf.
 This result is qualitatively consistent with estimates from radial velocity,
 microlensing, and direct imaging surveys.
+
+\dfmtodo{More words here about comparison and interpretation.}
 
 These long-period exoplanet candidates are potentially interesting candidates
 for follow-up observations.
@@ -1515,6 +1560,12 @@ baselines will be plentiful in these forthcoming data sets and this method
 can, in principle, be trivially generalized to discover these planets,
 prioritize follow-up, and study their population.
 
+Follow-up observations would be fruitful in confirming the false-alarm
+rates that we have estimated by further demonstrating that these planet
+candidates are non-stellar.  Better characterization of the host stars with,
+say, parallax measurements using \gaia would help further refine the
+properties of their transiting planets.
+
 \vspace{1.5em}
 All of the code used in this project is available from
 \url{https://github.com/dfm/peerless} under the MIT open-source software
@@ -1526,16 +1577,26 @@ with git commit \texttt{\githash} (\gitdate).
 
 \acknowledgments
 It is a pleasure to thank
-So Hattori,
 Jeff Coughlin,
-Angie Wolfgang,
+So Hattori,
+Hans-Walter Rix,
+Dun Wang,
 and
-Hans-Walter Rix
+Angie Wolfgang
 for helpful contributions to the ideas and code presented here.
+
+TDM was supported by the National Aeronautics and Space
+Administration, under the \kepler\ participating
+scientist program (grant NNX14AE11G), and is grateful for the
+hospitality of both the Institute for Advanced Study and Carnegie
+Observatories that helped support this work.
 
 DWH was partially supported by the National Science Foundation (grant
 IIS-1124794), the National Aeronautics and Space Administration (grant
 NNX12AI50G), and the Moore--Sloan Data Science Environment at NYU.
+E.A. acknowledges support from NASA grants NNX13AF20G, NNX13AF62G, and NASA
+Astrobiology Institutes Virtual Planetary Laboratory, supported by NASA under
+cooperative agreement NNH05ZDA001C.
 
 This research made use of the NASA \project{Astrophysics Data System} and the
 NASA Exoplanet Archive.
@@ -1564,6 +1625,7 @@ University.
     \project{corner.py} \citep{Foreman-Mackey:2016},
     \project{emcee} \citep{Foreman-Mackey:2013},
     \project{george} \citep{Ambikasaran:2016},
+    \project{isochrones} \citep{Morton:2015},
 	\project{matplotlib} \citep{Hunter:2007},
 	\project{numpy} \citep{Van-Der-Walt:2011},
 	\project{scipy} \citep{Jones:2001}}.
@@ -1610,7 +1672,8 @@ m_2 + h_2\,\exp\left([t_0 - t] / w_2\right), & \mbox{if $t_0 \le t$}
 \end{array}\right.
 \end{eqnarray}
 where all of the parameters~--~including $t_0$~--~are included in the fit.
-To ensure that the widths $w_*$ remain positive, we fit for $\log w_*$.
+To ensure that the widths $w_1$ and $w_2$ remain positive, we fit for
+$\log w_1$ and $\log w_2$.
 }
 
 {\item
@@ -1705,7 +1768,7 @@ These gradients are given by
 \begin{eqnarray}\eqlabel{gpmeangrad}
 \frac{\dd\ln p(\bvec{y}\,|\,\meanpars,\,\kernpars)}{\dd \meanpars} &=&
 \frac{\dd m(\bvec{t};\,\meanpars)}{\dd\meanpars}^\T \, K(\kernpars)^{-1} \,
-    m(\bvec{t};\,\meanpars)
+    \bvec{r}(\meanpars)
 \end{eqnarray}
 and
 \begin{eqnarray}
@@ -1720,12 +1783,10 @@ where
 \bvec{\phi} &=& K(\kernpars)^{-1}\,\bvec{r}(\meanpars) \quad.
 \end{eqnarray}
 
-% To evaluate \eq{gpmeangrad}, we must also evaluate the derivative of the mean
-% model with respect to its parameters.
 
-
+\newpage
 \bibliography{peerless}
 
-\theendnotes
+% \theendnotes
 
 \end{document}

@@ -92,6 +92,12 @@ To collect the results of the search and injection tests, run:
 where ``{searchdir}`` and ``{injdir}`` are from above and ``{resultsdir}`` is
 the location where these should be saved.
 
+False positive simulations & analysis
++++++++++++++++++++++++++++++++++++
+
+Run the `predictions notebook <https://github.com/dfm/peerless/blob/master/prediction/prediction.ipynb>`_.  
+Dependencies are `exosyspop <github.com/timothydmorton/exosyspop>`_, which
+further depends on `isochrones <github.com/timothydmorton/exosyspop>`_ and `vespa <githubcom/timothydmorton/vespa>`_.
 
 License
 -------

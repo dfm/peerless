@@ -139,7 +139,7 @@ With modifications by David W. Hogg and Daniel Foreman-Mackey
 \newcommand{\rate}{{\ensuremath{\Gamma}}}
 
 \newcommand{\modelname}[1]{{\textsf{#1}}}
-\newcommand{\datareleaseurl}{url to be added at submission}
+\newcommand{\datareleaseurl}{\url{http://dx.doi.org/10.5281/zenodo.58273}}
 
 
 \shorttitle{The population of long-period transiting exoplanets}
@@ -626,7 +626,8 @@ as suggested by Alan Sokal:
 \url{http://www.stat.unc.edu/faculty/cji/Sokal.pdf}.} and discard the first
 third of the chain as burn-in.
 The posterior constraints on a few physical parameters for the single transit
-candidate in the light curve of KIC~8505215 are shown in \dfmfig{corner}.
+candidate in the light curve of KIC~8505215 are shown in \dfmfig{corner} and
+all the chains are made available online\footnote{\datareleaseurl}.
 
 \begin{figure}~\\
 \begin{center}
@@ -1591,6 +1592,8 @@ license.
 This code (plus some dependencies) can be run to re-generate all of the
 figures and results in this \paper; this version of the paper was generated
 with git commit \texttt{\githash} (\gitdate).
+The parameter estimation results are available for download as MCMC samplings
+on Zenodo at \datareleaseurl.
 
 
 \acknowledgments

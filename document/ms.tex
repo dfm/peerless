@@ -339,6 +339,9 @@ used to rigorously constrain the occurrence rate of long-period planets.
 In this \paper, we develop a systematic method for reliably discovering the
 transits of large, long-period companions in photometric time series
 \emph{without human intervention}.
+The method is similar in character to the recently published fully automated
+method used to generate the official DR24 exoplanet candidate catalog from
+\kepler\ \citep{Mullally:2016, Coughlin:2016}.
 Since the search methodology is fully automated, we can robustly measure the
 search completeness~--~using injection and recovery tests~--~and use these
 products to place probabilistic constraints on the occurrence rate of
@@ -430,15 +433,18 @@ the three highest signal-to-noise events in the following step.
 
 In this step of the method, the goal is to discard any signals that are not
 sufficiently ``transit-like'' in shape.
-To quantify this decision, we perform a model comparison between a physical
-transit model and a set of other parameterized models for systematics.
+This step is similar to the method independently developed and recently
+published by the \kepler\ team \citep{Mullally:2016}.
+To quantify the quality of a candidate, we perform a model comparison between
+a physical transit model and a set of other parameterized models for
+systematics.
 In order for a candidate to pass this vetting step, the transit model must be
 ``preferred'' to any other model as measured using the Bayesian Information
 Criterion (BIC).
-The BIC is not the optimal choice for this model comparison, but it is
-more computationally computationally tractable than the alternatives, such
-as computing thousands of precise marginalized
-likelihoods or expected utilities for each model.
+The BIC is not the optimal choice for this model comparison, but it is more
+computationally computationally tractable than the alternatives, such as
+computing thousands of precise marginalized likelihoods or expected utilities
+for each model.
 The BIC can be efficiently computed and it exhibits the desired
 behavior~--~decreasing with increasing likelihood but flexible models are
 penalized~--~and we find that it performs sufficiently well in practice.
@@ -1559,7 +1565,7 @@ $0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K dwarf.
 This result is qualitatively consistent with estimates from radial velocity,
 microlensing, and direct imaging surveys.
 
-\dfmtodo{More words here about comparison and interpretation.}
+% \dfmtodo{More words here about comparison and interpretation.}
 
 These long-period exoplanet candidates are potentially interesting candidates
 for follow-up observations.
@@ -1592,8 +1598,8 @@ license.
 This code (plus some dependencies) can be run to re-generate all of the
 figures and results in this \paper; this version of the paper was generated
 with git commit \texttt{\githash} (\gitdate).
-The parameter estimation results are available for download as MCMC samplings
-on Zenodo at \datareleaseurl.
+The parameter estimation results represented as MCMC samplings and the
+injection results are available for download from Zenodo at \datareleaseurl.
 
 
 \acknowledgments

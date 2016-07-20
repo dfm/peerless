@@ -206,11 +206,12 @@ the occurrence rate of exoplanets and planetary systems as a function of their
 physical properties.
 However, transit surveys like \kepler\ are most sensitive to planets with
 orbital periods shorter than a few years, which is shorter than the orbital periods of
-Jupiter and Saturn, which dominate the dynamics of our Solar System.  To address this deficiency,
-we performed a fully automated search for long-period exoplanets with only one
-or two transits in the archival \kepler\ light curves.
+Jupiter and Saturn, which dominate the dynamics of our Solar System.
+To address this deficiency, we perform a fully automated search for
+long-period exoplanets with only one or two transits in the archival \kepler\
+light curves.
 When applied to the $\sim 40,000$ brightest Sun-like target stars, this search
-produced \numcands\ long-period exoplanet candidates.
+produces \numcands\ long-period exoplanet candidates.
 Of these candidates, 6 are novel discoveries and 5 are in systems with inner
 short-period transiting planets.
 Since our method involves no human intervention, we empirically characterize
@@ -485,7 +486,7 @@ details of the technical methodology of GP fitting are described in
 \app{gp-regression}.
 
 \dfmfig{model-comp} shows representative events that fall into different
-classes and the corresponding maximum-likelihood model.
+classes and the corresponding maximum likelihood model.
 For each candidate event, the BIC of each of these models is computed and the
 event is only passed as a candidate if the \modelname{transit} model is
 preferred to all the other models.
@@ -493,7 +494,8 @@ The \modelname{box} model is the most restrictive comparison, vetoing about
 half of the candidate events in the \kepler\ light curves, followed by the
 \modelname{variability} model.
 To further restrict to non-grazing transits, we also reject events where the
-maximum impact parameter is greater than $1 - R_\mathrm{P} / R_\star$.
+maximum likelihood impact parameter is greater than $1 - R_\mathrm{P} /
+R_\star$.
 
 Since the search procedure described here was tuned to discover transit
 signals, we do not consider the distribution or potential astrophysical nature

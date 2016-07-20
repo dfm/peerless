@@ -22,7 +22,8 @@ from matplotlib import rcParams
 rcParams["figure.autolayout"] = False
 
 
-def collect_one(kicid, root=None, fig_output="document/figures"):
+def collect_one(kicid, root=None, fig_output="document/figures",
+                sample_output="results/chains"):
     np.random.seed(kicid)
 
     n = int((cands.kicid == kicid).sum())
@@ -89,12 +90,23 @@ def collect_one(kicid, root=None, fig_output="document/figures"):
         m = f["params"]["ncadence"][a:b:c] == 0
         chain = f["chain"][a:b:c]
         lnprob = f["lnprob"][a:b:c]
+        lnprior = f["lnprior"][a:b:c]
         params = f["params"][a:b:c]
 
     tau = [integrated_time(np.mean(chain[k], axis=1), c=1)
            for k in chain.dtype.names]
     nsamps = chain.shape[1] * len(chain)
     nind = nsamps / np.mean(tau)
+
+    sfn = os.path.join(sample_output, "{0}.h5".format(kicid))
+    os.makedirs(sample_output, exist_ok=True)
+    with h5py.File(sfn, "w") as f:
+        f.attrs["kicid"] = kicid
+        f.attrs["tau"] = np.array(tau)
+        f.create_dataset("chain", data=chain, compression="gzip")
+        f.create_dataset("lnprob", data=lnprob, compression="gzip")
+        f.create_dataset("lnprior", data=lnprior, compression="gzip")
+        f.create_dataset("params", data=params, compression="gzip")
 
     chain = chain[m]
     lnprob = lnprob[m]

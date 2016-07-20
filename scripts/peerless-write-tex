@@ -75,7 +75,7 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     \colhead{impact} &
     \colhead{$T_\mathrm{eq}$\\tablenotemark{*}} &
     \colhead{$\mathrm{Pr}_\mathrm{planet}$} &
-    \colhead{designation\\tablenotemark{$\dagger$}}
+    \colhead{KOI/Kepler\\tablenotemark{$\dagger$}}
     \\\\
     & \colhead{K} & \colhead{$R_\odot$} && \colhead{years} & \colhead{KBJD} &
     \colhead{$R_\mathrm{J}$} & \colhead{hours} && \colhead{K} &&

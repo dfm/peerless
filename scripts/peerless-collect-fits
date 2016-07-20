@@ -217,7 +217,8 @@ def collect_one(kicid, root=None, fig_output="document/figures",
         [np.log10(period_samps), np.log10(radius_samps), b, e]
     ).T
     fig = corner.corner(corner_samples[::113], smooth=1, smooth1d=1, labels=[
-        "$\log_{10}P/\mathrm{days}$", "$\log_{10}R/R_\mathrm{J}$", "$b$", "$e$"
+        "$\log_{10}P/\mathrm{years}$", "$\log_{10}R/R_\mathrm{J}$", "$b$",
+        "$e$"
     ])
     os.makedirs(os.path.join(fig_output, "params"), exist_ok=True)
     fig.savefig(os.path.join(fig_output, "params", "{0}.pdf".format(kicid)),

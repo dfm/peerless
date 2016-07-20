@@ -71,11 +71,13 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
     \colhead{Kp} &
     \colhead{period} & \colhead{$t_0$} &
     \colhead{radius} &
+    \colhead{duration} &
     \colhead{$T_\mathrm{eq}$\\tablenotemark{*}} &
     \colhead{$\mathrm{Pr}_\mathrm{planet}$} &
+    \colhead{\kepler\ name\\tablenotemark{\dagger}}
     \\\\
-    & \colhead{K} & \colhead{$R_\odot$} && \colhead{year} & \colhead{KBJD} &
-    \colhead{$R_\mathrm{J}$} & \colhead{K} &&
+    & \colhead{K} & \colhead{$R_\odot$} && \colhead{years} & \colhead{KBJD} &
+    \colhead{$R_\mathrm{J}$} & \colhead{hours} & \colhead{K} &&
 }
 \\rotate
 \startdata\n""")
@@ -85,18 +87,20 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
         comment = []
         if len(koi):
             koiname = int(koi.kepoi_name.iloc[0][1:-3])
-            name = "KOI {0}".format(koiname)
+            name = "{0}".format(koiname)
             if not koi.kepler_name.isnull().iloc[0]:
-                name += " / Kepler-{0}".format(
+                name += " / {0}".format(
                     int(koi.kepler_name.iloc[0][7:-2]))
+            else:
+                name += " / none"
             comment.append(name)
         elif row.kicid == 8800954:
-            comment = ["KOI 1274 / Kepler-421"]
+            comment = ["1274 / 421"]
         comment = "; ".join(comment)
 
         notes = []
         if row.n_transits > 1:
-            notes.append("\dagger")
+            notes.append("c")
         w = wang[wang.kicid == row.kicid]
         if len(w):
             notes.append("a")
@@ -115,7 +119,7 @@ with open(os.path.join(args.tex_output, "paramtab.tex"), "w") as f:
             row.radius_stlr, row.radius_err2, row.radius_err1))
         cols.append("${0:.1f}$".format(row.kepmag))
 
-        for v in ["period", "t0", "radius", "teq"]:
+        for v in ["period", "t0", "radius", "duration", "teq"]:
             u = np.array(row[[v+"_uncert_minus", v+"_uncert_plus"]],
                          dtype=float)
             nd = int(-min(0, np.floor(np.min(np.log10(u)) - 1)))

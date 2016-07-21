@@ -9,7 +9,7 @@ import matplotlib.pyplot as pl
 from peerless.catalogs import TargetCatalog, KOICatalog
 
 targets = TargetCatalog().df
-kois = pd.merge(KOICatalog().df, targets, how="inner")
+kois = pd.merge(KOICatalog().df, targets, how="inner", on="kepid")
 print(kois)
 assert 0
 

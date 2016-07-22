@@ -48,8 +48,7 @@ def error(params, ln_radius, ln_period, flag):
     pred = m > 0.5
     return np.sum(pred != flag)
 
-
-x, y = np.log(np.array(inj.radius)), np.log(np.array(inj.period))
+x, y = np.log(np.array(inj.radius)/0.0995), np.log(np.array(inj.period)/365.25)
 flag = np.array(inj.accept, dtype=int)
 params = np.array([0.0, 1.0, 0.0, 0.6, 0.0, 10.0, 0.0, -3.0])
 r = minimize(nll, params, jac=grad(nll), args=(x, y, flag))

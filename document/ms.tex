@@ -1022,14 +1022,14 @@ function
 \begin{eqnarray}
 Q_\mathrm{det}(P,\,R) &\approx&
     \frac{\mathrm{min}[\mathrm{max}[a(P)\,b(R),\,0],\,1]}
-         {1+\exp\left[-k(P)\,(\ln R-x(P))\right]}
+         {1+\exp\left[-k(P)\,(\ln R / R_\mathrm{J}-x(P))\right]}
 \end{eqnarray}
 where
 \begin{eqnarray}
-a(P) = a_1\,\ln P + a_2 \,,\quad
-b(R) = b_1\,\ln R + b_2 \,,\quad \\
-k(P) = k_1\,\ln P + k_2 \,,\,\mathrm{and}\quad
-x(P) = x_1\,\ln P + x_2 \,.
+a(P) = a_1\,\ln P / \unit{yr} + a_2 \,,\quad
+b(R) = b_1\,\ln R / R_\mathrm{J} + b_2 \,,\quad \\
+k(P) = k_1\,\ln P / \unit{yr} + k_2 \,,\,\mathrm{and}\quad
+x(P) = x_1\,\ln P / \unit{yr} + x_2 \,.
 \end{eqnarray}
 When fit to the set of \numinjs\ injected transits, the best fit parameters
 are given in Table~\ref{tab:completeness} and the approximation is plotted

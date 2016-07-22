@@ -832,11 +832,11 @@ of each candidate system and follow-up data.
 Any result would be physically interesting but a rigorous analysis that is
 beyond the scope of this \paper\ would be required to make a conclusive claim.
 
-The difference between the observed radius distributions apparent in Figure \ref{obs-dist}
-can be attributed to the drop off in sensitivity of our search at small planet
-radius depicted in Figure \ref{completeness}.  The \kepler\ survey, on the other 
-hand, has increasing sensitivity to smaller planets due to the addition of multiple 
-transits at shorter period.
+The difference between the observed radius distributions apparent in
+\dfmfig{obs-dist} can be attributed to the drop off in sensitivity of our
+search at small planet radius depicted in \dfmfig{completeness}.
+The \kepler\ survey, on the other hand, has increasing sensitivity to smaller
+planets due to the addition of multiple transits at shorter period.
 
 \begin{floattable}
 \begin{deluxetable}{cccccccccccl}
@@ -910,7 +910,6 @@ with periods longer than 200~days and radii in the range $1-10\,R_\oplus$
 \end{figure*}
 
 
-\newpage
 \section{Empirical search completeness}\sectlabel{completeness}
 
 To measure the completeness of search procedure described in \sect{search}, we
@@ -1024,14 +1023,14 @@ function
 \begin{eqnarray}
 Q_\mathrm{det}(P,\,R) &\approx&
     \frac{\mathrm{min}[\mathrm{max}[a(P)\,b(R),\,0],\,1]}
-         {1+\exp\left[-k(P)\,(\ln R-x(P))\right]}
+         {1+\exp\left[-k(P)\,(\ln R / R_\mathrm{J}-x(P))\right]}
 \end{eqnarray}
 where
 \begin{eqnarray}
-a(P) = a_1\,\ln P + a_2 \,,\quad
-b(R) = b_1\,\ln R + b_2 \,,\quad \\
-k(P) = k_1\,\ln P + k_2 \,,\,\mathrm{and}\quad
-x(P) = x_1\,\ln P + x_2 \,.
+a(P) = a_1\,\ln P / \unit{yr} + a_2 \,,\quad
+b(R) = b_1\,\ln R / R_\mathrm{J} + b_2 \,,\quad \\
+k(P) = k_1\,\ln P / \unit{yr} + k_2 \,,\,\mathrm{and}\quad
+x(P) = x_1\,\ln P / \unit{yr} + x_2 \,.
 \end{eqnarray}
 When fit to the set of \numinjs\ injected transits, the best fit parameters
 are given in Table~\ref{tab:completeness} and the approximation is plotted
@@ -1875,7 +1874,7 @@ where
 \bvec{\phi} &=& K(\kernpars)^{-1}\,\bvec{r}(\meanpars) \quad.
 \end{eqnarray}
 
-\newpage
+% \newpage
 \bibliography{peerless}
 
 \end{document}

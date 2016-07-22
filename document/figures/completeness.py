@@ -48,10 +48,9 @@ def error(params, ln_radius, ln_period, flag):
     pred = m > 0.5
     return np.sum(pred != flag)
 
-
-x, y = np.log(np.array(inj.radius)), np.log(np.array(inj.period))
+x, y = np.log(np.array(inj.radius)/0.0995), np.log(np.array(inj.period)/365.25)
 flag = np.array(inj.accept, dtype=int)
-params = np.array([0.0, 1.0, 0.0, 0.6, 0.0, 10.0, 0.0, -3.0])
+params = np.array([0.0, 0.5, 0.0, 0.5, 0.0, 50.0, 0.0, -1.0])
 r = minimize(nll, params, jac=grad(nll), args=(x, y, flag))
 with open("../completenessfit.tex", "w") as f:
     f.write(r"""\newcommand{{\parama}}{{{0[0]:.2f}}}
@@ -72,7 +71,7 @@ fig, ax = pl.subplots(1, 1, figsize=s)
 ln_radius_bins = np.linspace(np.log(0.15), np.log(2.2), 100)
 ln_period_bins = np.linspace(np.log(2), np.log(25), 101)
 Y, X = np.meshgrid(ln_period_bins, ln_radius_bins, indexing="ij")
-Z = analytic_model(r.x, X + np.log(0.0995), Y + np.log(365.25))
+Z = analytic_model(r.x, X, Y)
 c = ax.pcolor(np.exp(ln_period_bins), np.exp(ln_radius_bins), Z.T,
               cmap="Blues", vmin=0, vmax=1)
 cbar = fig.colorbar(c)

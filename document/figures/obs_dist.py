@@ -32,7 +32,6 @@ def make_plot(ax, x1, x2, rng, nbins, ticks):
     ax.hist(x2, bins, histtype="step", color=COLORS["MODEL_1"], lw=2,
             hatch="/")
     ax.set_ylim(0, np.max(n) + 0.5)
-
     ax.set_xscale("log")
     ax.set_xticks(ticks)
     ax.get_xaxis().set_major_formatter(pl.ScalarFormatter())

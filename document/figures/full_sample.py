@@ -2,16 +2,24 @@
 
 from peerless.plot_setup import COLORS
 
+import os
+import sys
+import h5py
 import matplotlib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as pl
 
-from peerless.catalogs import KOICatalog
+from peerless.catalogs import KOICatalog, TargetCatalog
+
+np.random.seed(42)
+fits_path = sys.argv[1]
 
 fig, ax = pl.subplots(1, 1, figsize=(6, 4))
 
-kois = KOICatalog().df
+targets = TargetCatalog().df
+# kois = KOICatalog().df
+kois = pd.merge(KOICatalog().df, targets, how="inner", on="kepid")
 m = kois.koi_disposition == "CONFIRMED"
 x, y = kois[m].koi_period, kois[m].koi_prad
 
@@ -65,3 +73,18 @@ y = np.array(fits.radius) * rf
 ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt=".g", capsize=0)
 
 fig.savefig("full_sample_plus_cands.pdf", bbox_inches="tight")
+fig.savefig("full_sample_plus_cands.png", bbox_inches="tight")
+
+for kicid in np.array(fits.kicid):
+    fn = os.path.join(fits_path, "{0}.h5".format(kicid))
+    with h5py.File(fn, "r") as f:
+        nsamp, nwalk = f["chain"].shape
+        s_inds = np.random.randint(nsamp, size=500)
+        w_inds = np.random.randint(nwalk, size=500)
+        periods = f["params"]["period"][s_inds, w_inds]
+        radii = np.exp(f["chain"]["bodies[0]:ln_radius"][s_inds, w_inds])
+        radii /= 0.009171
+    ax.plot(periods, radii, ".g", alpha=0.1, ms=3, rasterized=True, mec="none")
+
+fig.savefig("full_sample_plus_cands_samps.pdf", bbox_inches="tight", dpi=300)
+fig.savefig("full_sample_plus_cands_samps.png", bbox_inches="tight", dpi=300)

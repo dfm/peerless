@@ -281,7 +281,7 @@ A study of the population of long-period transiting planets complements other
 planet detection techniques, such as radial velocity \citep[for
 example][]{Cumming:2008, Knutson:2014, Bryan:2016}, microlensing \citep[for
 example][]{Gould:2010, Cassan:2012, Clanton:2014, Shvartzvald:2016}, and
-direct imaging \citep[for example][]{Bowler:2016} surveys.
+direct imaging \citep[for example][]{Bowler:2016}.
 The marriage of the radial velocity and transit techniques is particularly
 powerful as exoplanets with both mass and radius measurements can be used to
 study planetary compositions and the formation of planetary systems \citep[for
@@ -296,7 +296,7 @@ radial velocity surveys.
 There are two main technical barriers to a systematic search for single
 transit events.
 The first is that the transit probability for long-period planets is very low;
-scaling as $\propto P^{-5/3}$ for orbital periods longer than the
+scaling as $\propto P^{-5/3}$ for orbital periods $P$ longer than the
 baseline of contiguous observations.
 Therefore, even if long-period planets are intrinsically common, they will
 be underrepresented in a transiting sample.
@@ -402,8 +402,8 @@ In detail, at each proposal time $t_0$, we hypothesize a box-shaped transit
 with duration $\tau$
 \begin{eqnarray}
 m(t) &=& \left\{\begin{array}{ll}
-    \mu, & \mbox{\,if $|t - t_0| < \tau/2$} \\
-    \mu - \delta, & \mbox{\,otherwise}
+    \mu - \delta, & \mbox{\,if $|t - t_0| < \tau/2$} \\
+    \mu, & \mbox{\,otherwise}
 \end{array}\right. \quad.
 \end{eqnarray}
 Assuming that the uncertainties on the observed fluxes $f(t)$ are Gaussian
@@ -443,9 +443,8 @@ In order for a candidate to pass this vetting step, the transit model must be
 ``preferred'' to any other model as measured using the Bayesian Information
 Criterion (BIC).
 The BIC is not the optimal choice for this model comparison, but it is more
-computationally computationally tractable than the alternatives, such as
-computing thousands of precise marginalized likelihoods or expected utilities
-for each model.
+computationally tractable than the alternatives, such as computing thousands
+of precise marginalized likelihoods or expected utilities for each model.
 The BIC can be efficiently computed and it exhibits the desired
 behavior~--~decreasing with increasing likelihood but flexible models are
 penalized~--~and we find that it performs sufficiently well in practice.
@@ -502,9 +501,8 @@ signals, we do not consider the distribution or potential astrophysical nature
 of any models besides the \modelname{transit} model.
 In the future, it would be interesting to relax this goal and investigate the
 other model classes; in particular, the \modelname{box} model is
-sensitive to astrophysical phenomena, notably occultations of white dwarfs,
-which produce a perfect box-shaped signal.  In a cursory investigation
-it is clear that the majority of signals labeled
+sensitive to astrophysical phenomena, notably occultations of white dwarfs.
+In a cursory investigation it is clear that the majority of signals labeled
 \modelname{box} in our analysis are noise; however, a subset are likely to be
 astrophysical in nature.
 
@@ -797,12 +795,12 @@ We do not consider these events further in the following analysis but
 Table~\ref{tab:rejects} lists these events and their properties for posterity.
 
 The candidate in the light curve of KIC~4754460 is an individual transit
-candidate but another deeper eclipse can be found at a KBJD of 1587.13; right
-at the beginning of Quarter 17.
+candidate but another deeper eclipse can be found at a \kepler\ Barycentric
+Julian Date (KBJD) of 1587.13; right at the beginning of Quarter 17.
 This eclipse was missed by the automated search because only the second half
 of the eclipse is observed.
 The most likely explanation of this system is that the listed candidate is the
-secondary eclipse of a binary system but we will keep the candidate is the
+secondary eclipse of a binary system but we will keep the candidate in the
 list and treat this effect statistically in \sect{false-positives}.
 
 In \dfmfig{obs-dist}, we compare the \emph{observed} period and radius
@@ -1119,8 +1117,9 @@ faint background star).
 We revisit this assumption and discuss its validity in the following section.
 As a further simplification, we also neglect the measurement uncertainties on
 the planet parameters (including orbital period).
-This assumption is only justified because we are only making high-level
-measurements of the mean occurrence rate in bins larger than the uncertainties.
+This assumption is justified because we are only making high-level
+measurements of the mean occurrence rate in bins larger than the
+uncertainties.
 
 Assuming a Poisson likelihood, the occurrence rate density in a volume
 $V$~--~defined as $P_\mathrm{min} \le P < P_\mathrm{max}$ and
@@ -1494,8 +1493,8 @@ statistical uncertainties should not be taken too seriously.
 \begin{floattable}
 \begin{deluxetable}{ccccccccc}
 \tabletypesize{\scriptsize}
-\caption{The predicted masses and radial velocity signals for the candidates
-from Table~\ref{tab:catalog} \label{tab:masses}}
+\caption{The predicted masses and radial velocity semi-amplitudes for the
+candidates from Table~\ref{tab:catalog} \label{tab:masses}}
 \include{masstab}
 \tablecomments{The masses and radial velocity amplitudes are estimated based
 on the measured radius using a probabilistic mass--radius relation
@@ -1555,7 +1554,7 @@ This allows observations to be scheduled without a well constrained orbital
 period.
 Furthermore, follow-up of any of these candidates using radial velocity or
 astrometry would provide a measurement of the density of a planet that would
-be invaluable for the study of planetary compositions.
+be valuable for the study of planetary compositions.
 
 Table~\ref{tab:masses} lists the posterior predictions for the semi-amplitude
 $K$ of the radial velocity signal produced by each candidate using the mass
@@ -1569,7 +1568,7 @@ cases, the radial velocity trends are small.
 Some candidates should, however, be within the reach of current
 state-of-the-art facilities.
 
-In priniciple the \gaia\ Mission will be very sensitive to the astrometric
+In principle the \gaia\ Mission will be very sensitive to the astrometric
 wobble produced by a long-period exoplanet \citep{Perryman:2014}.
 To leading order, the astrometric signal strength is proportional to the
 semi-major axis of the stellar (primary) reflex motion in angular units.
@@ -1577,7 +1576,6 @@ That is, detectability is related to the angle $\alpha$ given by
 \begin{eqnarray}
 \alpha &=& \frac{a}{D}\,\frac{M_{\mathrm p}}{M_{\mathrm s}} \quad ,
 \end{eqnarray}
-% obviously fix to your notation!
 where $a$ is the semi-major axis, $D$ is the distance from the observer to the
 primary, and $M_{\mathrm{p}}/M_{\mathrm{s}}$ is the planet-to-star mass ratio.
 
@@ -1585,7 +1583,7 @@ The single-visit precision of \gaia\ will vary with magnitude but is expected
 to be on the order of 40\,$\mu$as at these magnitudes.
 In detail the confidence with which an exoplanet can be detected or measured
 in the final \gaia\ data depends on this precision, the number of crossings of
-the star through the \gaia\ focal plane, and details of how the projected
+the star through the \gaia\ field-of-view, and details of how the projected
 orbit is sampled by the time history of the focal-plane crossings.
 However, it is not expected that \gaia\ can detect or precisely measure
 exoplanet-induced astrometric wobbles that are much smaller in amplitude than

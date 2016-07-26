@@ -602,8 +602,8 @@ catalog (black).
 For each transit candidate, we constrain the physical parameters of the system
 by fitting a section of light curve around each transit using an exposure-time
 integrated  Keplerian orbit with a quadratic limb darkening law for the
-central body\footnote{Implemented at \url{https://github.com/dfm/transit};
-this \paper\ uses git commit \textsf{482d99b} of that repository.}.
+central body\footnote{\url{https://github.com/dfm/transit}; in this work, we
+use git commit \textsf{482d99b}.}.
 It has previously been established that the orbital period of a transiting
 planet with only one transit can still be constrained given a measurement of
 the stellar density and an assumption about the orbital eccentricity \cite[for
@@ -787,13 +787,6 @@ the plane of any inner planets but a more detailed analysis would be needed to
 make a quantitative statement \citep[see, for example,][]{Tremaine:2012,
 Fang:2012, Ballard:2016, Moriarty:2015}.
 
-Five candidate transit events in the light curves of four targets were
-rejected because of a significant centroid shift or a large impact parameter.
-These events are probably astrophysical eclipses from binary star systems that
-were not found by previous studies of long-period eclipsing binary systems.
-We do not consider these events further in the following analysis but
-Table~\ref{tab:rejects} lists these events and their properties for posterity.
-
 The candidate in the light curve of KIC~4754460 is an individual transit
 candidate but another deeper eclipse can be found at a \kepler\ Barycentric
 Julian Date (KBJD) of 1587.13; right at the beginning of Quarter 17.
@@ -802,6 +795,13 @@ of the eclipse is observed.
 The most likely explanation of this system is that the listed candidate is the
 secondary eclipse of a binary system but we will keep the candidate in the
 list and treat this effect statistically in \sect{false-positives}.
+
+Five candidate transit events in the light curves of four targets were
+rejected because of a significant centroid shift or a large impact parameter.
+These events are probably astrophysical eclipses from binary star systems that
+were not found by previous studies of long-period eclipsing binary systems.
+We do not consider these events further in the following analysis but
+Table~\ref{tab:rejects} lists these events and their properties for posterity.
 
 \begin{floattable}
 \begin{deluxetable}{cccccccccccl}
@@ -845,10 +845,11 @@ The catalog of long-period transiting exoplanet candidates (green points with
 error bars) compared to the \kepler\ candidates (blue points) and confirmed
 planets \citep[black points;][]{Morton:2016} found in our target sample, and
 the Solar System (orange squares).
-The vertical dashed line indicates the full lifetime of the \kepler\ Mission;
-planets with orbital periods longer than this will show at most one transit.
+The thin black error bars to the left of each candidate indicate the minimum
+period allowed for each candidate by the prior assumption that no other
+transit occurred during the baseline of \kepler\ observations of the target.
 The vertical solid line shows the absolute maximum period accessible to
-transit searches that require at least three transits.
+transit searches that require at least three transits in the \kepler\ data.
 \dfmfiglabel{full-sample}}~\\
 \end{figure*}
 
@@ -1194,7 +1195,7 @@ may contain such false positives, we simulate populations of detected signals
 to predict how many we should expect.  To accomplish this, we use the Python
 package
 \exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}; in this
-work we use commit \textsf{e4f54288}}, which
+work, we use git commit \textsf{e4f54288}.}, which
 we developed for this purpose and utilizes the \project{isochrones}
 package \citep{Morton:2015} for simulations of stellar populations.
 
@@ -1568,9 +1569,12 @@ transits and eclipses.
 We fit the light curve for each candidate with a physical generative model and
 informative priors on eccentricity and stellar density to estimate the
 planet's orbital period.
-Simulations of the false positive population~--~lone primary or secondary eclipses of
-binary systems or background eclipsing binaries~--~suggest that 13 of these
-candidates have high probability of being planetary in nature.
+The constraint on the period is also informed by the simplifying assumption
+that no other transit could occur during the baseline of \kepler\ observations
+of the target.
+Simulations of the false positive population~--~lone primary or secondary
+eclipses of binary systems or background eclipsing binaries~--~suggest that 13
+of these candidates have high probability of being planetary in nature.
 
 We measure the empirical detection efficiency function of our search procedure
 by injecting simulated transit signals into the target light curves and
@@ -1582,10 +1586,6 @@ $0.1-1\,R_\mathrm{J}$ to be \intocc\ planets per G/K dwarf.
 This result is qualitatively consistent with estimates from radial velocity,
 microlensing, and direct imaging surveys.
 
-% \dfmtodo{More words here about comparison and interpretation.}
-
-These long-period exoplanet candidates are potentially interesting candidates
-for follow-up observations.
 Using a probabilistic mass--radius relationship, we predict the masses of our
 candidates and report predictions for the radial velocity amplitudes.
 Unfortunately, since the target stars are faint and the amplitudes are small,
@@ -1594,6 +1594,18 @@ state-of-the-art high-precision instruments.
 We also discuss the potential for astrometric follow-up using the forthcoming
 data from the \gaia\ Mission with similarly discouraging results.
 
+Any detailed analysis of individual systems detected with only a single
+transit requires follow-up observations to convincingly rule out false
+positive scenarios and to better characterize the stellar host parameters
+(with, for example, parallax measurements from \gaia).
+The conclusions of this work~--~and all other occurrence rate results based on
+\kepler\ data~--~are conditioned on the assumption that the stellar
+characterization of the target sample is systematic and un-biased.
+The main population-level results should be fairly insensitive systematic
+issues with the sample but a rigorous analysis of these effects will be
+required to come to more detailed conclusions about this population of
+long-period transiting planets.
+
 Our method of transit discovery is especially relevant for future photometric
 surveys like \KT, \tess, and \plato\ where the survey baseline is shorter than
 \kepler.
@@ -1601,12 +1613,6 @@ The transits of planets with orbital periods longer than the observation
 baselines will be plentiful in these forthcoming data sets and this method
 can, in principle, be trivially generalized to discover these planets,
 prioritize follow-up, and study their population.
-
-Follow-up observations would be fruitful in confirming the false-alarm
-rates that we have estimated by further demonstrating that these planet
-candidates are non-stellar.  Better characterization of the host stars with,
-say, parallax measurements using \gaia would help further refine the
-properties of their transiting planets.
 
 \vspace{1.5em}
 All of the code used in this project is available from
@@ -1619,10 +1625,12 @@ The parameter estimation results represented as MCMC samplings and the
 injection results are available for download from Zenodo at \datareleaseurl.
 
 
-\acknowledgments
+% \acknowledgments
+\vspace{1.5em}
 It is a pleasure to thank
 Jeff Coughlin,
 So Hattori,
+Heather Knutson,
 Hans-Walter Rix,
 Dun Wang,
 and
@@ -1673,6 +1681,7 @@ University.
 	\project{numpy} \citep{Van-Der-Walt:2011},
 	\project{scipy} \citep{Jones:2001}}.
 
+\newpage
 \appendix
 
 \section{Details of the light curve models}\sectlabel{model-details}

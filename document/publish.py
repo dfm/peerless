@@ -4,7 +4,6 @@
 from __future__ import division, print_function
 import os
 import re
-import glob
 import shutil
 from datetime import date
 from subprocess import check_call

@@ -79,7 +79,7 @@ yerr = np.array(fits[["radius_uncert_minus", "radius_uncert_plus"]]).T * rf
 x = np.array(fits.period) * pf
 y = np.array(fits.radius) * rf
 ax.errorbar(x, y, xerr=xerr_2, fmt=",k", capsize=2, lw=0.5, zorder=-100)
-ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt=".g", capsize=0, lw=1.0)
+ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt=".g", capsize=1.5, lw=1.0)
 
 fig.savefig("full_sample_plus_cands.pdf", bbox_inches="tight")
 fig.savefig("full_sample_plus_cands.png", bbox_inches="tight", dpi=300)

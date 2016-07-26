@@ -14,18 +14,14 @@ G = 2945.4625385377644
 parser = argparse.ArgumentParser(
     description="predict the masses of the injections and candidates"
 )
-parser.add_argument("fits", help="the csv of fit results")
 parser.add_argument("injections", help="the hdf5 file of injections")
 parser.add_argument("-r", "--relation", choices=["chen", "wolfgang"],
                     default="chen", help="which MR relation")
 args = parser.parse_args()
 
-fits = pd.read_csv(args.fits)
 inj = pd.read_hdf(args.injections, "injections")
 targets = TargetCatalog().df
 
-fits = pd.merge(fits, targets, left_on="kicid", right_on="kepid",
-                suffixes=["", "_stlr"])
 inj = pd.merge(inj, targets[["kepid", "mass"]],
                suffixes=["", "_stlr"])
 inj["stlr_mass"] = inj["mass"]

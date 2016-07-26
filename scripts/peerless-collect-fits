@@ -287,7 +287,8 @@ args = parser.parse_args()
 cands = pd.read_csv(args.candidates)
 
 function = partial(collect_one, root=args.fits_root,
-                   fig_output=os.path.join(args.tex_output, args.fig_output))
+                   fig_output=os.path.join(args.tex_output, args.fig_output),
+                   sample_output=args.output)
 
 if args.kicids:
     kicids = args.kicids

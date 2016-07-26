@@ -803,39 +803,6 @@ The most likely explanation of this system is that the listed candidate is the
 secondary eclipse of a binary system but we will keep the candidate in the
 list and treat this effect statistically in \sect{false-positives}.
 
-In \dfmfig{obs-dist}, we compare the \emph{observed} period and radius
-distributions of our discoveries to the longest-period planet candidates
-discovered transiting stars in our target list by the official \kepler\
-transit search \citep{Coughlin:2016}.
-These histograms do not take uncertainties or detection efficiency into
-account so any conclusions based on these plots should be taken with caution.
-That being said, the apparent deficit of planets in the period range between
-600 and 1000~days cannot be explained by selection effects~--~in fact, the
-decreasing geometric transit probability and decreased orbital phase coverage at
-longer periods exacerbates the signal~--~and should be
-investigated more thoroughly.  The decline at longer periods can be attributed
-to the declining transit detection probability.
-We postulate three scenarios and expect that the observed effect is the result
-of some combination of the three:
-\begin{itemize}
-{\item the periods of some candidates are overestimated and the missing second
-transit occurs in a data gap,}
-{\item overestimated stellar densities leading to an overestimate of the
-orbital periods and an underestimate of the radii, or}
-{\item a physical rise in the frequency of giant planets at long orbital
-periods.}
-\end{itemize}
-The first two scenarios could be confirmed or ruled out by detailed analysis
-of each candidate system and follow-up data.
-Any result would be physically interesting but a rigorous analysis that is
-beyond the scope of this \paper\ would be required to make a conclusive claim.
-
-The difference between the observed radius distributions apparent in
-\dfmfig{obs-dist} can be attributed to the drop off in sensitivity of our
-search at small planet radius depicted in \dfmfig{completeness}.
-The \kepler\ survey, on the other hand, has increasing sensitivity to smaller
-planets due to the addition of multiple transits at shorter period.
-
 \begin{floattable}
 \begin{deluxetable}{cccccccccccl}
 \tabletypesize{\scriptsize}
@@ -876,8 +843,8 @@ bottom-right.
 \caption{%
 The catalog of long-period transiting exoplanet candidates (green points with
 error bars) compared to the \kepler\ candidates (blue points) and confirmed
-planets \citep[black points;][]{Morton:2016}, and the Solar System (orange
-squares).
+planets \citep[black points;][]{Morton:2016} found in our target sample, and
+the Solar System (orange squares).
 The vertical dashed line indicates the full lifetime of the \kepler\ Mission;
 planets with orbital periods longer than this will show at most one transit.
 The vertical solid line shows the absolute maximum period accessible to
@@ -893,19 +860,6 @@ transit searches that require at least three transits.
 \include{rejecttab}
 \end{deluxetable}
 \end{floattable}
-
-\begin{figure*}~\\
-\begin{center}
-\includegraphics[width=\textwidth]{figures/obs_dist.pdf}
-\end{center}
-\caption{%
-A comparison between the observed orbital period and planet radius
-distributions of the long-period planet candidates reported here (blue hatched
-histogram) and the previously known planet candidates \citep{Coughlin:2016}
-with periods longer than 200~days and radii in the range $1-10\,R_\oplus$
-(orange histogram).
-\dfmfiglabel{obs-dist}}~\\
-\end{figure*}
 
 
 \section{Empirical search completeness}\sectlabel{completeness}

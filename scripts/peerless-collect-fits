@@ -228,6 +228,7 @@ def collect_one(kicid, root=None, fig_output="document/figures",
     return OrderedDict([
         ("kicid", kicid),
         ("n_transits", n),
+        ("min_period", model.min_period / 365.25),
         ("period", period[1]),
         ("period_uncert_plus", period[2]-period[1]),
         ("period_uncert_minus", period[1]-period[0]),

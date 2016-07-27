@@ -1141,7 +1141,7 @@ occurrence rate estimate.   Second, we assume that each planet candidate transit
 the star that is characterized by \citet{Huber:2014}; we assert that each planet
 does not transit a fainter companion star or a background star.  If the planet
 does transit a companion star, then the companion star must be fainter, and hence
-denser, causing the period estimate to be underestimated.  If the planet transits
+denser, causing the period to be underestimated.  If the planet transits
 a background star, it is more likely to be a giant star due to Malmquist bias,
 hence the density of the star and period of the planet would be overestimated.
 Either of these scenarios has a small
@@ -1198,8 +1198,9 @@ to predict how many we should expect.  To accomplish this, we use the Python
 package
 \exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}; in this
 work, we use git commit \textsf{e4f54288}.}, which
-we developed for this purpose and utilizes the \project{isochrones}
-package \citep{Morton:2015} for simulations of stellar populations.
+we developed for this purpose and utilizes the \project{isochrones}, \project{vespa},
+and \project{batman} packages \citep{Morton:2015, Morton:2015b, Kreidberg:2015}
+ for simulations of stellar populations and their eclipses.
 
 With \exosyspop\, one can define the parameters of a population model and
 generate synthetic catalogs according to the model (and the parameters of a
@@ -1409,7 +1410,7 @@ This difference is consistent with previous results that cooler stars host
 fewer long-period giant planets \citep[for example][]{Cumming:2008}.
 
 Recently, \citet{Bryan:2016} studied the frequency of long-period giant
-planets in systems with inner hot-Jupiters based on long-baseline radial
+planets in systems with inner hot Jupiters based on long-baseline radial
 velocity monitoring of these systems \citep{Knutson:2014}.
 In this sample, the computed occurrence rate of long-period giant planets was
 found to be
@@ -1418,8 +1419,10 @@ found to be
 \end{eqnarray}
 in the range $1-20\,M_\mathrm{J}$ and $5-20\unit{au}$.
 This result is about a factor of two larger than our estimate
-(\eqalt{massocc}) once again suggesting that cold-Jupiters might
-preferentially occur in systems with inner planets.
+(\eqalt{massocc}) once again suggesting that cold Jupiters might
+preferentially occur in systems with inner planets---or that the 
+presence of cold Jupiters encourages the formation of hot Jupiters. 
+
 
 A recent review of the occurrence rate estimates based on direct imaging
 surveys \citep{Bowler:2016} reports the upper limit on the occurrence rate of
@@ -1675,6 +1678,7 @@ University.
 
 \facility{Kepler}
 \software{%
+    \project{batman} \citep{Kreidberg:2015},
     \project{ceres} \citep{Agarwal:2016},
     \project{corner.py} \citep{Foreman-Mackey:2016},
     \project{emcee} \citep{Foreman-Mackey:2013},
@@ -1682,7 +1686,8 @@ University.
     \project{isochrones} \citep{Morton:2015},
 	\project{matplotlib} \citep{Hunter:2007},
 	\project{numpy} \citep{Van-Der-Walt:2011},
-	\project{scipy} \citep{Jones:2001}}.
+	\project{scipy} \citep{Jones:2001},
+  \project{vespa} \citep{Morton:2015b}}.
 
 \newpage
 \appendix

@@ -217,8 +217,8 @@ short-period transiting planets.
 Since our method involves no human intervention, we empirically characterize
 the detection efficiency of our search.
 Based on these results, we measure the average occurrence rate of exoplanets
-smaller than Jupiter with orbital periods longer than two years to be $1.80\pm
-0.65$ planets per Sun-like star.
+smaller than Jupiter with orbital periods longer than two years to be
+$2.0\pm0.7$ planets per Sun-like star.
 
 \end{abstract}
 
@@ -950,7 +950,10 @@ All of these parameters are included in \params.
 Approximating the window function using a binomial probability of observing
 at least one transit, we find \citep[following][]{Burke:2014a}
 \begin{eqnarray}
-Q_{\mathrm{win},k} (\params) &=& 1 - (1 - f_{\mathrm{duty},k})^{T_k/P}
+Q_{\mathrm{win},k} (\params) &=& \left\{\begin{array}{ll}
+1 - (1 - f_{\mathrm{duty},k})^{T_k/P} & \quad\mbox{if $P \le T_k$} \\
+T_k\,f_{\mathrm{duty},k} / P & \quad\mbox{otherwise}
+\end{array}\right.
 \end{eqnarray}
 where $f_{\mathrm{duty},k}$ is the duty cycle and $T_k$ is the full
 observation baseline for target $k$.

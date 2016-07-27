@@ -9,7 +9,7 @@ import matplotlib.pyplot as pl
 
 from peerless.plot_setup import SQUARE_FIGSIZE
 
-f_duty = 0.6
+f_duty = 0.7
 T_k = 700.0
 
 P = np.linspace(100.0, 5000.0, 5000)

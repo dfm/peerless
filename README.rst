@@ -141,9 +141,9 @@ False positive simulations & analysis
 
 Run the `predictions notebook
 <https://github.com/dfm/peerless/blob/master/prediction/prediction.ipynb>`_.
-Dependencies are `exosyspop <github.com/timothydmorton/exosyspop>`_, which
-further depends on `isochrones <github.com/timothydmorton/exosyspop>`_ and
-`vespa <githubcom/timothydmorton/vespa>`_.
+Dependencies are `exosyspop <https://github.com/timothydmorton/exosyspop>`_, which
+further depends on `isochrones <https://github.com/timothydmorton/exosyspop>`_ and
+`vespa <https://github.com/timothydmorton/vespa>`_.
 
 
 Generate LaTeX tables and macros

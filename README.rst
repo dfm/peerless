@@ -142,7 +142,7 @@ False positive simulations & analysis
 Run the `predictions notebook
 <https://github.com/dfm/peerless/blob/master/prediction/prediction.ipynb>`_.
 Dependencies are `exosyspop <https://github.com/timothydmorton/exosyspop>`_, which
-further depends on `isochrones <https://github.com/timothydmorton/exosyspop>`_ and
+further depends on `isochrones <https://github.com/timothydmorton/isochrones>`_ and
 `vespa <https://github.com/timothydmorton/vespa>`_.
 
 

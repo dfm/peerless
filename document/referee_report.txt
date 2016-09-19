@@ -47,6 +47,14 @@ The misunderstanding here
 > the known EBs prior to the analysis (which would then serve to decrease the
 > number of EB signals you should expect to detect).
 >
+
+We acknowledge this point, but note that this will be at most a minor correction,
+considering the selection effects required in the mock-observation simulations
+(fewer than three eclipses, and showing only a primary or secondary eclipse, 
+but not both).  As properly accounting for this effect would move the planet
+FPPs only lower, we judge that it is not necessary to treat in detail.
+We have added a paragraph discussing this to the end of section 7.
+
 > 3. In Section 7 (pg 24, 2nd to last paragraph), it is mentioned "We list the
 > probabilities for each of our candidates to belong to each hypothesis in
 > Table 2." However, I only see P_planet in Table 2, and not P_EB or P_BEB. I'm

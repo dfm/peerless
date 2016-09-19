@@ -1251,7 +1251,7 @@ above EB population parameters.  We consider an EB to be detected if it
 presents fewer than three eclipses (either primary or secondary, but not
 both), if the signal-to-noise ratio is $>$15, and the duration of the
 detected eclipse is $<$2.5\,d.  In 100 realizations of these synthetic
-observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals.
+observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals. 
 
 To simulate BEBs, we assume an exponentially varying background field star
 density across the \kepler\ field, from 0.005\,arcsec$^{-2}$ at a Galactic
@@ -1276,7 +1276,7 @@ we note that these simulations do not include the full vetting procedure
 described in \sect{catalog}, and it is likely that the three impact-parameter-rejected
 candidates are EBs and that the centroid-rejected candidate is a BEB.  Thus,
 we might expect maybe two or three additional false positives among our planet
-candidates.
+candidates.  
 
 In order to more precisely quantify which of the candidates might indeed be false
 positives, we can inspect the synthetic observation simulations in more detail. In
@@ -1333,6 +1333,17 @@ These updated rates are listed in Table~\ref{tab:occurrence}.
 In each case, the results are consistent within the uncertainties but the
 difference can be used to get a qualitative sense of the systematic
 uncertainty introduced by the false positive population.
+
+We note that in the above procedure we have not corrected our predictions
+for the fact that our search has explicitly excluded KOIs
+that host known \kepler\ EBs---if any of these excluded systems show fewer than 
+three eclipses and do not present both primary and secondary eclipses, then they 
+should also should perhaps count towards the number of EBs we should have 
+expected to find in this survey.  However, as the \kepler\ EB catalog does not provide information
+on whether both primary and secondary eclipses are detected, we neglect this correction.
+We note that this is a conservative decision, in the sense that accounting for the
+effect of excluded EBs on our predictions would only further decrease the FPP of 
+the planetary signals, as they would be even less likely to be caused by EBs. 
 
 
 \begin{figure*}[htbp]~\\

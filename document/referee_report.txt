@@ -34,6 +34,7 @@
 > transits. Also, the coefficients you derive in equations (9)-(11) will likely
 > be (at least slightly) different if you were to incorporate this correction.
 
+The misunderstanding here
 
 2.00\pm0.72 -> 2.19\pm0.78
 
@@ -69,7 +70,9 @@ The text has been corrected.
 > dwarfs and Solar-type stars at a similar ~2 sigma level (see their Section
 > 7.1.2). The authors of the paper under review may wish to include a comparison
 > with the Clanton & Gaudi (2016) results.
->
+
+This comparison and reference have been added.
+
 > 5. The last sentence of the second paragraph of Section 10, which reads "This
 > result is qualitatively consistent with estimates from radial velocity,
 > microlensing, and direct imaging surveys" is a bit misleading. The result
@@ -85,3 +88,4 @@ The text has been corrected.
 > is consistent with expectations of core accretion theory, which makes the
 > generic prediction that giant planets should be relatively rare around low-mass
 > stars (Laughlin et al. 2004). I would recommend some clarification here.
+

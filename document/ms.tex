@@ -126,6 +126,9 @@ With modifications by David W. Hogg and Daniel Foreman-Mackey
 \newcommand{\tdmtodo}[1]{\todo{TDM}{blue}{#1}}
 \newcommand{\hoggtodo}[1]{\todo{HOGG}{blue}{#1}}
 
+% Response
+\newcommand{\response}[1]{{\color{blue}#1}}
+
 
 % Helpers for this paper:
 \newcommand{\license}{MIT License}
@@ -934,7 +937,7 @@ This detection efficiency must then be combined with the geometric transit
 probability function and the window function.
 For the star $k$, the geometric transit probability is given by
 \citep{Winn:2010}
-\begin{eqnarray}
+\begin{eqnarray}\eqlabel{geom-comp}
 Q_{\mathrm{geom},k} (\params) &=& \frac{R_{\star,k} + R}{a_k}
     \, \frac{1 + e\,\sin\omega}{1-e^2} \\
 &=& \left[\frac{4\,\pi^2}{G\,M_{\star,k}}\right]^{1/3}
@@ -945,6 +948,21 @@ where $R$ is the planet radius, $P$ is the orbital period, $e$ is the orbital
 eccentricity, $\omega$ is the argument of periastron, $R_{\star,k}$ is
 the radius of star $k$, and $M_{\star,k}$ is the star's mass.
 All of these parameters are included in \params.
+
+\response{%
+In \eq{geom-comp}, the term $(R_{\star,k}+R)$ takes grazing transits into
+account.
+This might seem counter intuitive because, as part of the search procedure, we
+rejected candidates where the maximum likelihood model had a grazing transit.
+However, since the measurement of $Q_{\mathrm{det},k}$ included a cut on the
+measured impact parameter, we argue that the $Q_{\mathrm{det},k}$ already
+takes this effect into account.
+In other words, $Q_{\mathrm{det},k}$ quantifies the probability that a transit
+of a given shape will be detected \emph{given that it transits at all} and
+$Q_{\mathrm{geom},k}$~--~the way it is written in \eq{geom-comp}~--~is the
+marginalized probability that the system will transit given its physical
+parameters.
+}
 
 Approximating the window function using a binomial probability of observing
 at least one transit, we find \citep[following][]{Burke:2014a}
@@ -1288,8 +1306,8 @@ according to the two-bin population model described by the
 median posterior values in Table~\ref{tab:occurrence} and
 generate a population of 1000 detected signals.
 
-We list the probabilities for each of our candidates to belong to each
-hypothesis in Table~\ref{tab:catalog}.  We find that the two deepest signals in our
+\response{We list the probability that each candidate is a planet in
+Table~\ref{tab:catalog}.} We find that the two deepest signals in our
 candidate catalog (9306307 and  10602068) are very likely to be EBs, though we
 note that this result may be dominated by the fact that our planet population
 is fixed to have a maximum radius of 1\,$R_{\rm J}$.  Most of the rest of the

@@ -34,9 +34,22 @@
 > transits. Also, the coefficients you derive in equations (9)-(11) will likely
 > be (at least slightly) different if you were to incorporate this correction.
 
-The misunderstanding here
+We stand by the version equation that we had that includes the probability of
+grazing transits and we have added a paragraph to Section 5 that discusses the
+argument. In short, since we injected grazing transits (Table 4) and included
+the impact parameter cut in the injection procedure, Q_det already takes this
+effect into account. Therefore, if we used (R_s - R_p), we would be
+double-counting the impact parameter completeness. This method is preferable
+to only injecting full transits and accounting for the impact parameter in the
+geometric term because the cut in the search procedure is made on the
+_measured/maximum-likelihood_ impact parameter which is generally quite
+different from the _true_ impact parameter.
 
-2.00\pm0.72 -> 2.19\pm0.78
+Out of interest, we computed how the result would change if we used the
+non-grazing Q_geom and find that the integrated occurrence rate becomes
+2.19\pm0.78 instead of 2.00\pm0.72. We don't include this analysis in the
+paper (because we don't think that it is correct!) but thought that it might
+be of interest to the referee.
 
 > 2. In the first paragraph of Section 3.1, it is mentioned that the light
 > curves of known EBs and other known false positives are excluded from the
@@ -46,13 +59,12 @@ The misunderstanding here
 > you took into account the fact that you had already removed a large sample of
 > the known EBs prior to the analysis (which would then serve to decrease the
 > number of EB signals you should expect to detect).
->
 
-We acknowledge this point, but note that this will be at most a minor correction,
-considering the selection effects required in the mock-observation simulations
-(fewer than three eclipses, and showing only a primary or secondary eclipse, 
-but not both).  As properly accounting for this effect would move the planet
-FPPs only lower, we judge that it is not necessary to treat in detail.
+We acknowledge this point, but note that this will be at most a minor
+correction, considering the selection effects required in the mock-observation
+simulations (fewer than three eclipses, and showing only a primary or secondary
+eclipse, but not both).  As properly accounting for this effect would move the
+planet FPPs only lower, we judge that it is not necessary to treat in detail.
 We have added a paragraph discussing this to the end of section 7.
 
 > 3. In Section 7 (pg 24, 2nd to last paragraph), it is mentioned "We list the

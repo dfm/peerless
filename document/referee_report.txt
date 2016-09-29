@@ -9,6 +9,9 @@
 > This is an excellent paper, it is well-written with an appropriate amount of
 > detail, and I recommend it for publication. There are just a few comments I
 > have with some suggested revisions.
+
+We thank the referee for their comments!
+
 >
 > Detailed Comments:
 > ------------------
@@ -34,7 +37,7 @@
 > transits. Also, the coefficients you derive in equations (9)-(11) will likely
 > be (at least slightly) different if you were to incorporate this correction.
 
-We stand by the version equation that we had that includes the probability of
+We stand by the version of the equation that we had that includes the probability of
 grazing transits and we have added a paragraph to Section 5 that discusses the
 argument. In short, since we injected grazing transits (Table 4) and included
 the impact parameter cut in the injection procedure, Q_det already takes this

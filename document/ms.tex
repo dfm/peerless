@@ -264,7 +264,7 @@ already been more fruitful than expected \citep{Wang:2015, Uehara:2016}.
 However, the systematic study of the population of long-period exoplanets
 found in the \kepler\ data to date has been hampered due to the
 substantial technical challenge of implementing a search, as well as the
-subtleties involved in intepreting the results. For example,
+subtleties involved in interpreting the results. For example,
 false alarms in the form of uncorrected systematics in the data and background
 eclipsing binaries can make single-transit detections ambiguous.
 
@@ -281,10 +281,11 @@ The methodological framework presented in the following pages is a candidate
 for this task.
 
 A study of the population of long-period transiting planets complements other
-planet detection techniques, such as radial velocity \citep[for
-example][]{Cumming:2008, Knutson:2014, Bryan:2016}, microlensing \citep[for
-example][]{Gould:2010, Cassan:2012, Clanton:2014, Shvartzvald:2016}, and
-direct imaging \citep[for example][]{Bowler:2016}.
+planet detection and characterization techniques, such as radial velocity
+\citep[for example][]{Cumming:2008, Knutson:2014, Bryan:2016}, microlensing
+\citep[for example][]{Gould:2010, Cassan:2012, Clanton:2014,
+Shvartzvald:2016}, direct imaging \citep[for example][]{Bowler:2016}, and
+transmission spectroscopy \citep[for example][]{Dalba:2015}.
 The marriage of the radial velocity and transit techniques is particularly
 powerful as exoplanets with both mass and radius measurements can be used to
 study planetary compositions and the formation of planetary systems \citep[for
@@ -1251,7 +1252,7 @@ above EB population parameters.  We consider an EB to be detected if it
 presents fewer than three eclipses (either primary or secondary, but not
 both), if the signal-to-noise ratio is $>$15, and the duration of the
 detected eclipse is $<$2.5\,d.  In 100 realizations of these synthetic
-observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals. 
+observations, we see $7.2 \pm 2.5$ single- or double-eclipsing EB signals.
 
 To simulate BEBs, we assume an exponentially varying background field star
 density across the \kepler\ field, from 0.005\,arcsec$^{-2}$ at a Galactic
@@ -1276,7 +1277,7 @@ we note that these simulations do not include the full vetting procedure
 described in \sect{catalog}, and it is likely that the three impact-parameter-rejected
 candidates are EBs and that the centroid-rejected candidate is a BEB.  Thus,
 we might expect maybe two or three additional false positives among our planet
-candidates.  
+candidates.
 
 In order to more precisely quantify which of the candidates might indeed be false
 positives, we can inspect the synthetic observation simulations in more detail. In
@@ -1334,16 +1335,18 @@ In each case, the results are consistent within the uncertainties but the
 difference can be used to get a qualitative sense of the systematic
 uncertainty introduced by the false positive population.
 
+\response{%
 We note that in the above procedure we have not corrected our predictions
 for the fact that our search has explicitly excluded KOIs
-that host known \kepler\ EBs---if any of these excluded systems show fewer than 
-three eclipses and do not present both primary and secondary eclipses, then they 
-should also should perhaps count towards the number of EBs we should have 
+that host known \kepler\ EBs---if any of these excluded systems show fewer than
+three eclipses and do not present both primary and secondary eclipses, then they
+should also should perhaps count towards the number of EBs we should have
 expected to find in this survey.  However, as the \kepler\ EB catalog does not provide information
 on whether both primary and secondary eclipses are detected, we neglect this correction.
 We note that this is a conservative decision, in the sense that accounting for the
-effect of excluded EBs on our predictions would only further decrease the FPP of 
-the planetary signals, as they would be even less likely to be caused by EBs. 
+effect of excluded EBs on our predictions would only further decrease the FPP of
+the planetary signals, as they would be even less likely to be caused by EBs.
+}
 
 
 \begin{figure*}[htbp]~\\
@@ -1542,7 +1545,7 @@ A real concern about the detection of exoplanets from a single transit is that
 follow-up and confirmation is difficult.
 Since the period of the orbit is poorly constrained and transits are sparse,
 any prediction of a subsequent transit time will be too uncertain to schedule
-targeted photometric follow-up.
+targeted photometric follow-up \citep{Beichman:2016, Dalba:2016}.
 Instead, follow-up using radial velocity and astrometry are more promising.
 For both radial velocity and astrometry, there is information about the
 orbiting planets in measurements made at all times~--~not just during transit.

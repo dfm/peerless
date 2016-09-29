@@ -109,3 +109,4 @@ This comparison and reference have been added.
 > generic prediction that giant planets should be relatively rare around low-mass
 > stars (Laughlin et al. 2004). I would recommend some clarification here.
 
+The text has been updated to clarify the argument.

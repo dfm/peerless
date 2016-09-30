@@ -9,7 +9,9 @@
 > This is an excellent paper, it is well-written with an appropriate amount of
 > detail, and I recommend it for publication. There are just a few comments I
 > have with some suggested revisions.
->
+
+We thank the referee for their comments!
+
 > Detailed Comments:
 > ------------------
 > 1. Possibly the most substantive issue is that I believe you have overestimated

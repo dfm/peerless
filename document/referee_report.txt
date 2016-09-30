@@ -34,16 +34,17 @@
 > transits. Also, the coefficients you derive in equations (9)-(11) will likely
 > be (at least slightly) different if you were to incorporate this correction.
 
-We stand by the version equation that we had that includes the probability of
-grazing transits and we have added a paragraph to Section 5 that discusses the
-argument. In short, since we injected grazing transits (Table 4) and included
-the impact parameter cut in the injection procedure, Q_det already takes this
-effect into account. Therefore, if we used (R_s - R_p), we would be
-double-counting the impact parameter completeness. This method is preferable
-to only injecting full transits and accounting for the impact parameter in the
-geometric term because the cut in the search procedure is made on the
-_measured/maximum-likelihood_ impact parameter which is generally quite
-different from the _true_ impact parameter.
+This is a great question and we appreciate the fact that this choice was not
+clearly presented. The version that we used (the one that includes the grazing
+transits) is correct in this case and we have added a paragraph to Section 5
+that discusses the argument. In short, since we injected grazing transits
+(Table 4) and included the impact parameter cut in the injection procedure,
+Q_det already takes this effect into account. Therefore, if we used (R_s -
+R_p), we would be double-counting the incompleteness for grazing transits. This
+method is preferable to only injecting full transits and accounting for the
+impact parameter in the geometric term because the cut in the search procedure
+is made on the measured (maximum-likelihood) impact parameter which is
+generally quite different from the true impact parameter.
 
 Out of interest, we computed how the result would change if we used the
 non-grazing Q_geom and find that the integrated occurrence rate becomes
@@ -60,12 +61,13 @@ be of interest to the referee.
 > the known EBs prior to the analysis (which would then serve to decrease the
 > number of EB signals you should expect to detect).
 
-We acknowledge this point, but note that this will be at most a minor
-correction, considering the selection effects required in the mock-observation
-simulations (fewer than three eclipses, and showing only a primary or secondary
-eclipse, but not both).  As properly accounting for this effect would move the
-planet FPPs only lower, we judge that it is not necessary to treat in detail.
-We have added a paragraph discussing this to the end of section 7.
+We acknowledge this point and have added a discussion to Section 7. This will
+be at most a minor correction, considering the selection effects required in
+the mock-observation simulations (fewer than three eclipses, and showing only a
+primary or secondary eclipse, but not both).  As properly accounting for this
+effect would move the planet FPPs only lower, we argue that it is not out of
+scope to treat in detail we have added a paragraph of discussion to highlight
+this point in Section 7.
 
 > 3. In Section 7 (pg 24, 2nd to last paragraph), it is mentioned "We list the
 > probabilities for each of our candidates to belong to each hypothesis in
@@ -73,7 +75,7 @@ We have added a paragraph discussing this to the end of section 7.
 > not sure if those quantities are meant to be in the table or not, but this
 > text and the table should be made consistent.
 
-The text has been corrected.
+Good point. We have altered the text to be consistent with the Table.
 
 > 4. In Section 8, the authors do a comparison with the results of Clanton &
 > Gaudi (2014), which was a synthesis of microlensing and RV survey results for
@@ -91,7 +93,8 @@ The text has been corrected.
 > 7.1.2). The authors of the paper under review may wish to include a comparison
 > with the Clanton & Gaudi (2016) results.
 
-This comparison and reference have been added.
+We have updated the comparison to discuss the comparison to the 2016 result and
+we have added the missing reference.
 
 > 5. The last sentence of the second paragraph of Section 10, which reads "This
 > result is qualitatively consistent with estimates from radial velocity,
@@ -109,4 +112,5 @@ This comparison and reference have been added.
 > generic prediction that giant planets should be relatively rare around low-mass
 > stars (Laughlin et al. 2004). I would recommend some clarification here.
 
-The text has been updated to clarify the argument.
+We agree that the submitted version was ambiguous in this section and we have
+updated the text to clarify the argument.

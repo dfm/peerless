@@ -127,7 +127,8 @@ With modifications by David W. Hogg and Daniel Foreman-Mackey
 \newcommand{\hoggtodo}[1]{\todo{HOGG}{blue}{#1}}
 
 % Response
-\newcommand{\response}[1]{{\color{blue}#1}}
+\newcommand{\response}[1]{{#1}}
+% \newcommand{\response}[1]{{\color{blue}#1}}
 
 
 % Helpers for this paper:
@@ -605,8 +606,7 @@ catalog (black).
 For each transit candidate, we constrain the physical parameters of the system
 by fitting a section of light curve around each transit using an exposure-time
 integrated  Keplerian orbit with a quadratic limb darkening law for the
-central body\footnote{\url{https://github.com/dfm/transit}; in this work, we
-use git commit \textsf{482d99b}.}.
+central body \cite{Foreman-Mackey:2016a}.
 It has previously been established that the orbital period of a transiting
 planet with only one transit can still be constrained given a measurement of
 the stellar density and an assumption about the orbital eccentricity \cite[for
@@ -1214,9 +1214,7 @@ photometric dip without an accompanying tell-tale deep primary signal.
 To determine to what extent the catalog of detections presented in this work
 may contain such false positives, we simulate populations of detected signals
 to predict how many we should expect.  To accomplish this, we use the Python
-package
-\exosyspop\footnote{\url{https://github.com/timothydmorton/exosyspop}; in this
-work, we use git commit \textsf{e4f54288}.}, which
+package \exosyspop\ \citep{Morton:2016a}, which
 we developed for this purpose and utilizes the \project{isochrones}, \project{vespa},
 and \project{batman} packages \citep{Morton:2015, Morton:2015b, Kreidberg:2015}
  for simulations of stellar populations and their eclipses.
@@ -1732,11 +1730,13 @@ University.
     \project{ceres} \citep{Agarwal:2016},
     \project{corner.py} \citep{Foreman-Mackey:2016},
     \project{emcee} \citep{Foreman-Mackey:2013},
+    \project{exosyspop} \citep{Morton:2016a},
     \project{george} \citep{Ambikasaran:2016},
     \project{isochrones} \citep{Morton:2015},
 	\project{matplotlib} \citep{Hunter:2007},
 	\project{numpy} \citep{Van-Der-Walt:2011},
 	\project{scipy} \citep{Jones:2001},
+    \project{transit} \citep{Foreman-Mackey:2016a},
   \project{vespa} \citep{Morton:2015b}}.
 
 \newpage

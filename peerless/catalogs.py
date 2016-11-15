@@ -19,7 +19,7 @@ from .settings import PEERLESS_DATA_DIR
 __all__ = [
     "KOICatalog", "KICatalog", "EBCatalog", "BlacklistCatalog",
     "TargetCatalog", "DatasetsCatalog", "CumulativeCatalog", "UeharaCatalog",
-    "WangCatalog",
+    "WangCatalog", "EPICatalog",
 ]
 
 
@@ -114,6 +114,22 @@ class KICatalog(ExoplanetArchiveCatalog):
 
 class CumulativeCatalog(ExoplanetArchiveCatalog):
     name = "cumulative"
+
+
+class EPICatalog(ExoplanetArchiveCatalog):
+    name = "k2targets"
+    delete_columns = [
+        "k2_campaign_str",
+        "k2_spar_prov",
+        "k2_spar_reflink",
+    ]
+
+    def _save_fetched_file(self, file_handle):
+        df = pd.read_csv(file_handle)
+        df["k2_campaign"] = df.k2_campaign_str.replace("E", -1).astype(int)
+        for c in self.delete_columns:
+            del df[c]
+        df.to_hdf(self.filename, self.name, format="t")
 
 
 class CatalogDownloadError(Exception):
@@ -232,3 +248,4 @@ EBCatalog = singleton(EBCatalog)
 BlacklistCatalog = singleton(BlacklistCatalog)
 TargetCatalog = singleton(TargetCatalog)
 DatasetsCatalog = singleton(DatasetsCatalog)
+EPICatalog = singleton(EPICatalog)

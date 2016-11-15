@@ -1,0 +1,209 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import time
+import logging
+import argparse
+import traceback
+import numpy as np
+from scipy.stats import beta
+from functools import partial
+from multiprocessing import Pool
+
+from tqdm import tqdm
+
+from peerless.search import search, plot
+from peerless.catalogs import EPICatalog
+from peerless.k2 import load_k2_light_curve
+
+
+def _wrapper(*args, **kwargs):
+    quiet = kwargs.pop("quiet", False)
+    output_dir = kwargs.pop("output_dir", "output")
+    no_plots = kwargs.pop("no_plots", False)
+    plot_all = kwargs.pop("plot_all", False)
+    try:
+        star, inj = args[0]
+        args = args[1:]
+        lc = load_k2_light_curve(star, kwargs.get("tau", 0.6))
+        results = search(target_id_and_injection=(star.epic_number, inj),
+                         lcs=[lc], *args, **kwargs)
+        if not no_plots:
+            plot(results, output_dir=output_dir, plot_all=plot_all)
+        return results
+    except:
+        if not quiet:
+            raise
+        with open(os.path.join(output_dir, "errors.txt"), "a") as f:
+            f.write("{0} failed with exception:\n{1}"
+                    .format(args, traceback.format_exc()))
+    return None
+
+
+parser = argparse.ArgumentParser(description="search for single transits")
+
+parser.add_argument("campaign", help="the campaign to search",
+                    type=int)
+parser.add_argument("-c", "--candidates", default=None,
+                    help="only search candidate light curves")
+parser.add_argument("--inject", action="store_true",
+                    help="inject transits into the light curves")
+parser.add_argument("-p", "--parallel", default=0, type=int,
+                    help="parallelize across targets")
+parser.add_argument("-q", "--quiet", action="store_true",
+                    help="log errors instead of raising")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="more output to the screen")
+parser.add_argument("-o", "--output-dir", default="output",
+                    help="the output directory")
+parser.add_argument("--plot-all", action="store_true",
+                    help="make all the plots")
+parser.add_argument("--no-plots", action="store_true",
+                    help="don't make any plots")
+
+# Search parameters:
+parser.add_argument("--duration", type=float, default=0.6,
+                    help="the transit duration in days")
+parser.add_argument("--detrend-hw", type=float, default=2.0,
+                    help="the half width of the de-trending window")
+parser.add_argument("--no-remove-kois", action="store_true",
+                    help="leave the known KOIs in the light curves")
+parser.add_argument("--grid-frac", type=float, default=0.25,
+                    help="search grid spacing in units of the duration")
+parser.add_argument("--noise-hw", type=float, default=15.0,
+                    help="the half width of the noise estimation window")
+parser.add_argument("--detect-thresh", type=float, default=25.0,
+                    help="the relative detection threshold")
+parser.add_argument("--max-fit-data", type=int, default=500,
+                    help="maximum number of points to fit")
+parser.add_argument("--max-peaks", type=int, default=3,
+                    help="the maximum number of peaks to consider")
+
+args = parser.parse_args()
+
+# Build the dictionary of search keywords.
+function = partial(
+    _wrapper,
+    tau=args.duration,
+    detrend_hw=args.detrend_hw,
+    remove_kois=not args.no_remove_kois,
+    grid_frac=args.grid_frac,
+    noise_hw=args.noise_hw,
+    detect_thresh=args.detect_thresh,
+    output_dir=args.output_dir,
+    plot_all=args.plot_all,
+    no_plots=args.no_plots,
+    max_fit_data=args.max_fit_data,
+    max_peaks=args.max_peaks,
+    verbose=args.verbose,
+    quiet=args.quiet,
+)
+
+
+epic = EPICatalog().df
+stars = epic[(epic.k2_campaign == args.campaign) & (epic.k2_type == "STAR")]
+
+#  Build the list of KIC IDs.
+#  kicids = np.array(TargetCatalog().df.kepid, dtype=int)
+#  if args.kicids:
+#      kicids = np.array(list(set(kicids) & set(args.kicids)), dtype=int)
+#  if args.candidates is not None:
+#      candidates = pd.read_csv(args.candidates)
+#      kicids = np.array(list(set(candidates.kicid)))
+#  assert len(kicids)
+
+# Build injections.
+if args.inject:
+    np.random.seed(int(os.getpid() + 1000*time.time()) % 4294967295)
+    np.random.shuffle(kicids)
+
+    injections = []
+    for k in kicids:
+        r = np.exp(np.random.uniform(np.log(0.02), np.log(0.3)))
+        injections.append(dict(
+            kicid=k,
+            q1=np.random.rand(),
+            q2=np.random.rand(),
+            ror=r,
+            period=np.exp(np.random.uniform(np.log(2*365),
+                                            np.log(25*365))),
+            b=np.random.uniform(0, 1+r),
+            e=beta.rvs(0.867, 3.03),
+            omega=np.random.uniform(0, 2*np.pi),
+            t0=np.random.uniform(120, 1600),
+            recovered=False,
+            ncadences=0,
+        ))
+else:
+    injections = [None for _ in range(len(stars))]
+
+# Check and create the output directory.
+if os.path.exists(args.output_dir):
+    logging.warning("Output directory '{0}' exists"
+                    .format(args.output_dir))
+else:
+    os.makedirs(args.output_dir)
+
+cand_fn = os.path.join(args.output_dir, "candidates.csv")
+models = ["gp", "outlier", "box1", "box2", "step", "transit"]
+columns = [
+    "target_id", "num_peaks", "peak_id",
+    "accept_bic", "accept_time",
+    "channel", "skygroup", "module", "output", "quarter", "season",
+    "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",
+    "transit_ror", "transit_duration", "transit_time", "transit_depth",
+    "transit_impact",
+    "chunk_min_time", "chunk_max_time",
+    "centroid_offset", "centroid_offset_err",
+]
+columns += ["lnlike_{0}".format(k) for k in models]
+columns += ["bic_{0}".format(k) for k in models]
+if args.inject:
+    columns += ["injected_{0}".format(k) for k in ["t0", "period", "ror",
+                                                   "b", "e", "omega"]]
+    columns += ["is_injection"]
+with open(cand_fn, "w") as f:
+    f.write("{0}\n".format(",".join(columns)))
+with open(os.path.join(args.output_dir, "targets.txt"), "w") as f:
+    f.write("\n".join(map("{0}".format, np.array(stars.epic_number))))
+
+inj_columns = ["target_id", "q1", "q2", "t0", "period", "ror", "b", "e",
+               "omega", "recovered",
+               "ncadences"]
+inj_fn = os.path.join(args.output_dir, "injections.csv")
+if args.inject:
+    with open(inj_fn, "w") as f:
+        f.write("{0}\n".format(",".join(inj_columns)))
+
+# Deal with parallelization.
+if args.parallel:
+    pool = Pool(args.parallel)
+    M = pool.imap_unordered
+    # M = pool.map
+else:
+    M = map
+
+if args.verbose:
+    prog = lambda f, *args, **kwargs: f
+else:
+    prog = tqdm
+
+for results in prog(M(function,
+                      list(zip((star for _, star in stars.iterrows()),
+                               injections))),
+                    total=len(stars)):
+    if results is None:
+        continue
+    inj = results.injection
+    peaks = results.peaks
+    if args.inject and inj is not None:
+        with open(inj_fn, "a") as f:
+            f.write(",".join("{0}".format(inj.get(k, np.nan))
+                             for k in inj_columns) + "\n")
+    if not len(peaks):
+        continue
+    with open(cand_fn, "a") as f:
+        f.write("\n".join(
+            ",".join("{0}".format(p.get(k, np.nan)) for k in columns)
+            for p in peaks) + "\n")

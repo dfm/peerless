@@ -22,7 +22,7 @@ __all__ = ["search"]
 class SearchResults(object):
 
     def __init__(self,
-                 kicid,
+                 target_id,
                  chunks,
                  duration,
                  detect_thresh,
@@ -32,7 +32,7 @@ class SearchResults(object):
                  search_scalar,
                  search_background,
                  injection=None):
-        self.kicid = kicid
+        self.target_id = target_id
         self.chunks = chunks
 
         self.duration = duration
@@ -48,8 +48,13 @@ class SearchResults(object):
 
         self.peaks = []
 
+    @property
+    def kicid(self):
+        return self.target_id
 
-def search(kicid_and_injection=None,
+
+def search(target_id_and_injection=None,
+           is_kepler=True,
            lcs=None,
            tau=0.6,
            detrend_hw=2.0,
@@ -59,6 +64,7 @@ def search(kicid_and_injection=None,
            detect_thresh=25.0,
            max_fit_data=500,
            max_peaks=3,
+           truncate=True,
            min_datapoints=10,
            all_models=False,
            verbose=False):
@@ -87,6 +93,10 @@ def search(kicid_and_injection=None,
     :param max_peaks:
         The maximum number of peaks to analyze in detail. (default: 3)
 
+    :param truncate:
+        Truncate the raw peak list to ``max_peaks``? Otherwise just skip.
+        (default: True)
+
     :param min_datapoints:
         The minimum number of in-transit data points. (default: 10)
 
@@ -94,10 +104,10 @@ def search(kicid_and_injection=None,
         Moar printing. (default: False)
 
     """
-    if kicid_and_injection is not None:
-        kicid, injection = kicid_and_injection
+    if target_id_and_injection is not None:
+        target_id, injection = target_id_and_injection
     else:
-        kicid, injection = None, None
+        target_id, injection = None, None
     inject = injection is not None
 
     system = None
@@ -115,18 +125,18 @@ def search(kicid_and_injection=None,
         injection["ncadences"] = 0
         injection["recovered"] = False
 
-    if lcs is None and kicid is None:
-        raise ValueError("you must specify 'lcs' or 'kicid'")
-    if lcs is None:
-        lcs, ncad = load_light_curves_for_kic(kicid,
+    if lcs is None and target_id is None:
+        raise ValueError("you must specify 'lcs' or 'target_id'")
+    if is_kepler and lcs is None:
+        lcs, ncad = load_light_curves_for_kic(target_id,
                                               detrend_hw=detrend_hw,
                                               remove_kois=remove_kois,
                                               inject_system=system)
         if inject:
             injection["ncadences"] += ncad
 
-    else:
-        kicid = "unknown-target"
+    if target_id is None:
+        target_id = "unknown-target"
 
     # Loop over light curves and search each one.
     time = []
@@ -154,7 +164,7 @@ def search(kicid_and_injection=None,
     noise = np.nan + np.zeros_like(s2n)
     noise[m] = running_median_trend(time[m], np.abs(s2n[m]), noise_hw)
 
-    results = SearchResults(kicid, lcs, tau, detect_thresh,
+    results = SearchResults(target_id, lcs, tau, detect_thresh,
                             time, depth, depth_ivar, s2n, noise,
                             injection=injection)
 
@@ -165,7 +175,7 @@ def search(kicid_and_injection=None,
         i = np.argmax(s2n[m])
         t0 = time[m][i]
         peaks.append(dict(
-            kicid=kicid,
+            target_id=target_id,
             t0=t0 + 0.5 * tau,
             s2n=s2n[m][i],
             bkg=noise[m][i],
@@ -187,6 +197,8 @@ def search(kicid_and_injection=None,
 
     if verbose and len(peaks) > max_peaks:
         logging.warning("truncating peak list")
+    if len(peaks) > max_peaks and not truncate:
+        return results
     peaks = peaks[:max_peaks]
 
     # For each peak, plot the diagnostic plots and vet.
@@ -541,8 +553,8 @@ def search(kicid_and_injection=None,
     return results
 
 
-def plot(results, output_dir="output", plot_all=False):
-    basedir = os.path.join(output_dir, "{0}".format(results.kicid))
+def plot(results, output_dir="output", plot_all=False, xlim=5.0):
+    basedir = os.path.join(output_dir, "{0}".format(results.target_id))
     for i, peak in enumerate(results.peaks):
         accept = peak["accept_bic"] and peak["accept_time"]
         if (not accept) and (not plot_all):
@@ -575,7 +587,7 @@ def plot(results, output_dir="output", plot_all=False):
 
         for ax in axes:
             ax.axvline(system.t0, color="g", lw=5, alpha=0.3)
-            ax.set_xlim(system.t0-5, system.t0+5)
+            ax.set_xlim(system.t0-xlim, system.t0+xlim)
             ax.yaxis.set_major_locator(pl.MaxNLocator(4))
             ax.xaxis.set_major_locator(pl.MaxNLocator(5))
             ax.yaxis.set_label_coords(-0.15, 0.5)
@@ -646,10 +658,10 @@ def plot(results, output_dir="output", plot_all=False):
         for ax1, ax2 in axes:
             ax1.yaxis.set_label_coords(-0.15, 0.5)
 
-            ax1.set_xlim(time.min() - 5.0, time.max() + 5.0)
+            ax1.set_xlim(time.min() - xlim, time.max() + xlim)
             ax1.axvline(system.t0, color="g", lw=5, alpha=0.3)
 
-            ax2.set_xlim(system.t0 - 5.0, system.t0 + 5.0)
+            ax2.set_xlim(system.t0 - xlim, system.t0 + xlim)
             ax2.axvline(system.t0, color="g", lw=5, alpha=0.3)
             ax2.axvline(system.t0 - 0.5*tau, color="k", ls="dashed")
             ax2.axvline(system.t0 + 0.5*tau, color="k", ls="dashed")

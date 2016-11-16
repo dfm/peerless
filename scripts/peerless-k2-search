@@ -29,6 +29,8 @@ def _wrapper(*args, **kwargs):
         lc = load_k2_light_curve(star, kwargs.get("tau", 0.6))
         results = search(target_id_and_injection=(star.epic_number, inj),
                          lcs=[lc], *args, **kwargs)
+        for p in results.peaks:
+            p["pipeline"] = lc.pipeline
         if not no_plots:
             plot(results, output_dir=output_dir, plot_all=plot_all)
         return results
@@ -148,7 +150,7 @@ else:
 cand_fn = os.path.join(args.output_dir, "candidates.csv")
 models = ["gp", "outlier", "box1", "box2", "step", "transit"]
 columns = [
-    "target_id", "num_peaks", "peak_id",
+    "target_id", "pipeline", "num_peaks", "peak_id",
     "accept_bic", "accept_time",
     "channel", "skygroup", "module", "output", "quarter", "season",
     "chunk", "t0", "s2n", "bkg", "depth", "depth_ivar",

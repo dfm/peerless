@@ -37,6 +37,7 @@ def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
             hdr = fts[1].header
         x = data["T"]
         y = data["FCOR"]
+        pipeline = "k2sff"
     else:
         r.raise_for_status()
         with fits.open(BytesIO(r.content)) as fts:
@@ -48,6 +49,7 @@ def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
             hdr = fts[1].header
         x = data["TIME"]
         y = data["FLUX"]
+        pipeline = "everest1"
 
     meta["skygroup"] = 0
     meta["season"] = 0
@@ -89,4 +91,6 @@ def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
     yerr = 1.4 * np.median(np.abs(np.diff(y))) + np.zeros_like(y)
     corr = np.random.randn(len(y))
 
-    return LightCurve(x, y, yerr, meta, header, corr, corr, corr, corr)
+    lc = LightCurve(x, y, yerr, meta, header, corr, corr, corr, corr)
+    lc.pipeline = pipeline
+    return lc

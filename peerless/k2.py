@@ -13,7 +13,7 @@ __all__ = ["load_k2_light_curve"]
 
 
 def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
-                        sigma_window=10, sigma_clip=7.0):
+                        sigma_window=5, sigma_clip=7.0):
     star_id = "{0}".format(star.epic_number)
     url = ("https://archive.stsci.edu/missions/hlsp/everest/c{0:02d}/{1}/{2}/"
            .format(star.k2_campaign, star_id[:4] + "00000", star_id[4:]))

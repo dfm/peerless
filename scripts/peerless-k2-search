@@ -81,6 +81,8 @@ parser.add_argument("--max-fit-data", type=int, default=500,
                     help="maximum number of points to fit")
 parser.add_argument("--max-peaks", type=int, default=3,
                     help="the maximum number of peaks to consider")
+parser.add_argument("--truncate", action="store_true",
+                    help="truncate the peak list")
 
 args = parser.parse_args()
 
@@ -100,6 +102,7 @@ function = partial(
     max_peaks=args.max_peaks,
     verbose=args.verbose,
     quiet=args.quiet,
+    truncate=args.truncate,
 )
 
 

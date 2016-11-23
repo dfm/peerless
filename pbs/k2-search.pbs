@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -l nodes=1:ppn=20
-#PBS -l walltime=48:00:00
+#PBS -l walltime=8:00:00
 #PBS -l mem=60GB
-#PBS -N pl-search
+#PBS -N pl-k2-search
 #PBS -M danfm@nyu.edu
 #PBS -j oe
 #PBS -o logs
@@ -20,5 +20,5 @@ RUNDIR=$SCRATCH/k2-peerless/search/${PBS_JOBID/.*}
 mkdir -p $RUNDIR
 
 cd $SRCDIR
-python scripts/peerless-k2-search 2 -p $PBS_NP -q -o $RUNDIR
+python scripts/peerless-k2-search 2 -p $PBS_NP -q -o $RUNDIR --detect-thresh 15
 

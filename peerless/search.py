@@ -366,6 +366,7 @@ def search(target_id_and_injection=None,
                     (system.duration/2.0, system.duration*2.0)
                 )
                 bounds[n.index("mean:t0")] = (t0 - 0.5*tau, t0 + 0.5*tau)
+                bounds[n.index("mean:ln_ror")] = (-5.0, 0.0)
                 if "mean:impact" in n:
                     bounds[n.index("mean:impact")] = (0, 1.0)
                 if "mean:q1_param" in n:
@@ -380,14 +381,28 @@ def search(target_id_and_injection=None,
 
             # Optimize.
             initial_vector = np.array(gp.get_vector())
-            r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll, args=(y,),
-                         method="L-BFGS-B", bounds=bounds)
-            gp.set_vector(r.x)
-            peak["gps"][name] = (gp, y)
+            mask = np.ones(len(y), dtype=bool)
+            for iteration in range(5):
+                gp.compute(x[mask], yerr[mask])
+                r = minimize(gp.nll, gp.get_vector(), jac=gp.grad_nll,
+                             args=(y[mask],), method="L-BFGS-B",
+                             bounds=bounds)
+                gp.set_vector(r.x)
+                mu, var = gp.predict(y[mask], x, return_var=True)
+                var += np.exp(gp._call_white_noise(x))
+                resid = np.abs(y - mu) / np.sqrt(var + yerr**2)
+                new_mask = resid < 7.0 * np.std(resid)
+                print(len(y), mask.sum(), new_mask.sum(), np.std(resid))
+                if new_mask.sum() == mask.sum():
+                    mask = new_mask
+                    break
+                mask = new_mask
+            peak["gps"][name] = (gp, y[mask])
 
             # Compute the -0.5*BIC.
             peak["lnlike_{0}".format(name)] = -r.fun
-            peak["bic_{0}".format(name)] = -r.fun-0.5*len(r.x)*np.log(len(x))
+            peak["bic_{0}".format(name)] = \
+                -r.fun-0.5*len(r.x)*np.log(mask.sum())
 
             if verbose:
                 print("Peak {0}:".format(i))
@@ -482,7 +497,7 @@ def search(target_id_and_injection=None,
             for j in np.arange(len(x))[np.abs(x - t0) < 0.5*tau]:
                 y0 = np.array(y)
                 y0[j] = np.median(y[np.arange(len(y)) != j])
-                ll = gp.lnlikelihood(y0)
+                ll = gp.lnlikelihood(y0[mask])
                 if ll > best[0]:
                     best = (ll, j)
 

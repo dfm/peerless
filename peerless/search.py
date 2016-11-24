@@ -325,6 +325,20 @@ def search(target_id_and_injection=None,
         )
         check_gradient(step, x)
 
+        # Half-step:
+        step_t0 = 0.5*(x[ind+n-1] + x[ind+n])
+        D = np.vander(1. / (x[:ind] - step_t0), 2)
+        w = np.linalg.solve(np.dot(D.T, D), np.dot(D.T, y[:ind]))
+        half_step = HalfStepModel(
+            value1=w[1],
+            #  slope=w[2],
+            value2=np.mean(y[ind+2*n:]),
+            log_width_1=np.log(w[0]),
+            log_width_2=np.log(10),
+            t0=step_t0,
+        )
+        check_gradient(half_step, x)
+
         # 4. box:
         inds = np.argsort(np.diff(y))
         inds = np.sort([inds[0], inds[-1]])
@@ -342,7 +356,7 @@ def search(target_id_and_injection=None,
         # Loop over models and compare them.
         models = OrderedDict([
             ("transit", system),
-            # ("vee", vee),
+            ("half_step", half_step),
             ("box1", boxes[1]),
             ("step", step),
             ("gp", constant),
@@ -397,12 +411,13 @@ def search(target_id_and_injection=None,
                     mask = new_mask
                     break
                 mask = new_mask
-            peak["gps"][name] = (gp, y[mask])
+            gp.compute(x, yerr)
+            lnlike = gp.lnlikelihood(y, quiet=True)
+            peak["gps"][name] = (gp, y)
 
             # Compute the -0.5*BIC.
-            peak["lnlike_{0}".format(name)] = -r.fun
-            peak["bic_{0}".format(name)] = \
-                -r.fun-0.5*len(r.x)*np.log(mask.sum())
+            peak["lnlike_{0}".format(name)] = lnlike
+            peak["bic_{0}".format(name)] = lnlike-0.5*len(r.x)*np.log(len(y))
 
             if verbose:
                 print("Peak {0}:".format(i))
@@ -497,7 +512,7 @@ def search(target_id_and_injection=None,
             for j in np.arange(len(x))[np.abs(x - t0) < 0.5*tau]:
                 y0 = np.array(y)
                 y0[j] = np.median(y[np.arange(len(y)) != j])
-                ll = gp.lnlikelihood(y0[mask])
+                ll = gp.lnlikelihood(y0)
                 if ll > best[0]:
                     best = (ll, j)
 
@@ -720,6 +735,35 @@ class StepModel(ModelingMixin):
             log_width_minus=-h1*em*dtm*mm,
             log_width_plus=-h2*ep*dtp*mp,
             t0=-(h1*em*mm/wm + h2*ep*mp/wp),
+        )
+
+
+class HalfStepModel(ModelingMixin):
+
+    def get_value(self, t):
+        dt = (t - self.t0)
+        w = np.exp(self.log_width_1)
+        mw = np.exp(self.log_width_2)
+        mod = w/dt * np.exp(dt * mw)
+        v = (self.value1 + mod)*(t < self.t0)
+        v += self.value2*(t >= self.t0)
+        return v
+
+    @ModelingMixin.parameter_sort
+    def get_gradient(self, t):
+        dt = t - self.t0
+        w = np.exp(self.log_width_1)
+        mw = np.exp(self.log_width_2)
+        mod = w/dt * np.exp(dt * mw)
+        mm = t < self.t0
+        mp = t >= self.t0
+
+        return dict(
+            value1=np.ones_like(t) * mm,
+            value2=np.ones_like(t) * mp,
+            log_width_1=mod * mm,
+            log_width_2=mod * dt * mw * mm,
+            t0=(mod / dt - mod * mw) * mm,
         )
 
 

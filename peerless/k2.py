@@ -15,10 +15,13 @@ __all__ = ["load_k2_light_curve"]
 def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
                         sigma_window=5, sigma_clip=7.0):
     star_id = "{0}".format(star.epic_number)
-    url = ("https://archive.stsci.edu/missions/hlsp/everest/c{0:02d}/{1}/{2}/"
+    #  url = ("https://archive.stsci.edu/missions/hlsp/everest/c{0:02d}/{1}/{2}/"
+    #         .format(star.k2_campaign, star_id[:4] + "00000", star_id[4:]))
+    url = ("https://bbq.dfm.io/~dfm/k2-everest/c{0:02d}/{1}/{2}/"
            .format(star.k2_campaign, star_id[:4] + "00000", star_id[4:]))
-    url += "hlsp_everest_k2_llc_{1}-c{0:02d}_kepler_v1.0_lc.fits".format(
+    url += "hlsp_everest_k2_llc_{1}-c{0:02d}_kepler_v2.0_lc.fits".format(
         star.k2_campaign, star_id)
+    print(url)
     r = requests.get(url)
     if r.status_code == 404:
         url = "https://archive.stsci.edu/missions/hlsp/k2sff"
@@ -38,6 +41,7 @@ def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
         x = data["T"]
         y = data["FCOR"]
         pipeline = "k2sff"
+        q = np.zeros_like(x, dtype=int)
     else:
         r.raise_for_status()
         with fits.open(BytesIO(r.content)) as fts:
@@ -49,13 +53,16 @@ def load_k2_light_curve(star, tau=0.6, outlier_detect=5.0,
             hdr = fts[1].header
         x = data["TIME"]
         y = data["FLUX"]
-        pipeline = "everest1"
+        q = data["QUALITY"]
+        pipeline = "everest2"
 
     meta["skygroup"] = 0
     meta["season"] = 0
     meta["quarter"] = meta["campaign"]
 
-    m = np.isfinite(x) & np.isfinite(y)
+    # Remove bad cadences
+    m = (q & int("10000000000000000000000", 2)) == 0
+    m &= np.isfinite(x) & np.isfinite(y)
     x = x[m]
     y = y[m]
 

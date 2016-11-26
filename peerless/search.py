@@ -323,7 +323,7 @@ def search(target_id_and_injection=None,
             log_width_minus=wm,
             t0=0.5*(x[ind+n-1] + x[ind+n]),
         )
-        check_gradient(step, x)
+        # check_gradient(step, x)
 
         # Half-step:
         step_t0 = 0.5*(x[ind+n-1] + x[ind+n])
@@ -337,7 +337,7 @@ def search(target_id_and_injection=None,
             log_width_2=np.log(10),
             t0=step_t0,
         )
-        check_gradient(half_step, x)
+        # check_gradient(half_step, x)
 
         # 4. box:
         inds = np.argsort(np.diff(y))
@@ -346,7 +346,7 @@ def search(target_id_and_injection=None,
         for tmn, tmx in (0.5 * (x[inds] + x[inds + 1]),
                          (t0-0.5*tau, t0+0.5*tau)):
             boxes.append(BoxModel(tmn, tmx, data=(x, y)))
-            check_gradient(boxes[-1], x)
+            # check_gradient(boxes[-1], x)
 
         # # 5. vee
         # vee = VeeModel(depth=1., t0=system.t0, log_b=-0.5,

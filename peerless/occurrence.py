@@ -52,7 +52,9 @@ def compute_occurrence(inj, fits0, pgrid, rgrid,
         Qe = (1.0 + eccen * np.sin(omega)) / (1.0 - eccen**2)
 
         # Window function.
-        Qt = (1.0 - (1.0 - fk)**(Tk / period))
+        msk = (period > Tk)
+        Qt = (fk * Tk) / period * msk
+        Qt += (1.0 - (1.0 - fk)**(Tk / period)) * (~msk)
 
         # Re-weight the samples based on the injected radius distribution.
         x_samp = np.log(np.array(inj[x_name]))

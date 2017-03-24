@@ -61,8 +61,8 @@ where ``{ncpu}`` is the number of CPUs that you want to run in parallel using
 ``multiprocessing`` (they must be on the same node).
 
 
-Transit search & injection tests
-++++++++++++++++++++++++++++++++
+Transit search
+++++++++++++++
 
 To search these targets for transits, run:
 
@@ -72,6 +72,10 @@ To search these targets for transits, run:
 
 where ``{ncpu}`` is the same as above and ``{searchdir}`` is the root
 directory for the output.
+
+
+Injection & recovery tests
+++++++++++++++++++++++++++
 
 Then to run a single pass of injection tests (one per target), run:
 
@@ -90,14 +94,68 @@ To collect the results of the search and injection tests, run:
     scripts/peerless-collect {searchdir} {injdir} -o {resultsdir}
 
 where ``{searchdir}`` and ``{injdir}`` are from above and ``{resultsdir}`` is
-the location where these should be saved.
+the location where these should be saved. Some of the figure scripts will
+expect ``{resultsdir}`` to be ``results`` in this directory so, if you choose
+a different location, the figures might fail.
+
+To predict the masses of the injected planets, run:
+
+.. code-block:: bash
+
+    scripts/peerless-collect {searchdir} {injdir} -o {resultsdir}
+
+
+MCMC sampling
++++++++++++++
+
+To set up the MCMC fits for the candidates, run:
+
+.. code-block:: bash
+
+    scripts/peerless-init {resultsdir}/candidates.csv -p -o {mcmcdir}
+
+where ``{mcmcdir}`` is the directory where the MCMC results should be saved.
+Then, to run the MCMC analysis, run:
+
+.. code-block:: bash
+
+    export NP={number_of_processes}
+    mpiexec -np $NP scripts/peerless-fit {mcmcdir}/{kicid}/init.pkl --nwalkers $((NP*2))
+
+for each ``{kicid}``. You'll probably want to rerun this script a few times to
+get more samples.
+
+To collect the MCMC fit results, run:
+
+.. code-block:: bash
+
+    scripts/peerless-collect-fits {resultsdir}/candidates.csv {mcmcdir} -o {resultsdir}
+
+This script saves a table of posterior quantiles to ``{resultsdir}/fits.csv``,
+figures to the directory ``document/figures`` for use in the manuscript, and
+HDF5 archives of thinned MCMC chains to ``{resultsdir}/chains``.
+
 
 False positive simulations & analysis
-+++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++
 
-Run the `predictions notebook <https://github.com/dfm/peerless/blob/master/prediction/prediction.ipynb>`_.  
-Dependencies are `exosyspop <github.com/timothydmorton/exosyspop>`_, which
-further depends on `isochrones <github.com/timothydmorton/exosyspop>`_ and `vespa <githubcom/timothydmorton/vespa>`_.
+Run the `predictions notebook
+<https://github.com/dfm/peerless/blob/master/prediction/prediction.ipynb>`_.
+Dependencies are `exosyspop <https://github.com/timothydmorton/exosyspop>`_, which
+further depends on `isochrones <https://github.com/timothydmorton/isochrones>`_ and
+`vespa <https://github.com/timothydmorton/vespa>`_.
+
+
+Generate LaTeX tables and macros
+++++++++++++++++++++++++++++++++
+
+Finally, to generate the LaTeX tables and macros for the paper, run:
+
+.. code-block:: bash
+
+    scripts/peerless-write-tex {resultsdir}/candidates.csv {resultsdir}/fits.csv {resultsdir}/injections-with-mass.h5 {resultsdir}/fpp.csv
+
+This will save several ``.tex`` files to the ``document`` directory.
 
 License
 -------

@@ -1,0 +1,118 @@
+> Overall Comments:
+> ------------------
+> In this paper, the authors have constructed a fully automated algorithm to
+> search for long-period planets that show one or two transits in Kepler data.
+> They measure the detection efficiency of their algorithm, allowing them to
+> compute the occurrence rate of planets with radii 0.1 < r_p/R_Jup < 1 and
+> orbital periods 2 < P/year < 25.
+>
+> This is an excellent paper, it is well-written with an appropriate amount of
+> detail, and I recommend it for publication. There are just a few comments I
+> have with some suggested revisions.
+
+We thank the referee for their comments!
+
+> Detailed Comments:
+> ------------------
+> 1. Possibly the most substantive issue is that I believe you have overestimated
+> your detection efficiency. Equations (4) and (5) show the geometric transit
+> probability, but the expressions printed in the paper describe the probability
+> for both full and grazing transits. In Step 2 of your search method, you reject
+> events where the maximum likelihood impact parameter is > 1 - (r_p/R_star)
+> to eliminate grazing transits. Therefore, the geometric transit probability you
+> should use is that for only full transits, which is identical to Equations (4)
+> and (5), but with the term (R_star + r_p) -> (R_star - r_p). Thus, you have
+> overestimated the geometric transit probability by a factor
+> (R_star + r_p) / (R_star - r_p),
+> which can be non-negligible, particularly for the larger radii planets. For a
+> Jupiter radius planet around a 1 R_Sun star, this is a ~20% effect (~2% for an
+> Earth radius planet). The overestimation of this geometric transit probability
+> leads to an overestimate of your detection efficiency and therefore an
+> underestimate of your occurrence rate.
+>
+> The underestimate of the occurrence rate almost certainly won't be a 20%
+> effect, and it may not even be significant. But this is the correct way to do
+> the calculation given the criterion you have chosen to accept only non-grazing
+> transits. Also, the coefficients you derive in equations (9)-(11) will likely
+> be (at least slightly) different if you were to incorporate this correction.
+
+This is a great question and we appreciate the fact that this choice was not
+clearly presented. The version that we used (the one that includes the grazing
+transits) is correct in this case and we have added a paragraph to Section 5
+that discusses the argument. In short, since we injected grazing transits
+(Table 4) and included the impact parameter cut in the injection procedure,
+Q_det already takes this effect into account. Therefore, if we used (R_s -
+R_p), we would be double-counting the incompleteness for grazing transits. This
+method is preferable to only injecting full transits and accounting for the
+impact parameter in the geometric term because the cut in the search procedure
+is made on the measured (maximum-likelihood) impact parameter which is
+generally quite different from the true impact parameter.
+
+Out of interest, we computed how the result would change if we used the
+non-grazing Q_geom and find that the integrated occurrence rate becomes
+2.19\pm0.78 instead of 2.00\pm0.72. We don't include this analysis in the
+paper (because we don't think that it is correct!) but thought that it might
+be of interest to the referee.
+
+> 2. In the first paragraph of Section 3.1, it is mentioned that the light
+> curves of known EBs and other known false positives are excluded from the
+> analysis. What would happen if these were left in the sample? Also, later in
+> the paper (Section 7), you use the detected Kepler EBs to estimate the number
+> of EB signals you should expect to see in your analysis. It does not seem like
+> you took into account the fact that you had already removed a large sample of
+> the known EBs prior to the analysis (which would then serve to decrease the
+> number of EB signals you should expect to detect).
+
+We acknowledge this point and have added a discussion to Section 7. This will
+be at most a minor correction, considering the selection effects required in
+the mock-observation simulations (fewer than three eclipses, and showing only a
+primary or secondary eclipse, but not both).  As properly accounting for this
+effect would move the planet FPPs only lower, we argue that it is not out of
+scope to treat in detail we have added a paragraph of discussion to highlight
+this point in Section 7.
+
+> 3. In Section 7 (pg 24, 2nd to last paragraph), it is mentioned "We list the
+> probabilities for each of our candidates to belong to each hypothesis in
+> Table 2." However, I only see P_planet in Table 2, and not P_EB or P_BEB. I'm
+> not sure if those quantities are meant to be in the table or not, but this
+> text and the table should be made consistent.
+
+Good point. We have altered the text to be consistent with the Table.
+
+> 4. In Section 8, the authors do a comparison with the results of Clanton &
+> Gaudi (2014), which was a synthesis of microlensing and RV survey results for
+> M dwarf hosts. In a later paper, Clanton & Gaudi (2016) updated their
+> occurrence rates by including constraints from direct imaging surveys. In the
+> same region of parameter space (periods 10^3-10^4 days, masses 10-10^4 Earth
+> masses), the Clanton & Gaudi (2016) results show an occurrence rate density of
+> d^2N/dln(M)dln(P) ~ 0.023, which is also lower (by ~2 sigma, marginally
+> inconsistent) than the results of the paper under review. As the authors point
+> out, this is expected since lower-mass stars are predicted (and it has been
+> observed) to host fewer giant planets than higher-mass (Solar-type) stars.
+> Coincidentally, Clanton & Gaudi (2014) do a comparison with results from
+> Cumming et al. (2008) and found a difference in occurrence rates between M
+> dwarfs and Solar-type stars at a similar ~2 sigma level (see their Section
+> 7.1.2). The authors of the paper under review may wish to include a comparison
+> with the Clanton & Gaudi (2016) results.
+
+We have updated the comparison to discuss the comparison to the 2016 result and
+we have added the missing reference.
+
+> 5. The last sentence of the second paragraph of Section 10, which reads "This
+> result is qualitatively consistent with estimates from radial velocity,
+> microlensing, and direct imaging surveys" is a bit misleading. The result
+> being referenced in this sentence is the integrated occurrence rate of
+> exoplanetary companions to G/K dwarfs, but the microlensing results apply
+> (mostly) to M dwarfs. We currently have no constraints on occurrence rates for
+> Solar-type stars from microlensing (although they account for a non-negligible
+> fraction of microlensing samples) because lens masses are not routinely
+> measured in microlensing events (see e.g. Gaudi 2012) and thus it is not
+> currently possible to construct a sample of just Solar-type stars from
+> microlensing data. I believe the authors are trying to say that their results
+> are larger than the occurrence rates inferred by microlensing surveys, which
+> is consistent with expectations of core accretion theory, which makes the
+> generic prediction that giant planets should be relatively rare around low-mass
+> stars (Laughlin et al. 2004). I would recommend some clarification here.
+
+We agree that the submitted version was ambiguous in this section and we have
+updated the text to clarify the argument.
